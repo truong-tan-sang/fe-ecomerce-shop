@@ -2,13 +2,13 @@
 import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
-import { Lock, Mail } from "lucide-react";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { Lock, Mail, UserRound } from "lucide-react";
 import Link from "next/link";
+import { ChangeEvent, FormEvent, useState } from "react";
 
-function Login() {
-  const [user, setUser] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({ email: "", password: "" });
+function Signup() {
+  const [user, setUser] = useState({ name: "", email: "", password: "" });
+  const [errors, setErrors] = useState({ name: "", email: "", password: "" });
   const [showLoader, setShowLoader] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -20,17 +20,21 @@ function Login() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
-    let newErrors = { email: "", password: "" };
+    let newErrors = { name: "", email: "", password: "" };
+
+    if (!user.name.trim()) {
+      newErrors.name = "Please enter your name.";
+    }
 
     if (!user.email.trim()) {
-      newErrors.email = "Please enter  valid email.";
+      newErrors.email = "Please enter a valid email.";
     }
 
     if (!user.password.trim()) {
       newErrors.password = "Password cannot be empty.";
     }
 
-    if (newErrors.email || newErrors.password) {
+    if (newErrors.name || newErrors.email || newErrors.password) {
       setErrors(newErrors);
       return;
     }
@@ -40,8 +44,8 @@ function Login() {
     // Mimic API request
     setTimeout(() => {
       setShowLoader(false);
-      console.log("Login successful:", user);
-      alert("Login successful!");
+      console.log("Signup successful:", user);
+      alert("Signup successful!");
     }, 2000);
   };
 
@@ -50,9 +54,19 @@ function Login() {
       <div className="w-full max-w-md rounded-lg bg-white p-6">
         <DummyLogo />
         <h2 className="mb-8 text-center text-2xl font-semibold text-gray-800">
-          Login to Flexy UI
+          Sign up to Flexy UI
         </h2>
         <form onSubmit={handleSubmit} className="">
+          <Input
+            type="text"
+            label="Full Name"
+            name="name"
+            placeholder="Please enter your full name"
+            value={user.name}
+            onChange={handleChange}
+            error={errors.name}
+            icon={<UserRound size={20} />}
+          />
           <Input
             type="email"
             label="Email"
@@ -63,37 +77,34 @@ function Login() {
             error={errors.email}
             icon={<Mail size={20} />}
           />
-          <div>
-            <Input
-              type="password"
-              label="Password"
-              name="password"
-              placeholder="Please enter your password"
-              value={user.password}
-              onChange={handleChange}
-              error={errors.password}
-              icon={<Lock size={20} />}
+          <Input
+            type="password"
+            label="Password"
+            name="password"
+            placeholder="Please enter your password"
+            value={user.password}
+            onChange={handleChange}
+            error={errors.password}
+            icon={<Lock size={20} />}
+          />
+          <div className="mt-10">
+            <Button
+              text="Create an account"
+              loading={showLoader}
+              disabled={showLoader}
             />
-            {/* Forgot Password Link */}
-            <div className="mb-4 text-right">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Forgot Password?
-              </Link>
-            </div>
           </div>
-          <Button text="Sign in" loading={showLoader} disabled={showLoader} />
         </form>
-        {/* Sign-up Link */}
+        {/* Login Link */}
         <div className="mt-4 text-center">
-          <span className="text-sm text-gray-600">New here? </span>
+          <span className="text-sm text-gray-600">
+            Already have an account?{" "}
+          </span>
           <Link
-            href="/signup"
+            href="/auth/login"
             className="text-sm font-medium text-blue-600 hover:underline"
           >
-            Sign up
+            Log in
           </Link>
         </div>
       </div>
@@ -101,4 +112,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;
