@@ -3,14 +3,25 @@ import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
 import { Lock, Mail } from "lucide-react";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [showLoader, setShowLoader] = useState(false);
+  const router = useRouter();
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      void router.push("/auth/login");
+    } else if (status === "authenticated") {
+      void router.push("/dashboard");
+    }
+  }, [status, router]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
