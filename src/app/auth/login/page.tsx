@@ -5,6 +5,7 @@ import Input from "@/components/input";
 import { Lock, Mail } from "lucide-react";
 import { ChangeEvent, FormEvent, useState } from "react";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });
@@ -74,6 +75,16 @@ function Login() {
               error={errors.password}
               icon={<Lock size={20} />}
             />
+            {/* Signin with Google Link */}
+            <div className="mb-4 text-right">
+              <div
+                onClick={() => signIn("google")}
+                className="cursor-pointer text-sm text-blue-600 hover:underline"
+              >
+                Sign in with Google?
+              </div>
+            </div>
+
             {/* Forgot Password Link */}
             <div className="mb-4 text-right">
               <Link
