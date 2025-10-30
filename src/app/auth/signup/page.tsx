@@ -54,7 +54,7 @@ function Signup() {
       <div className="w-full max-w-md rounded-lg bg-white p-6">
         <DummyLogo />
         <h2 className="mb-8 text-center text-2xl font-semibold text-gray-800">
-          Sign up to Flexy UI
+          Sign up to BK Ecommerce shop
         </h2>
         <form onSubmit={handleSubmit} className="">
           <Input

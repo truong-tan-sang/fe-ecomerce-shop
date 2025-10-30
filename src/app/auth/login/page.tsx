@@ -19,7 +19,8 @@ function Login() {
     if (status === "unauthenticated") {
       void router.push("/auth/login");
     } else if (status === "authenticated") {
-      void router.push("/dashboard");
+      // void router.push("/dashboard");
+      void router.push("/homepage");
     }
   }, [status, router]);
 
@@ -62,7 +63,7 @@ function Login() {
       <div className="w-full max-w-md rounded-lg bg-white p-6">
         <DummyLogo />
         <h2 className="mb-8 text-center text-2xl font-semibold text-gray-800">
-          Login to Flexy UI
+          Login to BK Ecommerce shop
         </h2>
         <form onSubmit={handleSubmit} className="">
           <Input
@@ -86,15 +87,6 @@ function Login() {
               error={errors.password}
               icon={<Lock size={20} />}
             />
-            {/* Signin with Google Link */}
-            <div className="mb-4 text-right">
-              <div
-                onClick={() => signIn("google")}
-                className="cursor-pointer text-sm text-blue-600 hover:underline"
-              >
-                Sign in with Google?
-              </div>
-            </div>
 
             {/* Forgot Password Link */}
             <div className="mb-4 text-right">
@@ -108,6 +100,26 @@ function Login() {
           </div>
           <Button text="Sign in" loading={showLoader} disabled={showLoader} />
         </form>
+
+        {/* Signin with Google Link */}
+        <div className="mt-10 mb-4 flex flex-row gap-2 text-right">
+          <div
+            onClick={() => signIn("google")}
+            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800"
+          >
+            <i className="fa-brands fa-google mr-2"></i>
+            <div>Sign in with Google</div>
+          </div>
+
+          <div
+            onClick={() => signIn("facebook")}
+            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800"
+          >
+            <i className="fa-brands fa-facebook mr-2"></i>
+            <div>Sign in with Facebook</div>
+          </div>
+        </div>
+
         {/* Sign-up Link */}
         <div className="mt-4 text-center">
           <span className="text-sm text-gray-600">New here? </span>
