@@ -15,7 +15,7 @@ function Login() {
   const router = useRouter();
   const { status } = useSession();
 
-  useEffect(() => {
+  const redirectAfterLoginByOAuthMethod = useEffect(() => {
     if (status === "unauthenticated") {
       void router.push("/auth/login");
     } else if (status === "authenticated") {
@@ -101,11 +101,21 @@ function Login() {
           <Button text="Sign in" loading={showLoader} disabled={showLoader} />
         </form>
 
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-300"></span>
+          </div>
+
+          <div className="relative flex justify-center">
+            <span className="bg-white px-3 text-sm text-gray-500">Or</span>
+          </div>
+        </div>
+
         {/* Signin with Google Link */}
-        <div className="mt-10 mb-4 flex flex-row gap-2 text-right">
+        <div className="mt-5 mb-4 flex flex-row gap-2 text-right">
           <div
             onClick={() => signIn("google")}
-            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800"
+            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800 hover:bg-gray-200"
           >
             <i className="fa-brands fa-google mr-2"></i>
             <div>Sign in with Google</div>
@@ -113,7 +123,7 @@ function Login() {
 
           <div
             onClick={() => signIn("facebook")}
-            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800"
+            className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800 hover:bg-gray-200"
           >
             <i className="fa-brands fa-facebook mr-2"></i>
             <div>Sign in with Facebook</div>
