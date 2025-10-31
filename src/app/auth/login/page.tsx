@@ -7,9 +7,14 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { authenticate } from "@/utils/actions";
+import "@ant-design/v5-patch-for-react-19";
+import notification from "antd/es/notification";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [showLoader, setShowLoader] = useState(false);
   const router = useRouter();
@@ -17,10 +22,10 @@ function Login() {
 
   const redirectAfterLoginByOAuthMethod = useEffect(() => {
     if (status === "unauthenticated") {
-      void router.push("/auth/login");
+      router.push("/auth/login");
     } else if (status === "authenticated") {
       // void router.push("/dashboard");
-      void router.push("/homepage");
+      router.push("/homepage");
     }
   }, [status, router]);
 
@@ -30,7 +35,7 @@ function Login() {
     setErrors({ ...errors, [name]: "" });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     let newErrors = { email: "", password: "" };
@@ -50,12 +55,25 @@ function Login() {
 
     setShowLoader(true);
 
-    // Mimic API request
-    setTimeout(() => {
+    const res = await authenticate(user.email, user.password);
+
+    if (res?.error) {
+      //error
+      if (res?.code === 2) {
+        setIsModalOpen(true);
+        setUserEmail(user.email);
+        return;
+      }
+
+      notification.error({
+        message: "Error login",
+        description: res?.error,
+      });
+
       setShowLoader(false);
-      console.log("Login successful:", user);
-      alert("Login successful!");
-    }, 2000);
+    } else {
+      router.push("/homepage");
+    }
   };
 
   return (

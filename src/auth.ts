@@ -51,7 +51,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         const res = await sendRequest<IBackendRes<ILogin>>({
           method: "POST",
-          url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/login`,
+          url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
           body: {
             username: credentials.username,
             password: credentials.password,
