@@ -49,6 +49,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: {},
       },
       authorize: async (credentials) => {
+        console.log("Authorize called with credentials:", credentials);
         const res = await sendRequest<IBackendRes<ILogin>>({
           method: "POST",
           url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
@@ -57,12 +58,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             password: credentials.password,
           },
         });
+        console.log("Response from backend:", res);
 
         if (res.statusCode === 201) {
           // return user object with their profile data
-
           return {
-            _id: res.data?.user?._id,
+            id: res.data?.user?.id,
             name: res.data?.user?.name,
             email: res.data?.user?.email,
             access_token: res.data?.access_token,

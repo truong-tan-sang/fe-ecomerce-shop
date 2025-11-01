@@ -31,7 +31,7 @@ declare global {
 
   interface ILogin {
     user: {
-      _id: string;
+      id: string;
       name: string;
       email: string;
     };

@@ -9,7 +9,6 @@ export async function authenticate(username: string, password: string) {
     const r = await signIn("credentials", {
       username: username,
       password: password,
-      // callbackUrl: "/",
       redirect: false,
     });
     console.log(">>> check r: ", r);

@@ -2,7 +2,7 @@ import NextAuth, { DefaultSession } from "next-auth";
 import { JWT } from "next-auth/jwt";
 
 interface IUser {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   access_token: string;
