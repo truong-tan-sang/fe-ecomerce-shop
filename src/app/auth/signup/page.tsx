@@ -2,14 +2,18 @@
 import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
+import { sendRequest } from "@/utils/api";
+import { notification } from "antd";
 import { Lock, Mail, UserRound } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
 
 function Signup() {
   const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({ name: "", email: "", password: "" });
   const [showLoader, setShowLoader] = useState(false);
+  const router = useRouter();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -17,7 +21,7 @@ function Signup() {
     setErrors({ ...errors, [name]: "" });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     let newErrors = { name: "", email: "", password: "" };
@@ -42,11 +46,28 @@ function Signup() {
     setShowLoader(true);
 
     // Mimic API request
-    setTimeout(() => {
-      setShowLoader(false);
-      console.log("Signup successful:", user);
-      alert("Signup successful!");
-    }, 2000);
+    const email = user.email;
+    const password = user.password;
+    const name = user.name;
+
+    const res = await sendRequest<IBackendRes<any>>({
+      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
+      method: "POST",
+      body: {
+        email,
+        password,
+        name,
+      },
+    });
+
+    if (res?.data) {
+      router.push(`/verify/${res?.data?.id}`);
+    } else {
+      notification.error({
+        message: "Register error",
+        description: res?.message,
+      });
+    }
   };
 
   return (
