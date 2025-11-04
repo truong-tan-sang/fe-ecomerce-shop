@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 import { authenticate } from "@/utils/actions";
 import "@ant-design/v5-patch-for-react-19";
 import notification from "antd/es/notification";
-import ModalReactive from "../signup/modal.reactive";
-import ModalChangePassword from "../forgot-password/modal.change.password";
+import ModalReactive from "@/components/auth/modal.reactive";
+import ModalChangePassword from "@/components/auth/modal.change.password";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });

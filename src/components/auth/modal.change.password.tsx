@@ -42,7 +42,7 @@ const ModalChangePassword = (props: any) => {
   };
 
   const onFinishStep1 = async (values: any) => {
-    const { code, password, confirmPassword } = values;
+    const { codeActive, password, confirmPassword } = values;
     if (password !== confirmPassword) {
       notification.error({
         message: "Invalid input",
@@ -54,7 +54,7 @@ const ModalChangePassword = (props: any) => {
       url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/change-password`,
       method: "POST",
       body: {
-        code,
+        codeActive,
         password,
         confirmPassword,
         email: userEmail,
@@ -92,18 +92,15 @@ const ModalChangePassword = (props: any) => {
           items={[
             {
               title: "Email",
-              // status: 'finish',
               icon: <UserOutlined />,
             },
             {
               title: "Verification",
-              // status: 'finish',
               icon: <SolutionOutlined />,
             },
 
             {
               title: "Done",
-              // status: 'wait',
               icon: <SmileOutlined />,
             },
           ]}
@@ -148,8 +145,8 @@ const ModalChangePassword = (props: any) => {
               layout="vertical"
             >
               <Form.Item
-                label="Code"
-                name="code"
+                label="Code Active"
+                name="codeActive"
                 rules={[
                   {
                     required: true,

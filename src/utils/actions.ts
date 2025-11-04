@@ -36,7 +36,7 @@ export async function authenticate(username: string, password: string) {
 export const handleCreateUserAction = async (data: any) => {
   const session = await auth();
   const res = await sendRequest<IBackendRes<any>>({
-    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users`,
+    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/user`,
     method: "POST",
     headers: {
       Authorization: `Bearer ${session?.user?.access_token}`,
@@ -50,7 +50,7 @@ export const handleCreateUserAction = async (data: any) => {
 export const handleUpdateUserAction = async (data: any) => {
   const session = await auth();
   const res = await sendRequest<IBackendRes<any>>({
-    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users`,
+    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/user`,
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${session?.user?.access_token}`,
@@ -64,7 +64,7 @@ export const handleUpdateUserAction = async (data: any) => {
 export const handleDeleteUserAction = async (id: any) => {
   const session = await auth();
   const res = await sendRequest<IBackendRes<any>>({
-    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/${id}`,
+    url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/${id}`,
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${session?.user?.access_token}`,

@@ -3,15 +3,26 @@ import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
 import { sendRequest } from "@/utils/api";
-import { notification } from "antd";
+import "@ant-design/v5-patch-for-react-19";
+import notification from "antd/es/notification";
 import { Lock, Mail, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
 
 function Signup() {
-  const [user, setUser] = useState({ name: "", email: "", password: "" });
-  const [errors, setErrors] = useState({ name: "", email: "", password: "" });
+  const [user, setUser] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
   const [showLoader, setShowLoader] = useState(false);
   const router = useRouter();
 
@@ -24,10 +35,14 @@ function Signup() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    let newErrors = { name: "", email: "", password: "" };
+    let newErrors = { firstName: "", lastName: "", email: "", password: "" };
 
-    if (!user.name.trim()) {
-      newErrors.name = "Please enter your name.";
+    if (!user.firstName.trim()) {
+      newErrors.firstName = "Please enter your first name.";
+    }
+
+    if (!user.lastName.trim()) {
+      newErrors.lastName = "Please enter your last name.";
     }
 
     if (!user.email.trim()) {
@@ -38,7 +53,12 @@ function Signup() {
       newErrors.password = "Password cannot be empty.";
     }
 
-    if (newErrors.name || newErrors.email || newErrors.password) {
+    if (
+      newErrors.firstName ||
+      newErrors.lastName ||
+      newErrors.email ||
+      newErrors.password
+    ) {
       setErrors(newErrors);
       return;
     }
@@ -46,22 +66,28 @@ function Signup() {
     setShowLoader(true);
 
     // Mimic API request
-    const email = user.email;
-    const password = user.password;
-    const name = user.name;
+    const email = user.email.trim();
+    const password = user.password.trim();
+    const firstName = user.firstName.trim();
+    const lastName = user.lastName.trim();
 
     const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`,
+      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
       method: "POST",
       body: {
-        email,
-        password,
-        name,
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        username:
+          firstName + lastName + Math.floor(Math.random() * 100000).toString(),
       },
     });
 
+    console.log(">>> check res: ", res);
+
     if (res?.data) {
-      router.push(`/verify/${res?.data?.id}`);
+      router.push(`/auth/verify/${res?.data?.id}`);
     } else {
       notification.error({
         message: "Register error",
@@ -80,12 +106,22 @@ function Signup() {
         <form onSubmit={handleSubmit} className="">
           <Input
             type="text"
-            label="Full Name"
-            name="name"
-            placeholder="Please enter your full name"
-            value={user.name}
+            label="First Name"
+            name="firstName"
+            placeholder="Please enter your first name"
+            value={user.firstName}
             onChange={handleChange}
-            error={errors.name}
+            error={errors.firstName}
+            icon={<UserRound size={20} />}
+          />
+          <Input
+            type="text"
+            label="Last Name"
+            name="lastName"
+            placeholder="Please enter your full name"
+            value={user.lastName}
+            onChange={handleChange}
+            error={errors.lastName}
             icon={<UserRound size={20} />}
           />
           <Input
