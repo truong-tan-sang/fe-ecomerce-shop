@@ -25,7 +25,7 @@ const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   return (
-    <div className="mb-6">
+    <div className="mb-6 w-full">
       {label && (
         <label
           htmlFor={label}
@@ -34,8 +34,8 @@ const Input: React.FC<InputProps> = ({
           {label}
         </label>
       )}
-      <div className="relative flex items-center">
-        {icon && <span className="absolute left-3 text-[#667085]">{icon}</span>}
+      <div className="relative flex w-full items-center">
+        {icon && <span className="absolute left-3 text-[#9D9D9D]">{icon}</span>}
         <input
           type={type}
           name={name}
@@ -44,8 +44,8 @@ const Input: React.FC<InputProps> = ({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className={`w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 pl-10 text-gray-700 placeholder:text-[#667085] focus:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-            error && "ring-2 ring-red-200"
+          className={`w-full rounded-none border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 ${icon ? "pl-10" : "pl-4"} text-[#9D9D9D] placeholder:text-[#9D9D9D] focus:border-[#9D9D9D] focus:bg-transparent focus:outline-none focus:ring-0 ${
+            error && "border-b-2 border-red-600"
           }`}
           {...props}
         />

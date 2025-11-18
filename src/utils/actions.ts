@@ -4,6 +4,23 @@ import { auth, signIn } from "@/auth";
 import { revalidateTag } from "next/cache";
 import { sendRequest } from "./api";
 
+/**
+ * TODO: Backend Authentication Flow
+ * This function handles server-side authentication using NextAuth credentials provider
+ * 
+ * Backend Requirements:
+ * - Endpoint: POST /auth/login
+ * - Request: { username: string, password: string }
+ * - Response codes:
+ *   * 201: Success - returns { user: {...}, access_token: string }
+ *   * 401: Invalid credentials (wrong email/password)
+ *   * 400: Inactive account (needs email verification)
+ * 
+ * Error handling:
+ * - code 1: InvalidEmailPasswordError - wrong credentials
+ * - code 2: InactiveAccountError - account not activated via email
+ * - code 0: Internal server error
+ */
 export async function authenticate(username: string, password: string) {
   try {
     const r = await signIn("credentials", {

@@ -1,5 +1,4 @@
 "use client";
-import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
 import { Lock, Mail } from "lucide-react";
@@ -11,7 +10,7 @@ import { authenticate } from "@/utils/actions";
 import "@ant-design/v5-patch-for-react-19";
 import notification from "antd/es/notification";
 import ModalReactive from "@/components/auth/modal.reactive";
-import ModalChangePassword from "@/components/auth/modal.change.password";
+import Image from "next/image";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });
@@ -19,7 +18,7 @@ function Login() {
   const [userEmail, setUserEmail] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [showLoader, setShowLoader] = useState(false);
-  const [changePassword, setChangePassword] = useState(false);
+  // Removed modal-based change password in favor of dedicated page
   const router = useRouter();
   const { status } = useSession();
 
@@ -61,6 +60,13 @@ function Login() {
 
     setShowLoader(true);
 
+    // TODO: Implement backend authentication
+    // API endpoint: POST /auth/login
+    // Request body: { username: email, password: password }
+    // Response codes:
+    //   - 201: Success (returns user data + access_token)
+    //   - 401: Invalid credentials
+    //   - 400: Inactive account (code === 2)
     const res = await authenticate(user.email, user.password);
 
     if (res?.error) {
@@ -84,97 +90,143 @@ function Login() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="w-full max-w-md rounded-lg bg-white p-6">
-          <DummyLogo />
-          <h2 className="mb-8 text-center text-2xl font-semibold text-gray-800">
-            Login to BK Ecommerce shop
-          </h2>
-          <form onSubmit={handleSubmit} className="">
-            <Input
-              type="email"
-              label="Email"
-              name="email"
-              placeholder="Please enter your email"
-              value={user.email}
-              onChange={handleChange}
-              error={errors.email}
-              icon={<Mail size={20} />}
+      <div className="flex h-screen overflow-hidden">
+        {/* Left Side - Image */}
+        <div className="hidden h-full w-1/2 bg-black lg:flex lg:items-center lg:justify-center">
+          <div className="relative h-full w-full">
+            <Image
+              src="/AuthImg.png"
+              alt="Authentication"
+              fill
+              className="object-cover"
+              priority
             />
-            <div>
-              <Input
-                type="password"
-                label="Password"
-                name="password"
-                placeholder="Please enter your password"
-                value={user.password}
-                onChange={handleChange}
-                error={errors.password}
-                icon={<Lock size={20} />}
-              />
+          </div>
+        </div>
 
-              {/* Forgot Password Link */}
-              <div className="mb-4 text-right">
-                <div
-                  className="cursor-pointer text-sm text-blue-600 hover:underline"
-                  onClick={() => setChangePassword(true)}
-                >
-                  Forgot Password?
+        {/* Right Side - Login Form */}
+        <div className="flex h-full w-full items-center justify-center bg-white lg:w-1/2">
+          <div className="h-full w-full overflow-hidden px-40 py-20">
+          <div className="flex min-h-full w-full flex-col items-center justify-center">
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <Image
+                src="/LOGO.svg"
+                alt="Paplé Logo"
+                width={150}
+                height={60}
+                priority
+              />
+            </div>
+
+            <div className="flex w-full flex-col items-center justify-start">
+              {/* Title */}
+              <h2 className="mb-6 text-center text-2xl font-semibold text-gray-900">
+                Đăng nhập vào Paplé
+              </h2>
+
+              {/* Google Sign In Button */}
+              <button
+                onClick={() => signIn("google")}
+                className="mb-4 flex w-full items-center justify-center gap-3 rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                <span>Đăng nhập với Google</span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300"></span>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-4 text-lg font-bold text-gray-500">
+                    — HOẶC —
+                  </span>
                 </div>
               </div>
-            </div>
-            <Button text="Sign in" loading={showLoader} disabled={showLoader} />
-          </form>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300"></span>
-            </div>
+              {/* Login Form */}
+              <form onSubmit={handleSubmit} className="w-full space-y-4">
+                <Input
+                  type="email"
+                  // label="Email"
+                  name="email"
+                  placeholder="Email"
+                  value={user.email}
+                  onChange={handleChange}
+                  error={errors.email}
+                // icon={<Mail size={20} />}
+                />
 
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-sm text-gray-500">Or</span>
-            </div>
+                <Input
+                  type="password"
+                  // label="Mật khẩu"
+                  name="password"
+                  placeholder="Mật khẩu"
+                  value={user.password}
+                  onChange={handleChange}
+                  error={errors.password}
+                // icon={<Lock size={20} />}
+                />
+
+                {/* Login Button */}
+                <Button
+                  text="Đăng nhập"
+                  loading={showLoader}
+                  disabled={showLoader}
+                />
+              </form>
+
+              {/* Sign up Link */}
+              <div className="mt-4 w-full text-center">
+                <button
+                  onClick={() => router.push("/auth/signup")}
+                  className="w-full rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  Đăng ký
+                </button>
+              </div>
+
+              {/* Forgot Password Link */}
+              {/* TODO: Option to replace Modal with page navigation:
+                <Link href="/auth/forgot-password">QUÊN MẬT KHẨU?</Link>
+                This provides better UX with dedicated URL and prevents data loss on refresh */}
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => router.push("/auth/change-password")}
+                  className="text-sm font-medium text-gray-900 hover:underline"
+                >
+                  QUÊN MẬT KHẨU?
+                </button>
+              </div>
+              </div>
           </div>
-
-          {/* Signin with Google Link */}
-          <div className="mt-5 mb-4 flex flex-row gap-2 text-right">
-            <div
-              onClick={() => signIn("google")}
-              className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800 hover:bg-gray-200"
-            >
-              <i className="fa-brands fa-google mr-2"></i>
-              <div>Sign in with Google</div>
-            </div>
-
-            <div
-              onClick={() => signIn("facebook")}
-              className="text-justify-center mx-auto flex h-[40px] w-1/2 cursor-pointer items-center justify-center rounded-xl border text-center text-sm text-gray-800 hover:bg-gray-200"
-            >
-              <i className="fa-brands fa-facebook mr-2"></i>
-              <div>Sign in with Facebook</div>
-            </div>
-          </div>
-
-          {/* Sign-up Link */}
-          <div className="mt-4 text-center">
-            <span className="text-sm text-gray-600">New here? </span>
-            <Link
-              href="/auth/signup"
-              className="text-sm font-medium text-blue-600 hover:underline"
-            >
-              Sign up
-            </Link>
           </div>
         </div>
       </div>
+
       <ModalReactive
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         userEmail={userEmail}
-      />
-      <ModalChangePassword
-        isModalOpen={changePassword}
-        setIsModalOpen={setChangePassword}
       />
     </>
   );
