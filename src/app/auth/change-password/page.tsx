@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import "@ant-design/v5-patch-for-react-19";
 import notification from "antd/es/notification";
 import Image from "next/image";
-import { sendRequest } from "@/utils/api";
+import { authService } from "@/services/auth";
 
 function ChangePassword() {
   const [step, setStep] = useState(1); // 1: Enter email, 2: Enter code and passwords
@@ -51,13 +51,7 @@ function ChangePassword() {
 
     setShowLoader(true);
 
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/retry-password`,
-      method: "POST",
-      body: {
-        email: formData.email,
-      },
-    });
+    const res = await authService.retryPassword({ email: formData.email });
 
     setShowLoader(false);
 
@@ -112,15 +106,11 @@ function ChangePassword() {
 
     setShowLoader(true);
 
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/change-password`,
-      method: "POST",
-      body: {
-        codeActive: formData.codeActive,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        email: formData.email,
-      },
+    const res = await authService.changePassword({
+      codeActive: formData.codeActive,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      email: formData.email,
     });
 
     setShowLoader(false);

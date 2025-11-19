@@ -8,7 +8,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { sendRequest } from "@/utils/api";
+import { authService } from "@/services/auth";
 
 const ModalReactive = (props: any) => {
   const { isModalOpen, setIsModalOpen, userEmail } = props;
@@ -28,13 +28,7 @@ const ModalReactive = (props: any) => {
 
   const onFinishStep0 = async (values: any) => {
     const { email } = values;
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/retry-active`,
-      method: "POST",
-      body: {
-        email,
-      },
-    });
+    const res = await authService.retryActive({ email });
 
     if (res?.data) {
       setUserId(res?.data?._id);
@@ -49,13 +43,9 @@ const ModalReactive = (props: any) => {
 
   const onFinishStep1 = async (values: any) => {
     const { code } = values;
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/check-code`,
-      method: "POST",
-      body: {
-        code,
-        _id: userId,
-      },
+    const res = await authService.checkCode({
+      codeActive: code,
+      id: userId,
     });
 
     if (res?.data) {
@@ -110,7 +100,7 @@ const ModalReactive = (props: any) => {
               layout="vertical"
               form={form}
             >
-              <Form.Item label="" name="email">
+              <Form.Item label="Email Address" name="email">
                 <Input disabled value={userEmail} />
               </Form.Item>
               <Form.Item>
@@ -135,16 +125,16 @@ const ModalReactive = (props: any) => {
               layout="vertical"
             >
               <Form.Item
-                label="Code"
+                label="Activation Code"
                 name="code"
                 rules={[
                   {
                     required: true,
-                    message: "Please input your code!",
+                    message: "Please input your activation code!",
                   },
                 ]}
               >
-                <Input />
+                <Input placeholder="Enter 6-digit activation code" />
               </Form.Item>
               <Form.Item>
                 <Button type="primary" htmlType="submit">

@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import Credentials from "next-auth/providers/credentials";
-import { sendRequest } from "./utils/api";
+import { authService } from "./services/auth";
 import {
   InactiveAccountError,
   InvalidEmailPasswordError,
@@ -50,13 +50,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       authorize: async (credentials) => {
         console.log("Authorize called with credentials:", credentials);
-        const res = await sendRequest<IBackendRes<ILogin>>({
-          method: "POST",
-          url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-          body: {
-            username: credentials.username,
-            password: credentials.password,
-          },
+        const res = await authService.login({
+          username: credentials.username as string,
+          password: credentials.password as string,
         });
         console.log("Response from backend:", res);
 

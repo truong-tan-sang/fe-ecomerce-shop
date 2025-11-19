@@ -1,0 +1,2586 @@
+{
+    "openapi": "3.0.0",
+    "paths": {
+        "/": {
+            "get": {
+                "operationId": "AppController_getHello",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "App"
+                ]
+            }
+        },
+        "/user": {
+            "get": {
+                "operationId": "UserController_getAllUsers",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "User list found!"
+                    }
+                },
+                "summary": "Get user list",
+                "tags": [
+                    "User"
+                ]
+            },
+            "post": {
+                "operationId": "UserController_createAnUser",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "summary": "Add a new user",
+                "tags": [
+                    "User"
+                ]
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "operationId": "UserController_getUserDetailById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User found!"
+                    }
+                },
+                "summary": "Get user detail by ID",
+                "tags": [
+                    "User"
+                ]
+            },
+            "delete": {
+                "operationId": "UserController_deleteUserById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "summary": "Delete a user",
+                "tags": [
+                    "User"
+                ]
+            },
+            "put": {
+                "operationId": "UserController_updateAnUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "number"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateUserDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "summary": "Update a user",
+                "tags": [
+                    "User"
+                ]
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "operationId": "AuthController_handleLogin",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/profile": {
+            "get": {
+                "operationId": "AuthController_getProfile",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "operationId": "AuthController_register",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAuthDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/check-code": {
+            "post": {
+                "operationId": "AuthController_checkCode",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CodeAuthDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/retry-active": {
+            "post": {
+                "operationId": "AuthController_retryActive",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/retry-password": {
+            "post": {
+                "operationId": "AuthController_retryPassword",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/change-password": {
+            "post": {
+                "operationId": "AuthController_changePassword",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordAuthDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/mail/hello-mail": {
+            "get": {
+                "operationId": "MailController_sendHelloMail",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Mail"
+                ]
+            }
+        },
+        "/mail": {
+            "post": {
+                "operationId": "MailController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateMailDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Mail"
+                ]
+            }
+        },
+        "/products": {
+            "post": {
+                "operationId": "ProductsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Create a new product"
+                    }
+                },
+                "summary": "Create a new product",
+                "tags": [
+                    "Products"
+                ]
+            },
+            "get": {
+                "operationId": "ProductsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Get all products"
+                    }
+                },
+                "summary": "Get all products",
+                "tags": [
+                    "Products"
+                ]
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "operationId": "ProductsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get one product"
+                    }
+                },
+                "summary": "Get one product",
+                "tags": [
+                    "Products"
+                ]
+            },
+            "put": {
+                "operationId": "ProductsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update one product"
+                    }
+                },
+                "summary": "Update one product",
+                "tags": [
+                    "Products"
+                ]
+            },
+            "delete": {
+                "operationId": "ProductsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete one product"
+                    }
+                },
+                "summary": "Delete one product",
+                "tags": [
+                    "Products"
+                ]
+            }
+        },
+        "/category": {
+            "post": {
+                "operationId": "CategoryController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCategoryDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Category"
+                ]
+            },
+            "get": {
+                "operationId": "CategoryController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Category"
+                ]
+            }
+        },
+        "/category/{id}": {
+            "get": {
+                "operationId": "CategoryController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Category"
+                ]
+            },
+            "put": {
+                "operationId": "CategoryController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCategoryDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Category"
+                ]
+            },
+            "delete": {
+                "operationId": "CategoryController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Category"
+                ]
+            }
+        },
+        "/address": {
+            "post": {
+                "operationId": "AddressController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAddressDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Address"
+                ]
+            },
+            "get": {
+                "operationId": "AddressController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Address"
+                ]
+            }
+        },
+        "/address/{id}": {
+            "get": {
+                "operationId": "AddressController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Address"
+                ]
+            },
+            "put": {
+                "operationId": "AddressController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAddressDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Address"
+                ]
+            },
+            "delete": {
+                "operationId": "AddressController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Address"
+                ]
+            }
+        },
+        "/size-profiles": {
+            "post": {
+                "operationId": "SizeProfilesController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateSizeProfileDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "SizeProfiles"
+                ]
+            },
+            "get": {
+                "operationId": "SizeProfilesController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "SizeProfiles"
+                ]
+            }
+        },
+        "/size-profiles/{id}": {
+            "get": {
+                "operationId": "SizeProfilesController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "SizeProfiles"
+                ]
+            },
+            "put": {
+                "operationId": "SizeProfilesController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSizeProfileDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "SizeProfiles"
+                ]
+            },
+            "delete": {
+                "operationId": "SizeProfilesController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "SizeProfiles"
+                ]
+            }
+        },
+        "/product-variants": {
+            "post": {
+                "operationId": "ProductVariantsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductVariantDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Create a new product variant"
+                    }
+                },
+                "summary": "Create a new product variant",
+                "tags": [
+                    "ProductVariants"
+                ]
+            },
+            "get": {
+                "operationId": "ProductVariantsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Get all product variant"
+                    }
+                },
+                "summary": "Get all product variant",
+                "tags": [
+                    "ProductVariants"
+                ]
+            }
+        },
+        "/product-variants/{id}": {
+            "get": {
+                "operationId": "ProductVariantsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get one product variant"
+                    }
+                },
+                "summary": "Get one product variant",
+                "tags": [
+                    "ProductVariants"
+                ]
+            },
+            "put": {
+                "operationId": "ProductVariantsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductVariantDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update a product variant"
+                    }
+                },
+                "summary": "Update a product variant",
+                "tags": [
+                    "ProductVariants"
+                ]
+            },
+            "delete": {
+                "operationId": "ProductVariantsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete a product variant"
+                    }
+                },
+                "summary": "Delete a product variant",
+                "tags": [
+                    "ProductVariants"
+                ]
+            }
+        },
+        "/reviews": {
+            "post": {
+                "operationId": "ReviewsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateReviewDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Reviews"
+                ]
+            },
+            "get": {
+                "operationId": "ReviewsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Reviews"
+                ]
+            }
+        },
+        "/reviews/{id}": {
+            "get": {
+                "operationId": "ReviewsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Reviews"
+                ]
+            },
+            "put": {
+                "operationId": "ReviewsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateReviewDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Reviews"
+                ]
+            },
+            "delete": {
+                "operationId": "ReviewsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Reviews"
+                ]
+            }
+        },
+        "/media": {
+            "post": {
+                "operationId": "MediaController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateMediaDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Create a new media file"
+                    }
+                },
+                "summary": "Create a new media file",
+                "tags": [
+                    "Media"
+                ]
+            },
+            "get": {
+                "operationId": "MediaController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Get all media files"
+                    }
+                },
+                "summary": "Get all media files",
+                "tags": [
+                    "Media"
+                ]
+            }
+        },
+        "/media/{id}": {
+            "get": {
+                "operationId": "MediaController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get one media file"
+                    }
+                },
+                "summary": "Get one media file",
+                "tags": [
+                    "Media"
+                ]
+            },
+            "put": {
+                "operationId": "MediaController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMediaDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Update one media file"
+                    }
+                },
+                "summary": "Update one media file",
+                "tags": [
+                    "Media"
+                ]
+            },
+            "delete": {
+                "operationId": "MediaController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete one media file"
+                    }
+                },
+                "summary": "Delete one media file",
+                "tags": [
+                    "Media"
+                ]
+            }
+        },
+        "/orders": {
+            "post": {
+                "operationId": "OrdersController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOrderDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Orders"
+                ]
+            },
+            "get": {
+                "operationId": "OrdersController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "operationId": "OrdersController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Orders"
+                ]
+            },
+            "put": {
+                "operationId": "OrdersController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrderDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Orders"
+                ]
+            },
+            "delete": {
+                "operationId": "OrdersController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/order-items": {
+            "post": {
+                "operationId": "OrderItemsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOrderItemDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "OrderItems"
+                ]
+            },
+            "get": {
+                "operationId": "OrderItemsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "OrderItems"
+                ]
+            }
+        },
+        "/order-items/{id}": {
+            "get": {
+                "operationId": "OrderItemsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "OrderItems"
+                ]
+            },
+            "put": {
+                "operationId": "OrderItemsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrderItemDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "OrderItems"
+                ]
+            },
+            "delete": {
+                "operationId": "OrderItemsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "OrderItems"
+                ]
+            }
+        },
+        "/shipments": {
+            "post": {
+                "operationId": "ShipmentsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateShipmentDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Shipments"
+                ]
+            },
+            "get": {
+                "operationId": "ShipmentsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Shipments"
+                ]
+            }
+        },
+        "/shipments/{id}": {
+            "get": {
+                "operationId": "ShipmentsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Shipments"
+                ]
+            },
+            "put": {
+                "operationId": "ShipmentsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateShipmentDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Shipments"
+                ]
+            },
+            "delete": {
+                "operationId": "ShipmentsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Shipments"
+                ]
+            }
+        },
+        "/payments": {
+            "post": {
+                "operationId": "PaymentsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreatePaymentDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Payments"
+                ]
+            },
+            "get": {
+                "operationId": "PaymentsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Payments"
+                ]
+            }
+        },
+        "/payments/{id}": {
+            "get": {
+                "operationId": "PaymentsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Payments"
+                ]
+            },
+            "put": {
+                "operationId": "PaymentsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePaymentDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Payments"
+                ]
+            },
+            "delete": {
+                "operationId": "PaymentsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Payments"
+                ]
+            }
+        },
+        "/cart": {
+            "post": {
+                "operationId": "CartController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCartDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Cart"
+                ]
+            },
+            "get": {
+                "operationId": "CartController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Cart"
+                ]
+            }
+        },
+        "/cart/{id}": {
+            "get": {
+                "operationId": "CartController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Cart"
+                ]
+            },
+            "put": {
+                "operationId": "CartController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCartDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Cart"
+                ]
+            },
+            "delete": {
+                "operationId": "CartController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Cart"
+                ]
+            }
+        },
+        "/cart-items": {
+            "post": {
+                "operationId": "CartItemsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCartItemDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "CartItems"
+                ]
+            },
+            "get": {
+                "operationId": "CartItemsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "CartItems"
+                ]
+            }
+        },
+        "/cart-items/{id}": {
+            "get": {
+                "operationId": "CartItemsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "CartItems"
+                ]
+            },
+            "put": {
+                "operationId": "CartItemsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCartItemDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "CartItems"
+                ]
+            },
+            "delete": {
+                "operationId": "CartItemsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "CartItems"
+                ]
+            }
+        },
+        "/vouchers": {
+            "post": {
+                "operationId": "VouchersController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateVoucherDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Vouchers"
+                ]
+            },
+            "get": {
+                "operationId": "VouchersController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Vouchers"
+                ]
+            }
+        },
+        "/vouchers/{id}": {
+            "get": {
+                "operationId": "VouchersController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Vouchers"
+                ]
+            },
+            "put": {
+                "operationId": "VouchersController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateVoucherDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Vouchers"
+                ]
+            },
+            "delete": {
+                "operationId": "VouchersController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Vouchers"
+                ]
+            }
+        },
+        "/user-vouchers": {
+            "post": {
+                "operationId": "UserVouchersController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserVoucherDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "UserVouchers"
+                ]
+            },
+            "get": {
+                "operationId": "UserVouchersController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "UserVouchers"
+                ]
+            }
+        },
+        "/user-vouchers/{id}": {
+            "get": {
+                "operationId": "UserVouchersController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "UserVouchers"
+                ]
+            },
+            "put": {
+                "operationId": "UserVouchersController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateUserVoucherDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "UserVouchers"
+                ]
+            },
+            "delete": {
+                "operationId": "UserVouchersController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "UserVouchers"
+                ]
+            }
+        },
+        "/requests": {
+            "post": {
+                "operationId": "RequestsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Requests"
+                ]
+            },
+            "get": {
+                "operationId": "RequestsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Requests"
+                ]
+            }
+        },
+        "/requests/{id}": {
+            "get": {
+                "operationId": "RequestsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Requests"
+                ]
+            },
+            "put": {
+                "operationId": "RequestsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Requests"
+                ]
+            },
+            "delete": {
+                "operationId": "RequestsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Requests"
+                ]
+            }
+        },
+        "/return-requests": {
+            "post": {
+                "operationId": "ReturnRequestsController_create",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateReturnRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "ReturnRequests"
+                ]
+            },
+            "get": {
+                "operationId": "ReturnRequestsController_findAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "ReturnRequests"
+                ]
+            }
+        },
+        "/return-requests/{id}": {
+            "get": {
+                "operationId": "ReturnRequestsController_findOne",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "ReturnRequests"
+                ]
+            },
+            "put": {
+                "operationId": "ReturnRequestsController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateReturnRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "ReturnRequests"
+                ]
+            },
+            "delete": {
+                "operationId": "ReturnRequestsController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "ReturnRequests"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "BE Ecomerce Shop",
+        "description": "",
+        "version": "1.0",
+        "contact": {}
+    },
+    "tags": [],
+    "servers": [],
+    "components": {
+        "schemas": {
+            "CreateUserDto": {
+                "type": "object",
+                "properties": {
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john.doe@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "password123"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "USER"
+                    },
+                    "createdAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "example": "2025-11-18T17:36:23.136Z"
+                    },
+                    "isActive": {
+                        "type": "boolean",
+                        "example": "false"
+                    }
+                },
+                "required": [
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "phone",
+                    "password",
+                    "username",
+                    "role",
+                    "createdAt",
+                    "isActive"
+                ]
+            },
+            "UpdateUserDto": {
+                "type": "object",
+                "properties": {
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john.doe@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "password123"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "updatedAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "example": "2025-11-18T17:36:23.143Z"
+                    }
+                },
+                "required": [
+                    "firstName",
+                    "lastName",
+                    "email",
+                    "phone",
+                    "password",
+                    "username",
+                    "updatedAt"
+                ]
+            },
+            "CreateAuthDto": {
+                "type": "object",
+                "properties": {
+                    "firstName": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "lastName": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "USER"
+                    },
+                    "createdAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "example": "2025-11-18T17:36:23.249Z"
+                    },
+                    "isActive": {
+                        "type": "boolean",
+                        "example": "false"
+                    },
+                    "codeActiveExpire": {
+                        "format": "date-time",
+                        "type": "string",
+                        "example": "2025-11-18T17:36:23.249Z"
+                    }
+                },
+                "required": [
+                    "firstName",
+                    "lastName",
+                    "phone",
+                    "role",
+                    "createdAt",
+                    "isActive",
+                    "codeActiveExpire"
+                ]
+            },
+            "CodeAuthDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "ChangePasswordAuthDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateMailDto": {
+                "type": "object",
+                "properties": {
+                    "subject": {
+                        "type": "string",
+                        "example": "Activation email for your account"
+                    },
+                    "text": {
+                        "type": "string",
+                        "example": "Hello John Doe"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "activationCode": {
+                        "type": "string",
+                        "example": "1234567"
+                    }
+                },
+                "required": [
+                    "subject",
+                    "text",
+                    "name",
+                    "activationCode"
+                ]
+            },
+            "CreateProductDto": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Sample product name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Sample product description"
+                    },
+                    "price": {
+                        "type": "number",
+                        "example": "Sample product price"
+                    },
+                    "stockKeepingUnit": {
+                        "type": "string",
+                        "example": "Sample product SKU"
+                    },
+                    "stock": {
+                        "type": "number",
+                        "example": "Sample product stock"
+                    },
+                    "createByUserId": {
+                        "format": "int64",
+                        "type": "integer",
+                        "example": "User ID of staff who created the product"
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "price",
+                    "stockKeepingUnit",
+                    "stock",
+                    "createByUserId"
+                ]
+            },
+            "UpdateProductDto": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Sample product name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Sample product description"
+                    },
+                    "price": {
+                        "type": "number",
+                        "example": "Sample product price"
+                    },
+                    "stockKeepingUnit": {
+                        "type": "string",
+                        "example": "Sample product SKU"
+                    },
+                    "stock": {
+                        "type": "number",
+                        "example": "Sample product stock"
+                    },
+                    "createByUserId": {
+                        "format": "int64",
+                        "type": "integer",
+                        "example": "User ID of staff who created the product"
+                    }
+                }
+            },
+            "CreateCategoryDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateCategoryDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateAddressDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateAddressDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateSizeProfileDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateSizeProfileDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateProductVariantDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateProductVariantDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateReviewDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateReviewDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateMediaDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateMediaDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateOrderDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateOrderDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateOrderItemDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateOrderItemDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateShipmentDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateShipmentDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreatePaymentDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdatePaymentDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateCartDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateCartDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateCartItemDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateCartItemDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateVoucherDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateVoucherDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateUserVoucherDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateUserVoucherDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateRequestDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateRequestDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateReturnRequestDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateReturnRequestDto": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    }
+}

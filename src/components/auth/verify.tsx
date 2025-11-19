@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import Link from "next/link";
-import { sendRequest } from "@/utils/api";
+import { authService } from "@/services/auth";
 import { useRouter } from "next/navigation";
 
 const Verify = (props: any) => {
@@ -22,14 +22,7 @@ const Verify = (props: any) => {
 
   const onFinish = async (values: any) => {
     const { id, codeActive } = values;
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/check-code`,
-      method: "POST",
-      body: {
-        id,
-        codeActive,
-      },
-    });
+    const res = await authService.checkCode({ id, codeActive });
     if (res?.data) {
       message.success("Your account is activated.");
       router.push(`/auth/login`);
@@ -59,23 +52,23 @@ const Verify = (props: any) => {
             autoComplete="off"
             layout="vertical"
           >
-            <Form.Item label="Id" name="id" initialValue={id} hidden>
+            <Form.Item label="User ID" name="id" initialValue={id} hidden>
               <Input disabled />
             </Form.Item>
             <div>Code active sent to your email. Please check your email.</div>
             <Divider />
 
             <Form.Item
-              label="Code"
+              label="Activation Code"
               name="codeActive"
               rules={[
                 {
                   required: true,
-                  message: "Please input your code!",
+                  message: "Please input your activation code!",
                 },
               ]}
             >
-              <Input />
+              <Input placeholder="Enter 6-digit activation code" />
             </Form.Item>
 
             <Form.Item>

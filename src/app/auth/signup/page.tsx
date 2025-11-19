@@ -1,7 +1,7 @@
 "use client";
 import Button from "@/components/button";
 import Input from "@/components/input";
-import { sendRequest } from "@/utils/api";
+import { authService } from "@/services/auth";
 import "@ant-design/v5-patch-for-react-19";
 import notification from "antd/es/notification";
 import { Lock, Mail, UserRound } from "lucide-react";
@@ -77,18 +77,19 @@ function Signup() {
     const firstName = user.firstName.trim();
     const lastName = user.lastName.trim();
 
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
-      method: "POST",
-      body: {
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        username:
-          firstName + lastName + Math.floor(Math.random() * 100000).toString(),
-      },
-    });
+    const data = {
+      email: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      username:
+        firstName + lastName + Math.floor(Math.random() * 100000).toString(),
+      phone: "", // Backend requires this field
+    }
+
+    console.log(">>> check data: ", data);
+
+    const res = await authService.signup(data);
 
     console.log(">>> check res: ", res);
 

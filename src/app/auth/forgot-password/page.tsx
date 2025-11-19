@@ -2,7 +2,7 @@
 import DummyLogo from "@/components/app-logo";
 import Button from "@/components/button";
 import Input from "@/components/input";
-import { sendRequest } from "@/utils/api";
+import { authService } from "@/services/auth";
 import "@ant-design/v5-patch-for-react-19";
 import notification from "antd/es/notification";
 import { Mail } from "lucide-react";
@@ -40,11 +40,7 @@ const ForgotPassword = () => {
     //   2. Generate 6-digit OTP code
     //   3. Store code with expiration (e.g., 15 minutes)
     //   4. Send email with code
-    const res = await sendRequest<IBackendRes<any>>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/retry-password`,
-      method: "POST",
-      body: { email: email.trim() },
-    });
+    const res = await authService.retryPassword({ email: email.trim() });
 
     setLoading(false);
 
