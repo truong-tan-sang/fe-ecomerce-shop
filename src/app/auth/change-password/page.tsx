@@ -134,13 +134,7 @@ function ChangePassword() {
       {/* Left Side - Image */}
       <div className="hidden h-full w-1/2 bg-black lg:flex lg:items-center lg:justify-center">
         <div className="relative h-full w-full">
-          <Image
-            src="/AuthImg.png"
-            alt="Authentication"
-            fill
-            className="object-cover"
-            priority
-          />
+          <img src="/AuthImg.png" alt="Authentication" className="object-cover w-full h-full" />
         </div>
       </div>
 

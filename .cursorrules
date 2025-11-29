@@ -1,0 +1,106 @@
+# Cursor Project Rules for fe-ecomerce-shop
+
+## Guiding Principles
+- Never use `any`. Keep everything strictly typed via DTOs and shared types.
+- Prefer types generated or defined from `openapi.json`. Mirror backend contracts.
+- Minimize implicit casts. Do not typecast unless narrowing is provably safe and local.
+- Follow the project’s naming and file conventions.
+- Work top‑down for large features; annotate TODOs and track them.
+- After each task or TODO group, run `tsc` and fix type errors before continuing.
+
+---
+
+## Type Safety & DTO Usage
+- Source request/response types from `openapi.json` schemas.
+  - Define DTOs under `src/dto/` that reflect backend models (e.g., `ProductDto`, `UserDto`, `UpdateUserDto`).
+  - Services MUST use these DTOs for `sendRequest<T>()` generics.
+- Do not introduce `any` in components, services, or utilities.
+  - If a backend field is unknown, define a proper optional field or a discriminated union.
+- Avoid broad typecasting like `as string` or `as any`.
+  - Radio/select values: use string literal unions (e.g., `"MALE" | "FEMALE" | "OTHER"`).
+- When normalizing API responses, prefer explicit mapping functions with typed inputs/outputs.
+
+---
+
+## Naming & File Conventions
+- Services live in `src/services/` and are named `<entity>.ts` (e.g., `product.ts`, `user.ts`).
+  - Each service exports `<entity>Service` and relevant type aliases.
+- DTOs live in `src/dto/` and are named `<entity>.ts` grouping request/response DTOs.
+  - Match OpenAPI names: `CreateUserDto`, `UpdateUserDto`, `ProductDto`, etc.
+- Components live under `src/components/<area>/`.
+  - Client components use `"use client"` only when needed.
+  - Keep props typed (no `any`).
+- Utilities stay in `src/utils/` (e.g., `api.ts`, `errors.ts`).
+- Pages and layouts go in `src/app/...` with route‑conformant folders.
+- Environment variables must be read through `process.env` and passed down as typed configs.
+
+---
+
+## Authentication & API Calls
+- Protected endpoints MUST include `Authorization: Bearer <token>`.
+- Server components should use `auth()` to read the session and pass tokens to services.
+- Client components should call server actions or services that already handle tokens.
+- Always add error handling (try/catch) and minimal debug logs when integrating new APIs.
+
+---
+
+## Task Workflow & TODO Tracking
+- Before implementing, write a TODO list describing:
+  - What you will do.
+  - Which files will be changed.
+  - What each change accomplishes.
+- After completing the TODO list, run TypeScript checks and fix errors:
+  - Windows PowerShell:
+    ```powershell
+    cd "c:\Users\LEGION\Downloads\fe-ecomerce-shop"; npm run build
+    ```
+    or
+    ```powershell
+    cd "c:\Users\LEGION\Downloads\fe-ecomerce-shop"; npx tsc --noEmit
+    ```
+- For larger features, use top‑down:
+  - Place `// TODO:` comments at future integration points.
+  - Create a simple text/markdown entry in `todo/` (proposed directory) to track progress, e.g., `todo/feature-checklist.md`.
+  - If a TODO is directly related to the current feature, implement it now.
+
+---
+
+## Implementation Rules
+- Services:
+  - Use `sendRequest<T>()` with typed DTOs.
+  - Accept optional `accessToken?: string` and add headers when provided.
+- Components:
+  - Keep state types explicit (e.g., `type Gender = "MALE" | "FEMALE" | "OTHER" | ""`).
+  - Do not rely on IIFEs for simple initializations—prefer direct assignment from typed data.
+  - Provide empty states and fallbacks for optional fields.
+- Logging:
+  - Log minimal context around API requests/responses when debugging.
+  - Avoid leaking full tokens; truncate when necessary.
+
+---
+
+## Quality Gates
+- Every change must compile cleanly (`tsc --noEmit`).
+- No `any`, no unchecked casts.
+- Align DTOs and services with `openapi.json`.
+- Keep API calls authenticated when required.
+- Respect directory and naming conventions.
+
+---
+
+## Examples
+- Gender radios:
+  ```ts
+  type Gender = "MALE" | "FEMALE" | "OTHER" | "";
+  const initialGender: Gender = profile?.gender || "";
+  ```
+- Service with token:
+  ```ts
+  getAllProducts(accessToken?: string) {
+    return sendRequest<IBackendRes<ProductDto[]>>({
+      url: `${BASE_URL}/products`,
+      method: "GET",
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+  }
+  ```

@@ -1,212 +1,37 @@
-"use client";
-import { signOut } from "next-auth/react";
 import Header from "@/components/header/navbar";
 import HeroBanner from "@/components/home/HeroBanner";
-import ProductCard from "@/components/product/ProductCard";
+import ProductGrid from "@/components/product/ProductGrid";
+import { productService } from "@/services/product";
+import { auth } from "@/auth";
+import type { ProductDto } from "@/dto/product";
 
-// Sample products data
-const products = [
-  {
-    id: 1,
-    imageUrl: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 2,
-    imageUrl: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 3,
-    imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-  {
-    id: 4,
-    imageUrl: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 5,
-    imageUrl: "https://images.unsplash.com/photo-1622445275463-afa2ab738c34?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 6,
-    imageUrl: "https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-  {
-    id: 7,
-    imageUrl: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 8,
-    imageUrl: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 9,
-    imageUrl: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-  {
-    id: 10,
-    imageUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 11,
-    imageUrl: "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 12,
-    imageUrl: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-  {
-    id: 13,
-    imageUrl: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 14,
-    imageUrl: "https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 15,
-    imageUrl: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-  {
-    id: 16,
-    imageUrl: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c", selected: true },
-      { color: "#166534" },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 17,
-    imageUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534", selected: true },
-      { color: "#2563eb" },
-    ],
-  },
-  {
-    id: 18,
-    imageUrl: "https://images.unsplash.com/photo-1622445275463-afa2ab738c34?auto=format&fit=crop&w=400&q=80",
-    name: "Lorem Ipsum",
-    price: "Price",
-    colors: [
-      { color: "#b91c1c" },
-      { color: "#166534" },
-      { color: "#2563eb", selected: true },
-    ],
-  },
-];
+export default async function HomePage() {
+  // Get session for access token
+  const session = await auth();
+  const accessToken = session?.user?.access_token;
 
-export default function HomePage() {
+  // Fetch first page of products from API (SSR)
+  let initialProducts: ProductDto[] = [];
+  let initialPage = 1;
+  let initialHasMore = false;
+
+  try {
+    console.log("[HomePage] Fetching initial products with token:", accessToken?.substring(0, 20));
+    const res = await productService.getAllProducts({ page: 1, perPage: 20, accessToken });
+    console.log("[HomePage] Products API response:", res);
+    
+    // Backend returns products directly in data array (no pagination meta)
+    if (res?.data && Array.isArray(res.data)) {
+      initialProducts = res.data;
+      initialPage = 1;
+      // Derive hasMore from page size heuristic (perPage = 20)
+      initialHasMore = initialProducts.length === 20;
+      console.log("[HomePage] Loaded", initialProducts.length, "products; hasMore:", initialHasMore);
+    }
+  } catch (error) {
+    console.error("[HomePage] Failed to fetch products:", error);
+  }
+
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
@@ -226,19 +51,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-2">
-          {products.map((product) => (
-          <ProductCard
-              key={product.id}
-              id={product.id.toString()}
-              imageUrl={product.imageUrl}
-              name={product.name}
-              price={product.price}
-              colors={product.colors}
-            />
-          ))}
-        </div>
+        {/* Product Grid with Infinite Scroll */}
+        <ProductGrid 
+          initialProducts={initialProducts}
+          initialPage={initialPage}
+          initialHasMore={initialHasMore}
+        />
       </main>
     </div>
   );

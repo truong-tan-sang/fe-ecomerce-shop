@@ -43,14 +43,23 @@ function Login() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const email = user.email.trim();
+    const password = user.password.trim();
     let newErrors = { email: "", password: "" };
 
-    if (!user.email.trim()) {
-      newErrors.email = "Please enter  valid email.";
+    // Email validation
+    const emailRegex = /^(?:[a-zA-Z0-9_'^&amp;+%`{}~!-]+(?:\.[a-zA-Z0-9_'^&amp;+%`{}~!-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z-]*[a-zA-Z]:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]+)\])$/;
+    if (!email) {
+      newErrors.email = "Vui lòng nhập email.";
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Email không hợp lệ.";
     }
 
-    if (!user.password.trim()) {
-      newErrors.password = "Password cannot be empty.";
+    // Password validation (min 8 chars)
+    if (!password) {
+      newErrors.password = "Vui lòng nhập mật khẩu.";
+    } else if (password.length < 8) {
+      newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
     }
 
     if (newErrors.email || newErrors.password) {
@@ -91,16 +100,10 @@ function Login() {
   return (
     <>
       <div className="flex h-screen overflow-hidden">
-        {/* Left Side - Image */}
+        {/* Left Side - Image (use plain <img> to avoid Next.js optimizer errors for invalid files) */}
         <div className="hidden h-full w-1/2 bg-black lg:flex lg:items-center lg:justify-center">
           <div className="relative h-full w-full">
-            <Image
-              src="/AuthImg.png"
-              alt="Authentication"
-              fill
-              className="object-cover"
-              priority
-            />
+            <img src="/AuthImg.png" alt="Authentication" className="object-cover w-full h-full" />
           </div>
         </div>
 
@@ -169,7 +172,7 @@ function Login() {
                   type="email"
                   // label="Email"
                   name="email"
-                  placeholder="Email"
+                  placeholder="Nhập email"
                   value={user.email}
                   onChange={handleChange}
                   error={errors.email}
@@ -180,7 +183,7 @@ function Login() {
                   type="password"
                   // label="Mật khẩu"
                   name="password"
-                  placeholder="Mật khẩu"
+                  placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
                   value={user.password}
                   onChange={handleChange}
                   error={errors.password}

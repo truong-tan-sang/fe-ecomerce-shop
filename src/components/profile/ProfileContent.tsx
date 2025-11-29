@@ -2,12 +2,91 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useProfile } from "./ProfileContext";
+import { userService } from "../../services/user";
+import { useSession } from "next-auth/react";
 
 const subTabs = ["Hồ sơ", "Bảng Size", "Địa chỉ", "Đổi mật khẩu", "Xóa tài khoản"];
 
 export default function ProfileContent() {
+    const profile = useProfile();
+    const { data: session } = useSession();
     const [activeSubTab, setActiveSubTab] = useState("Hồ sơ");
     const [isEditing, setIsEditing] = useState(false);
+
+    // Controlled state for editable fields (backend-aligned)
+    const initialUsername = profile?.username || "";
+    const initialName = profile?.name || ""; // Will be mapped to firstName; lastName blank (or split heuristic)
+    const initialPhone = profile?.phone || "";
+
+    const [username, setUsername] = useState(initialUsername);
+    const [fullName, setFullName] = useState(initialName);
+    const [phone, setPhone] = useState(initialPhone);
+    
+    type Gender = "MALE" | "FEMALE" | "OTHER" | "";
+    const initialGender: Gender = profile?.gender || "";
+    const [gender, setGender] = useState<Gender>(initialGender);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSave = async () => {
+        if (!profile?.id) return;
+        // Debug log for session and token
+        console.log("Session:", session);
+        console.log("Access token:", session?.user?.access_token);
+        if (!session?.user?.access_token) {
+            setError("Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.");
+            return;
+        }
+        setLoading(true);
+        setMessage(null);
+        setError(null);
+
+        // Split full name into firstName/lastName
+        const parts = fullName.trim().split(/\s+/);
+        const firstName = parts[0] || "";
+        const lastName = parts.slice(1).join(" ");
+
+        const updatePayload = {
+            username,
+            firstName,
+            lastName: lastName || undefined,
+            phone: phone || undefined,
+            gender: gender || undefined,
+        };
+
+        console.log("=== Update User Payload ===");
+        console.log("Profile ID:", profile.id);
+        console.log("Payload:", JSON.stringify(updatePayload, null, 2));
+        console.log("Access Token (first 20 chars):", session.user.access_token?.substring(0, 20));
+        console.log("==========================");
+
+        try {
+            const res = await userService.updateUser(
+                profile.id,
+                updatePayload,
+                session.user.access_token as string
+            );
+            console.log("=== Backend Response ===");
+            console.log(JSON.stringify(res, null, 2));
+            console.log("=======================");
+            
+            if ((res as any)?.statusCode && (res as any).statusCode >= 400) {
+                setError((res as any).message || "Cập nhật thất bại");
+            } else {
+                setMessage("Cập nhật thành công");
+                setIsEditing(false);
+            }
+        } catch (e: any) {
+            console.error("=== Update Error ===");
+            console.error(e);
+            console.error("===================");
+            setError(e?.message || "Lỗi không xác định");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <>
@@ -38,7 +117,9 @@ export default function ProfileContent() {
                                 <label className="text-sm text-gray-600">Tên người dùng</label>
                                 <input
                                     type="text"
-                                    defaultValue="truong-tan-sang"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="Nhập tên người dùng"
                                     disabled={!isEditing}
                                     className="border px-3 py-2 text-sm disabled:bg-gray-50"
                                 />
@@ -48,7 +129,9 @@ export default function ProfileContent() {
                                 <label className="text-sm text-gray-600">Họ và tên</label>
                                 <input
                                     type="text"
-                                    defaultValue="Trương Tấn Sang"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Nhập họ và tên"
                                     disabled={!isEditing}
                                     className="border px-3 py-2 text-sm disabled:bg-gray-50"
                                 />
@@ -58,8 +141,8 @@ export default function ProfileContent() {
                                 <label className="text-sm text-gray-600">Email</label>
                                 <input
                                     type="email"
-                                    defaultValue="sang.truongtan2004@hcmut.edu.vn"
-                                    disabled
+                                    value={profile?.email || ""}
+                                    readOnly
                                     className="border px-3 py-2 text-sm bg-gray-50 text-gray-500"
                                 />
                             </div>
@@ -68,85 +151,79 @@ export default function ProfileContent() {
                                 <label className="text-sm text-gray-600">Số điện thoại</label>
                                 <input
                                     type="text"
-                                    defaultValue="*******692"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Nhập số điện thoại"
                                     disabled={!isEditing}
                                     className="border px-3 py-2 text-sm disabled:bg-gray-50"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-[120px_1fr] items-start gap-4">
-                                <label className="text-sm text-gray-600 pt-2">Giới tính</label>
-                                <div className="flex items-center gap-4">
+                            {/* Gender selection */}
+                            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                                <label className="text-sm text-gray-600">Giới tính</label>
+                                <div className="flex gap-6">
                                     <label className="flex items-center gap-2">
                                         <input
-                                            type="checkbox"
-                                            defaultChecked
+                                            type="radio"
+                                            name="gender"
+                                            value="MALE"
+                                            checked={gender === "MALE"}
+                                            onChange={(e) => setGender(e.target.value as Gender)}
                                             disabled={!isEditing}
-                                            className="h-4 w-4 rounded-none border border-black accent-black"
                                         />
-                                        <span className="text-sm">Nam</span>
+                                        <span>Nam</span>
                                     </label>
                                     <label className="flex items-center gap-2">
                                         <input
-                                            type="checkbox"
+                                            type="radio"
+                                            name="gender"
+                                            value="FEMALE"
+                                            checked={gender === "FEMALE"}
+                                            onChange={(e) => setGender(e.target.value as Gender)}
                                             disabled={!isEditing}
-                                            className="h-4 w-4 rounded-none border border-black accent-black"
                                         />
-                                        <span className="text-sm">Nữ</span>
+                                        <span>Nữ</span>
                                     </label>
                                     <label className="flex items-center gap-2">
                                         <input
-                                            type="checkbox"
+                                            type="radio"
+                                            name="gender"
+                                            value="OTHER"
+                                            checked={gender === "OTHER"}
+                                            onChange={(e) => setGender(e.target.value as Gender)}
                                             disabled={!isEditing}
-                                            className="h-4 w-4 rounded-none border border-black accent-black"
                                         />
-                                        <span className="text-sm">Khác</span>
+                                        <span>Khác</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Ngày sinh</label>
-                                <div className="flex gap-2">
-                                    <select
-                                        disabled={!isEditing}
-                                        className="border px-3 py-2 text-sm disabled:bg-gray-50"
-                                    >
-                                        <option>Ngày</option>
-                                    </select>
-                                    <select
-                                        disabled={!isEditing}
-                                        className="border px-3 py-2 text-sm disabled:bg-gray-50"
-                                    >
-                                        <option>Tháng</option>
-                                    </select>
-                                    <select
-                                        disabled={!isEditing}
-                                        className="border px-3 py-2 text-sm disabled:bg-gray-50"
-                                    >
-                                        <option>Năm</option>
-                                    </select>
-                                </div>
-                            </div>
+                            {/* Unsupported field group (gender) removed per OpenAPI absence */}
 
-                            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Số CCCD</label>
-                                <input
-                                    type="text"
-                                    defaultValue="066204012876"
-                                    disabled={!isEditing}
-                                    className="border px-3 py-2 text-sm disabled:bg-gray-50"
-                                />
-                            </div>
+                            {/* Unsupported field group (birth date) removed per OpenAPI absence */}
+
+                            {/* Unsupported field (CCCD) removed per OpenAPI absence */}
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                                 <div />
-                                <button
-                                    onClick={() => setIsEditing(!isEditing)}
-                                    className="bg-black text-white px-6 py-2 text-sm font-semibold hover:bg-gray-800 w-fit"
-                                >
-                                    {isEditing ? "Lưu" : "sửa hồ sơ"}
-                                </button>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => {
+                                            if (isEditing) {
+                                                handleSave();
+                                            } else {
+                                                setIsEditing(true);
+                                            }
+                                        }}
+                                        disabled={loading}
+                                        className="bg-black text-white px-6 py-2 text-sm font-semibold hover:bg-gray-800 w-fit disabled:opacity-60"
+                                    >
+                                        {loading ? "Đang lưu..." : isEditing ? "Lưu" : "Sửa hồ sơ"}
+                                    </button>
+                                    {message && <div className="text-green-600 text-sm">{message}</div>}
+                                    {error && <div className="text-red-600 text-sm">{error}</div>}
+                                </div>
                             </div>
                         </div>
 
@@ -154,7 +231,7 @@ export default function ProfileContent() {
                         <div className="flex flex-col items-center gap-4 pl-8">
                             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200">
                                 <Image
-                                    src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=200&q=80"
+                                    src={profile?.image || "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=200&q=80"}
                                     alt="Avatar"
                                     fill
                                     className="object-cover"

@@ -98,7 +98,7 @@
                     "User"
                 ]
             },
-            "put": {
+            "patch": {
                 "operationId": "UserController_updateAnUser",
                 "parameters": [
                     {
@@ -109,7 +109,7 @@
                             "type": "number"
                         }
                     }
-                ],
+                ],  
                 "requestBody": {
                     "required": true,
                     "content": {
