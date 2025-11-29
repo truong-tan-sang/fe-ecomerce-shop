@@ -1,5 +1,6 @@
 import { sendRequest } from "@/utils/api";
 import type { ProductDto, PaginatedProductsResponse, GetProductsParams } from "@/dto/product";
+import type { ProductDetailDto, ProductVariantDto, ReviewDto } from "@/dto/product-detail";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -21,9 +22,31 @@ export const productService = {
     });
   },
 
-  async getProductById(id: string, accessToken?: string): Promise<IBackendRes<ProductDto>> {
+  async getProductById(id: string, accessToken?: string): Promise<IBackendRes<ProductDetailDto>> {
     const url = `${BACKEND_URL}/products/${id}`;
-    return sendRequest<IBackendRes<ProductDto>>({
+    return sendRequest<IBackendRes<ProductDetailDto>>({
+      url,
+      method: "GET",
+      headers: accessToken ? {
+        Authorization: `Bearer ${accessToken}`,
+      } : {},
+    });
+  },
+
+  async getProductVariants(productId: string, accessToken?: string): Promise<IBackendRes<ProductVariantDto[]>> {
+    const url = `${BACKEND_URL}/products/${productId}/product-variants`;
+    return sendRequest<IBackendRes<ProductVariantDto[]>>({
+      url,
+      method: "GET",
+      headers: accessToken ? {
+        Authorization: `Bearer ${accessToken}`,
+      } : {},
+    });
+  },
+
+  async getProductReviews(productId: string, accessToken?: string): Promise<IBackendRes<ReviewDto[]>> {
+    const url = `${BACKEND_URL}/products/${productId}/reviews`;
+    return sendRequest<IBackendRes<ReviewDto[]>>({
       url,
       method: "GET",
       headers: accessToken ? {

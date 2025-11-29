@@ -1,69 +1,93 @@
-"use client";
-
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import Header from "@/components/header/navbar";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductInfo from "@/components/product/ProductInfo";
+import { productService } from "@/services/product";
+import type { ProductDetailDto, ProductVariantDto, ReviewDto } from "@/dto/product-detail";
 
-// Mock product data - replace with actual API call
-const mockProduct = {
-    id: "1",
-    brand: "PAPLÉ",
-    name: "Denim Jacket",
-    rating: 4,
-    reviewCount: 3,
-    price: 39.0,
-    originalPrice: 59.0,
-    discount: 33,
-    viewersCount: 24,
-    stock: 9,
-    sizes: ["M", "L", "XL", "XXL"],
-    colors: [
-        { color: "#b91c1c", name: "Đỏ" },
-        { color: "#eab308", name: "Vàng" },
-        { color: "#fb7185", name: "Hồng" },
-    ],
-    images: [
-        "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1622445275463-afa2ab738c34?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=600&q=80",
-    ],
-};
+const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80";
 
-export default function ProductDetailPage() {
-    const params = useParams();
-    const productId = params.id as string;
+// Helper to calculate average rating
+function calculateAverageRating(reviews: ReviewDto[]): number {
+  if (reviews.length === 0) return 0;
+  const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+  return Math.round((sum / reviews.length) * 10) / 10; // Round to 1 decimal
+}
 
-    // TODO: Fetch actual product data based on productId
-    const product = mockProduct;
+interface ProductDetailPageProps {
+  params: {
+    id: string;
+  };
+}
 
-    return (
-        <div className="min-h-dvh flex flex-col">
-            <Header />
-            <main className="mx-auto w-full max-w-7xl px-3 md:px-20 py-20 md:py-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                    {/* Left: Image Gallery */}
-                    <ProductGallery images={product.images} />
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const { id } = params;
+  
+  // Get session for access token
+  const session = await auth();
+  const accessToken = session?.user?.access_token;
 
-                    {/* Right: Product Info */}
-                    <ProductInfo
-                        brand={product.brand}
-                        name={product.name}
-                        rating={product.rating}
-                        reviewCount={product.reviewCount}
-                        price={product.price}
-                        originalPrice={product.originalPrice}
-                        discount={product.discount}
-                        viewersCount={product.viewersCount}
-                        stock={product.stock}
-                        sizes={product.sizes}
-                        colors={product.colors}
-                    />
-                </div>
-            </main>
+  // Fetch product data in parallel
+  let product: ProductDetailDto | null = null;
+  let variants: ProductVariantDto[] = [];
+  let reviews: ReviewDto[] = [];
+
+  try {
+    console.log(`[ProductDetail] Fetching data for product ${id}`);
+    
+    const [productRes, variantsRes, reviewsRes] = await Promise.all([
+      productService.getProductById(id, accessToken),
+      productService.getProductVariants(id, accessToken),
+      productService.getProductReviews(id, accessToken),
+    ]);
+
+    console.log("[ProductDetail] Product response:", productRes);
+    console.log("[ProductDetail] Variants response:", variantsRes);
+    console.log("[ProductDetail] Reviews response:", reviewsRes);
+
+    product = productRes?.data || null;
+    variants = Array.isArray(variantsRes?.data) ? variantsRes.data : [];
+    reviews = Array.isArray(reviewsRes?.data) ? reviewsRes.data : [];
+  } catch (error) {
+    console.error("[ProductDetail] Failed to fetch product data:", error);
+  }
+
+  // If product not found, show 404
+  if (!product) {
+    notFound();
+  }
+
+  // Calculate average rating and review count
+  const averageRating = calculateAverageRating(reviews);
+  const reviewCount = reviews.length;
+
+  // Collect images from variants (placeholder if none)
+  const images = variants.length > 0 
+    ? [PLACEHOLDER_IMAGE] // TODO: Backend needs to provide variant images via media endpoint
+    : [PLACEHOLDER_IMAGE];
+
+  return (
+    <div className="min-h-dvh flex flex-col">
+      <Header />
+      <main className="mx-auto w-full max-w-7xl px-3 md:px-20 py-20 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left: Image Gallery */}
+          <ProductGallery images={images} />
+
+          {/* Right: Product Info */}
+          <ProductInfo
+            brand={product.name.split(' ')[0] || 'Brand'} // Extract brand from product name
+            name={product.name}
+            rating={averageRating}
+            reviewCount={reviewCount}
+            basePrice={product.price}
+            viewersCount={0} // TODO: Backend doesn't provide viewer count yet
+            baseStock={product.stock}
+            variants={variants}
+          />
         </div>
-    );
+      </main>
+    </div>
+  );
 }

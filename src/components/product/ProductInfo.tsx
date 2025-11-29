@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import ColorSwatch from "./ColorSwatch";
+import type { ProductVariantDto } from "@/dto/product-detail";
+
+// Hard-coded standard sizes and colors
+const STANDARD_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
+const STANDARD_COLORS = [
+    { name: "Black", hex: "#000000" },
+    { name: "Blue", hex: "#3b82f6" },
+    { name: "Green", hex: "#22c55e" },
+    { name: "Red", hex: "#ef4444" },
+    { name: "White", hex: "#ffffff" },
+] as const;
 
 interface ProductInfoProps {
     brand: string;
     name: string;
     rating: number;
     reviewCount: number;
-    price: number;
-    originalPrice?: number;
-    discount?: number;
+    basePrice: number;
     viewersCount: number;
-    stock: number;
-    sizes: string[];
-    colors: { color: string; name: string }[];
+    baseStock: number;
+    variants: ProductVariantDto[];
 }
 
 export default function ProductInfo({
@@ -22,20 +30,116 @@ export default function ProductInfo({
     name,
     rating,
     reviewCount,
-    price,
-    originalPrice,
-    discount,
+    basePrice,
     viewersCount,
-    stock,
-    sizes,
-    colors,
+    baseStock,
+    variants,
 }: ProductInfoProps) {
-    const [selectedSize, setSelectedSize] = useState(sizes[0]);
-    const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
 
-    const incrementQty = () => setQuantity((q) => Math.min(q + 1, stock));
+    // Find the currently selected variant based on size and color
+    const selectedVariant = useMemo(() => {
+        if (!selectedSize || !selectedColor) return null;
+        
+        return variants.find(v => 
+            v.variantSize?.toUpperCase() === selectedSize.toUpperCase() && 
+            v.variantColor?.toLowerCase() === selectedColor.toLowerCase()
+        ) || null;
+    }, [selectedSize, selectedColor, variants]);
+
+    // Get available sizes (those with total stock > 0 across all colors)
+    const availableSizes = useMemo(() => {
+        const sizeStockMap = new Map<string, number>();
+        
+        variants.forEach(v => {
+            if (v.variantSize) {
+                const sizeUpper = v.variantSize.toUpperCase();
+                const currentStock = sizeStockMap.get(sizeUpper) || 0;
+                sizeStockMap.set(sizeUpper, currentStock + (v.stock || 0));
+            }
+        });
+        
+        // Return sizes with total stock > 0
+        return new Set(
+            Array.from(sizeStockMap.entries())
+                .filter(([_, stock]) => stock > 0)
+                .map(([size]) => size)
+        );
+    }, [variants]);
+
+    // Get available colors for the currently selected size (colors with stock > 0)
+    const availableColors = useMemo(() => {
+        if (!selectedSize) return new Set<string>();
+        
+        const colors = new Set<string>();
+        
+        variants.forEach(v => {
+            if (
+                v.variantSize?.toUpperCase() === selectedSize.toUpperCase() && 
+                v.variantColor && 
+                (v.stock || 0) > 0
+            ) {
+                colors.add(v.variantColor.toLowerCase());
+            }
+        });
+        
+        return colors;
+    }, [variants, selectedSize]);
+
+    // Calculate displayed values based on selection
+    const displayPrice = selectedVariant?.price || basePrice;
+    const displayStock = selectedVariant?.stock || baseStock;
+    const originalPrice = useMemo(() => {
+        if (!variants.length) return undefined;
+        const maxPrice = Math.max(...variants.map(v => v.price));
+        return maxPrice > displayPrice ? maxPrice : undefined;
+    }, [variants, displayPrice]);
+    const discount = originalPrice ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100) : undefined;
+
+    // Auto-select first available size if none selected
+    useEffect(() => {
+        if (!selectedSize && availableSizes.size > 0) {
+            const firstAvailable = STANDARD_SIZES.find(s => availableSizes.has(s));
+            if (firstAvailable) setSelectedSize(firstAvailable);
+        }
+    }, [selectedSize, availableSizes]);
+
+    // Auto-select color when size changes or no color selected
+    useEffect(() => {
+        if (selectedSize && availableColors.size > 0) {
+            // If current color is available for this size, keep it
+            if (selectedColor && availableColors.has(selectedColor)) {
+                return;
+            }
+            
+            // Otherwise, select the first available color
+            const firstAvailable = STANDARD_COLORS.find(c => availableColors.has(c.name.toLowerCase()));
+            if (firstAvailable) {
+                setSelectedColor(firstAvailable.name.toLowerCase());
+            }
+        }
+    }, [selectedSize, availableColors, selectedColor]);
+
+    const incrementQty = () => setQuantity((q) => Math.min(q + 1, displayStock));
     const decrementQty = () => setQuantity((q) => Math.max(q - 1, 1));
+
+    // Handle size selection - color will auto-adjust via useEffect
+    const handleSizeSelect = (size: string) => {
+        if (availableSizes.has(size)) {
+            setSelectedSize(size);
+            // useEffect will handle color selection/adjustment
+        }
+    };
+
+    // Handle color selection
+    const handleColorSelect = (colorName: string) => {
+        const colorLower = colorName.toLowerCase();
+        if (availableColors.has(colorLower)) {
+            setSelectedColor(colorLower);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-4">
@@ -62,10 +166,10 @@ export default function ProductInfo({
 
             {/* Price */}
             <div className="flex items-center gap-3">
-                <div className="text-3xl font-bold text-black">${price.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-black">{displayPrice.toLocaleString('vi-VN')} ₫</div>
                 {originalPrice && (
                     <>
-                        <div className="text-lg text-gray-400 line-through">${originalPrice.toFixed(2)}</div>
+                        <div className="text-lg text-gray-400 line-through">{originalPrice.toLocaleString('vi-VN')} ₫</div>
                         {discount && (
                             <div className="px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded">
                                 Save {discount}%
@@ -76,59 +180,83 @@ export default function ProductInfo({
             </div>
 
             {/* Viewers */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-                <i className="far fa-eye" />
-                <span>{viewersCount} people are viewing this right now</span>
-            </div>
-
-            {/* Sale countdown placeholder */}
-            <div className="bg-gray-50 border border-gray-200 p-4 rounded">
-                <div className="flex items-center justify-between text-sm sm text-gray-600">
-                    <span className="font-medium">Hurry up! Sale ends in:</span>
-                    <div className="flex items-center gap-2 font-mono font-bold">
-                        <span>00</span>:<span>05</span>:<span>59</span>:<span>47</span>
-                    </div>
+            {viewersCount > 0 && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <i className="far fa-eye" />
+                    <span>{viewersCount} people are viewing this right now</span>
                 </div>
-            </div>
+            )}
 
             {/* Stock */}
             <div className="text-sm text-gray-600">
-                Only <span className="text-red-600 font-semibold">{stock}</span> item(s) left in stock!
+                {displayStock > 0 ? (
+                    <>Only <span className="text-red-600 font-semibold">{displayStock}</span> item(s) left in stock!</>
+                ) : (
+                    <span className="text-red-600 font-semibold">Out of stock</span>
+                )}
             </div>
 
             {/* Size selector */}
             <div>
-                <div className="text-sm font-semibold text-black mb-2">Size: {selectedSize}</div>
+                <div className="text-sm font-semibold text-black mb-2">
+                    Size: {selectedSize || "Select a size"}
+                </div>
                 <div className="flex gap-2">
-                    {sizes.map((size) => (
-                        <button
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`px-4 py-2 border text-sm font-medium transition-all ${selectedSize === size
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black border-gray-300 hover:border-black"
+                    {STANDARD_SIZES.map((size) => {
+                        const isAvailable = availableSizes.has(size);
+                        const isSelected = selectedSize === size;
+                        
+                        return (
+                            <button
+                                key={size}
+                                onClick={() => handleSizeSelect(size)}
+                                disabled={!isAvailable}
+                                className={`px-4 py-2 border text-sm font-medium transition-all ${
+                                    isSelected
+                                        ? "bg-black text-white border-black"
+                                        : isAvailable
+                                            ? "bg-white text-black border-gray-300 hover:border-black"
+                                            : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                                 }`}
-                        >
-                            {size}
-                        </button>
-                    ))}
+                            >
+                                {size}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Color selector */}
             <div>
                 <div className="text-sm font-semibold text-black mb-2">
-                    Màu: {colors[selectedColorIndex].name}
+                    Màu: {selectedColor ? STANDARD_COLORS.find(c => c.name.toLowerCase() === selectedColor)?.name : "Select a color"}
                 </div>
                 <div className="flex gap-3">
-                    {colors.map((c, i) => (
-                        <ColorSwatch
-                            key={i}
-                            color={c.color}
-                            variant={selectedColorIndex === i ? "clicked-lg" : "large"}
-                            onClick={() => setSelectedColorIndex(i)}
-                        />
-                    ))}
+                    {STANDARD_COLORS.map((c) => {
+                        const isAvailable = availableColors.has(c.name.toLowerCase());
+                        const isSelected = selectedColor === c.name.toLowerCase();
+                        
+                        return (
+                            <button
+                                key={c.name}
+                                onClick={() => handleColorSelect(c.name)}
+                                disabled={!isAvailable}
+                                className={`relative ${!isAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                title={c.name}
+                            >
+                                <ColorSwatch
+                                    color={c.hex}
+                                    variant={isSelected ? "clicked-lg" : "large"}
+                                    onClick={() => {}}
+                                />
+                                {!isAvailable && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-full h-0.5 bg-gray-400 rotate-45 transform origin-center"></div>
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -156,8 +284,11 @@ export default function ProductInfo({
                         +
                     </button>
                 </div>
-                <button className="flex-1 bg-black text-white py-3 px-6 font-semibold hover:bg-gray-800 transition-colors">
-                    Add to cart
+                <button 
+                    className="flex-1 bg-black text-white py-3 px-6 font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    disabled={!selectedVariant || displayStock === 0}
+                >
+                    {displayStock === 0 ? "Out of Stock" : "Add to cart"}
                 </button>
             </div>
 
