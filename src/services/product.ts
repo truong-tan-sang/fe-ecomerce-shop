@@ -1,6 +1,6 @@
 import { sendRequest } from "@/utils/api";
 import type { ProductDto, PaginatedProductsResponse, GetProductsParams } from "@/dto/product";
-import type { ProductDetailDto, ProductVariantDto, ReviewDto } from "@/dto/product-detail";
+import type { ProductDetailDto, ProductVariantDto, ReviewDto, CreateReviewDto, UpdateReviewDto } from "@/dto/product-detail";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -52,6 +52,41 @@ export const productService = {
       headers: accessToken ? {
         Authorization: `Bearer ${accessToken}`,
       } : {},
+    });
+  },
+
+  async createReview(data: CreateReviewDto, accessToken: string): Promise<IBackendRes<ReviewDto>> {
+    const url = `${BACKEND_URL}/reviews`;
+    return sendRequest<IBackendRes<ReviewDto>>({
+      url,
+      method: "POST",
+      body: data,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  },
+
+  async updateReview(reviewId: number, data: UpdateReviewDto, accessToken: string): Promise<IBackendRes<ReviewDto>> {
+    const url = `${BACKEND_URL}/reviews/${reviewId}`;
+    return sendRequest<IBackendRes<ReviewDto>>({
+      url,
+      method: "PATCH",
+      body: data,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  },
+
+  async deleteReview(reviewId: number, accessToken: string): Promise<IBackendRes<void>> {
+    const url = `${BACKEND_URL}/reviews/${reviewId}`;
+    return sendRequest<IBackendRes<void>>({
+      url,
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
   },
 };

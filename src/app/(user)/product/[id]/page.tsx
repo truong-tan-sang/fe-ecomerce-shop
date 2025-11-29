@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import Header from "@/components/header/navbar";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductInfo from "@/components/product/ProductInfo";
+import ReviewSection from "@/components/product/ReviewSection";
 import { productService } from "@/services/product";
 import type { ProductDetailDto, ProductVariantDto, ReviewDto } from "@/dto/product-detail";
 
@@ -87,6 +88,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             variants={variants}
           />
         </div>
+
+        {/* Review Section (display-only) */}
+        <ReviewSection
+          productId={product.id}
+          initialReviews={reviews}
+          variants={variants}
+        />
       </main>
     </div>
   );

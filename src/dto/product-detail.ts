@@ -56,6 +56,26 @@ export interface ReviewWithMedia extends ReviewDto {
   medias?: MediaDto[];
 }
 
+export interface CreateReviewDto {
+  productId: number;
+  userId: number;
+  productVariantId: number;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateReviewDto {
+  productId?: number;
+  userId?: number;
+  productVariantId?: number;
+  rating?: number;
+  comment?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Aggregated product data for display
 export interface AggregatedProductData {
   product: ProductDetailDto;
