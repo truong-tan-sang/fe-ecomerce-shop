@@ -1,9 +1,10 @@
-"use client";
+    "use client";
 
 import Header from "@/components/header/navbar";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { cartService } from "@/services/cart";
 import type { CartItemWithDetails } from "@/dto/cart-api";
 
@@ -14,6 +15,7 @@ export default function CartPage() {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
     const { data: session } = useSession();
+    const router = useRouter();
 
     // Load cart from API on mount
     useEffect(() => {
@@ -292,6 +294,7 @@ export default function CartPage() {
                         <button
                             className="ml-2 bg-black text-white px-6 py-3 font-semibold hover:bg-gray-800 whitespace-nowrap disabled:bg-gray-300 disabled:cursor-not-allowed"
                             disabled={selectedCount === 0}
+                            onClick={() => router.push("/checkout")}
                         >
                             Mua hàng
                         </button>

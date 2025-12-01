@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProfile } from "./ProfileContext";
 import { userService } from "../../services/user";
+import { addressService } from "../../services/address";
 import { useSession } from "next-auth/react";
+import AddressModal from "./AddressModal";
+import type { AddressDto } from "@/dto/address";
 
 const subTabs = ["Hồ sơ", "Bảng Size", "Địa chỉ", "Đổi mật khẩu", "Xóa tài khoản"];
 
@@ -29,6 +32,81 @@ export default function ProfileContent() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Address state
+    const [addresses, setAddresses] = useState<AddressDto[]>([]);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [editingAddress, setEditingAddress] = useState<AddressDto | null>(null);
+    const [defaultAddressId, setDefaultAddressId] = useState<number | null>(null);
+    const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+
+    // Load addresses when tab changes to Địa chỉ
+    useEffect(() => {
+        if (activeSubTab === "Địa chỉ" && profile?.id && session?.user?.access_token) {
+            loadAddresses();
+        }
+    }, [activeSubTab, profile?.id, session?.user?.access_token]);
+
+    const loadAddresses = async () => {
+        if (!profile?.id || !session?.user?.access_token) return;
+        
+        setIsLoadingAddresses(true);
+        try {
+            const userId = typeof profile.id === 'string' ? parseInt(profile.id, 10) : profile.id;
+            const response = await addressService.getUserAddresses(userId, session.user.access_token);
+            const addressList = Array.isArray(response.data) ? response.data : [];
+            setAddresses(addressList);
+            
+            // Set first address as default if none set
+            if (addressList.length > 0 && !defaultAddressId) {
+                setDefaultAddressId(addressList[0].id);
+            }
+        } catch (err) {
+            console.error("[ProfileContent] Failed to load addresses:", err);
+        } finally {
+            setIsLoadingAddresses(false);
+        }
+    };
+
+    const handleAddAddress = () => {
+        setEditingAddress(null);
+        setIsAddressModalOpen(true);
+    };
+
+    const handleEditAddress = (address: AddressDto) => {
+        setEditingAddress(address);
+        setIsAddressModalOpen(true);
+    };
+
+    const handleDeleteAddress = async (addressId: number) => {
+        if (!session?.user?.access_token) return;
+        if (!confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) return;
+
+        try {
+            await addressService.deleteAddress(addressId, session.user.access_token);
+            
+            // Remove from local state
+            setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
+            
+            // Clear default if deleted
+            if (defaultAddressId === addressId) {
+                const remaining = addresses.filter((addr) => addr.id !== addressId);
+                setDefaultAddressId(remaining.length > 0 ? remaining[0].id : null);
+            }
+        } catch (err) {
+            console.error("[ProfileContent] Failed to delete address:", err);
+            alert("Không thể xóa địa chỉ. Vui lòng thử lại.");
+        }
+    };
+
+    const handleSetDefaultAddress = (addressId: number) => {
+        setDefaultAddressId(addressId);
+        // TODO: Could persist to backend if there's a default address API
+    };
+
+    const handleAddressModalSuccess = () => {
+        loadAddresses();
+    };
 
     const handleSave = async () => {
         if (!profile?.id) return;
@@ -250,7 +328,100 @@ export default function ProfileContent() {
                 <div className="text-gray-500">TODO: Bảng Size content</div>
             )}
             {activeSubTab === "Địa chỉ" && (
-                <div className="text-gray-500">TODO: Địa chỉ content</div>
+                <div>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-bold">Địa chỉ của tôi</h2>
+                        <button
+                            onClick={handleAddAddress}
+                            className="bg-black text-white px-4 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2"
+                        >
+                            <span>+</span> Thêm địa chỉ mới
+                        </button>
+                    </div>
+
+                    {isLoadingAddresses ? (
+                        <div className="text-center text-gray-600 py-8">Đang tải...</div>
+                    ) : addresses.length === 0 ? (
+                        <div className="border border-dashed border-gray-300 p-12 text-center text-gray-500">
+                            <i className="fa-solid fa-location-dot text-4xl mb-4 text-gray-300" />
+                            <p>Bạn chưa có địa chỉ nào</p>
+                            <button
+                                onClick={handleAddAddress}
+                                className="mt-4 border border-black bg-white text-black px-4 py-2 text-sm hover:bg-gray-100"
+                            >
+                                Thêm địa chỉ mới
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {addresses.map((address) => {
+                                const isDefault = defaultAddressId === address.id;
+                                const fullAddress = `${address.street}, ${address.ward}, ${address.district}, ${address.province}${address.zipCode ? `, ${address.zipCode}` : ""}, ${address.country}`;
+                                
+                                return (
+                                    <div
+                                        key={address.id}
+                                        className="border bg-white p-4"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="font-semibold">
+                                                        {/* TODO: Add recipient name from profile or separate field */}
+                                                        {profile?.name || "Người nhận"}
+                                                    </span>
+                                                    <span className="text-gray-600">|</span>
+                                                    <span className="text-gray-600">
+                                                        {profile?.phone || "(+84)927439685"}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-700 text-sm mb-2">
+                                                    {fullAddress}
+                                                </p>
+                                                {isDefault && (
+                                                    <span className="inline-block border border-black px-2 py-1 text-xs">
+                                                        Mặc định
+                                                    </span>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="flex gap-2 ml-4">
+                                                <button
+                                                    onClick={() => handleDeleteAddress(address.id)}
+                                                    className="text-red-600 border border-red-600 px-3 py-1 text-sm hover:bg-red-50"
+                                                >
+                                                    Xóa
+                                                </button>
+                                                <button
+                                                    onClick={() => handleEditAddress(address)}
+                                                    className="border border-black px-3 py-1 text-sm hover:bg-gray-100"
+                                                >
+                                                    Cập nhật
+                                                </button>
+                                                {!isDefault && (
+                                                    <button
+                                                        onClick={() => handleSetDefaultAddress(address.id)}
+                                                        className="border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
+                                                    >
+                                                        Đặt làm mặc định
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Address Modal */}
+                    <AddressModal
+                        isOpen={isAddressModalOpen}
+                        onClose={() => setIsAddressModalOpen(false)}
+                        onSuccess={handleAddressModalSuccess}
+                        editAddress={editingAddress}
+                    />
+                </div>
             )}
             {activeSubTab === "Đổi mật khẩu" && (
                 <div className="text-gray-500">TODO: Đổi mật khẩu content</div>
