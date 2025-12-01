@@ -24,10 +24,8 @@ export default async function HomePage() {
     if (res?.data && Array.isArray(res.data)) {
       initialProducts = res.data;
       initialPage = 1;
-      // Derive hasMore from page size heuristic (perPage = 20)
       initialHasMore = initialProducts.length === 20;
       console.log("[HomePage] Loaded", initialProducts.length, "products; hasMore:", initialHasMore);
-      console.log(accessToken)
     }
   } catch (error) {
     console.error("[HomePage] Failed to fetch products:", error);

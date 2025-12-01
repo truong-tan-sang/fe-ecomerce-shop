@@ -469,8 +469,31 @@
       }
     },
     "/user/{id}/cart": {
+      "post": {
+        "operationId": "UserController_createANewCart",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCartDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Create a new cart (only initial id user in cart table. Do not add any cart items)"
+          }
+        },
+        "summary": "Create a new cart (only initial id user in cart table. Do not add any cart items)",
+        "tags": [
+          "User"
+        ]
+      },
       "get": {
-        "operationId": "UserController_getCartOfUser",
+        "operationId": "UserController_getCartIdOfUser",
         "parameters": [
           {
             "name": "id",
@@ -483,10 +506,91 @@
         ],
         "responses": {
           "200": {
-            "description": "Get cart of user"
+            "description": "Get cart id of user (only get id user in cart table. Do not get any cart items)"
           }
         },
-        "summary": "Get cart of user",
+        "summary": "Get cart id of user (only get id user in cart table. Do not get any cart items)",
+        "tags": [
+          "User"
+        ]
+      },
+      "patch": {
+        "operationId": "UserController_updateUserCart",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCartDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update one cart (only update id user in cart table. Do not add any cart items)"
+          }
+        },
+        "summary": "Update one cart (only update id user in cart table. Do not add any cart items)",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/{id}/cart/cart-item": {
+      "post": {
+        "operationId": "UserController_AddANewCart",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCartItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Add a new product variant (cart item) to cart"
+          }
+        },
+        "summary": "Add a new product variant (cart item) to cart",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/{id}/cart/cart-details": {
+      "get": {
+        "operationId": "UserController_getUserCartDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get user cart with cart items detail"
+          }
+        },
+        "summary": "Get user cart with cart items detail",
         "tags": [
           "User"
         ]
@@ -2270,111 +2374,6 @@
         ]
       }
     },
-    "/cart": {
-      "post": {
-        "operationId": "CartController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCartDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Create a new cart"
-          }
-        },
-        "summary": "Create a new cart",
-        "tags": [
-          "Cart"
-        ]
-      }
-    },
-    "/cart/{id}": {
-      "get": {
-        "operationId": "CartController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Get one cart"
-          }
-        },
-        "summary": "Get one cart",
-        "tags": [
-          "Cart"
-        ]
-      },
-      "patch": {
-        "operationId": "CartController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCartDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Update one cart"
-          }
-        },
-        "summary": "Update one cart",
-        "tags": [
-          "Cart"
-        ]
-      }
-    },
-    "/cart/{id}/cart-details": {
-      "get": {
-        "operationId": "CartController_getCartDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Get user cart with cart items detail"
-          }
-        },
-        "summary": "Get user cart with cart items detail",
-        "tags": [
-          "Cart"
-        ]
-      }
-    },
     "/cart-items": {
       "post": {
         "operationId": "CartItemsController_create",
@@ -3346,7 +3345,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:15.890Z"
+            "example": "2025-11-30T09:56:22.581Z"
           },
           "isActive": {
             "type": "boolean",
@@ -3359,7 +3358,7 @@
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:15.890Z"
+            "example": "2025-11-30T09:56:22.582Z"
           },
           "staffCode": {
             "type": "string",
@@ -3431,7 +3430,7 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:15.891Z"
+            "example": "2025-11-30T09:56:22.587Z"
           }
         },
         "required": [
@@ -3444,6 +3443,87 @@
           "username",
           "updatedAt"
         ]
+      },
+      "CreateCartDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 4741
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.599Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.599Z"
+          }
+        },
+        "required": [
+          "userId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateCartItemDto": {
+        "type": "object",
+        "properties": {
+          "cartId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 4741
+          },
+          "productVariantId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 4741
+          },
+          "quantity": {
+            "type": "number",
+            "example": 4741
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.613Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.613Z"
+          }
+        },
+        "required": [
+          "cartId",
+          "productVariantId",
+          "quantity",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateCartDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 4741
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.599Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-11-30T09:56:22.599Z"
+          }
+        }
       },
       "CreateAuthDto": {
         "type": "object",
@@ -3479,7 +3559,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:15.951Z"
+            "example": "2025-11-30T09:56:22.838Z"
           },
           "isActive": {
             "type": "boolean",
@@ -3492,7 +3572,7 @@
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:15.951Z"
+            "example": "2025-11-30T09:56:22.838Z"
           }
         },
         "required": [
@@ -3622,12 +3702,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.050Z"
+            "example": "2025-11-30T09:56:23.383Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.050Z"
+            "example": "2025-11-30T09:56:23.383Z"
           },
           "categoryId": {
             "format": "int64",
@@ -3684,12 +3764,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.050Z"
+            "example": "2025-11-30T09:56:23.383Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.050Z"
+            "example": "2025-11-30T09:56:23.383Z"
           },
           "categoryId": {
             "format": "int64",
@@ -3732,12 +3812,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.075Z"
+            "example": "2025-11-30T09:56:23.416Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.075Z"
+            "example": "2025-11-30T09:56:23.416Z"
           }
         },
         "required": [
@@ -3779,12 +3859,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.075Z"
+            "example": "2025-11-30T09:56:23.416Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.075Z"
+            "example": "2025-11-30T09:56:23.416Z"
           }
         }
       },
@@ -3823,12 +3903,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.079Z"
+            "example": "2025-11-30T09:56:23.453Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.080Z"
+            "example": "2025-11-30T09:56:23.453Z"
           }
         },
         "required": [
@@ -3878,12 +3958,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.079Z"
+            "example": "2025-11-30T09:56:23.453Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.080Z"
+            "example": "2025-11-30T09:56:23.453Z"
           }
         }
       },
@@ -3934,12 +4014,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.083Z"
+            "example": "2025-11-30T09:56:23.483Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.083Z"
+            "example": "2025-11-30T09:56:23.483Z"
           }
         },
         "required": [
@@ -4004,12 +4084,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.083Z"
+            "example": "2025-11-30T09:56:23.483Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.083Z"
+            "example": "2025-11-30T09:56:23.483Z"
           }
         }
       },
@@ -4058,12 +4138,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.087Z"
+            "example": "2025-11-30T09:56:23.522Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.087Z"
+            "example": "2025-11-30T09:56:23.522Z"
           }
         },
         "required": [
@@ -4125,12 +4205,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.087Z"
+            "example": "2025-11-30T09:56:23.522Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.087Z"
+            "example": "2025-11-30T09:56:23.522Z"
           }
         }
       },
@@ -4163,12 +4243,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.091Z"
+            "example": "2025-11-30T09:56:23.556Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.091Z"
+            "example": "2025-11-30T09:56:23.556Z"
           }
         },
         "required": [
@@ -4210,12 +4290,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.091Z"
+            "example": "2025-11-30T09:56:23.556Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.091Z"
+            "example": "2025-11-30T09:56:23.556Z"
           }
         }
       },
@@ -4248,12 +4328,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.095Z"
+            "example": "2025-11-30T09:56:23.588Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.095Z"
+            "example": "2025-11-30T09:56:23.588Z"
           }
         },
         "required": [
@@ -4295,12 +4375,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.095Z"
+            "example": "2025-11-30T09:56:23.588Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.095Z"
+            "example": "2025-11-30T09:56:23.588Z"
           }
         }
       },
@@ -4325,7 +4405,7 @@
           "orderDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           },
           "status": {
             "type": "string",
@@ -4350,12 +4430,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           }
         },
         "required": [
@@ -4393,7 +4473,7 @@
           "orderDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           },
           "status": {
             "type": "string",
@@ -4418,12 +4498,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.100Z"
+            "example": "2025-11-30T09:56:23.623Z"
           }
         }
       },
@@ -4455,12 +4535,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.104Z"
+            "example": "2025-11-30T09:56:23.653Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.104Z"
+            "example": "2025-11-30T09:56:23.653Z"
           }
         },
         "required": [
@@ -4501,12 +4581,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.104Z"
+            "example": "2025-11-30T09:56:23.653Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.104Z"
+            "example": "2025-11-30T09:56:23.653Z"
           }
         }
       },
@@ -4526,22 +4606,22 @@
           "estimatedDelivery": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "deliveredAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "estimatedShipDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "shippedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "carrier": {
             "type": "string",
@@ -4558,12 +4638,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           }
         },
         "required": [
@@ -4596,22 +4676,22 @@
           "estimatedDelivery": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "deliveredAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "estimatedShipDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "shippedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "carrier": {
             "type": "string",
@@ -4628,12 +4708,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.108Z"
+            "example": "2025-11-30T09:56:23.695Z"
           }
         }
       },
@@ -4656,7 +4736,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.112Z"
+            "example": "2025-11-30T09:56:23.728Z"
           },
           "amount": {
             "type": "number",
@@ -4695,7 +4775,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.112Z"
+            "example": "2025-11-30T09:56:23.728Z"
           },
           "amount": {
             "type": "number",
@@ -4706,87 +4786,6 @@
             "example": "PENDING"
           }
         }
-      },
-      "CreateCartDto": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 4741
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.116Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.116Z"
-          }
-        },
-        "required": [
-          "userId",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateCartDto": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 4741
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.116Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.116Z"
-          }
-        }
-      },
-      "CreateCartItemDto": {
-        "type": "object",
-        "properties": {
-          "cartId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 4741
-          },
-          "productVariantId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 4741
-          },
-          "quantity": {
-            "type": "number",
-            "example": 4741
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.119Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-11-29T07:03:16.119Z"
-          }
-        },
-        "required": [
-          "cartId",
-          "productVariantId",
-          "quantity",
-          "createdAt",
-          "updatedAt"
-        ]
       },
       "UpdateCartItemDto": {
         "type": "object",
@@ -4808,12 +4807,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.119Z"
+            "example": "2025-11-30T09:56:22.613Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.119Z"
+            "example": "2025-11-30T09:56:22.613Z"
           }
         }
       },
@@ -4839,12 +4838,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "usageLimit": {
             "type": "number",
@@ -4861,12 +4860,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "createdBy": {
             "format": "int64",
@@ -4911,12 +4910,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "usageLimit": {
             "type": "number",
@@ -4933,12 +4932,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.125Z"
+            "example": "2025-11-30T09:56:23.808Z"
           },
           "createdBy": {
             "format": "int64",
@@ -4963,12 +4962,12 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.130Z"
+            "example": "2025-11-30T09:56:23.840Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.130Z"
+            "example": "2025-11-30T09:56:23.840Z"
           },
           "voucherStatus": {
             "type": "string",
@@ -4999,12 +4998,12 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.130Z"
+            "example": "2025-11-30T09:56:23.840Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.130Z"
+            "example": "2025-11-30T09:56:23.840Z"
           },
           "voucherStatus": {
             "type": "string",
@@ -5045,12 +5044,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.134Z"
+            "example": "2025-11-30T09:56:23.880Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.134Z"
+            "example": "2025-11-30T09:56:23.880Z"
           }
         },
         "required": [
@@ -5097,12 +5096,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.134Z"
+            "example": "2025-11-30T09:56:23.880Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.134Z"
+            "example": "2025-11-30T09:56:23.880Z"
           }
         }
       },
@@ -5117,12 +5116,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.139Z"
+            "example": "2025-11-30T09:56:23.914Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.139Z"
+            "example": "2025-11-30T09:56:23.914Z"
           }
         },
         "required": [
@@ -5142,12 +5141,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.139Z"
+            "example": "2025-11-30T09:56:23.914Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-29T07:03:16.139Z"
+            "example": "2025-11-30T09:56:23.914Z"
           }
         }
       },

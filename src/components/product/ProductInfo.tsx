@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import ColorSwatch from "./ColorSwatch";
 import type { ProductVariantDto } from "@/dto/product-detail";
+import { cartService } from "@/services/cart";
+import Toast from "../toast";
 
 // Hard-coded standard sizes and colors
 const STANDARD_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
@@ -38,6 +41,11 @@ export default function ProductInfo({
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+    const [isLoading, setIsLoading] = useState(false);
+    const { data: session } = useSession();
 
     // Find the currently selected variant based on size and color
     const selectedVariant = useMemo(() => {
@@ -124,6 +132,79 @@ export default function ProductInfo({
 
     const incrementQty = () => setQuantity((q) => Math.min(q + 1, displayStock));
     const decrementQty = () => setQuantity((q) => Math.max(q - 1, 1));
+
+    const handleAddToCart = async () => {
+        if (!selectedVariant) return;
+        if (!session?.user?.id || !session?.user?.access_token) {
+            console.log("[ProductInfo] User not authenticated");
+            setToastMessage("Please log in to add items to cart");
+            setToastType("error");
+            setShowToast(true);
+            return;
+        }
+
+        setIsLoading(true);
+        const userId = parseInt(session.user.id, 10);
+        console.log("[ProductInfo] Adding to cart:", {
+            variantId: selectedVariant.id,
+            quantity,
+            userId,
+        });
+
+        try {
+            // Get or create user cart
+            let cartResponse = await cartService.getCartById(
+                userId,
+                session.user.access_token
+            );
+            
+            let cartId: number;
+            
+            if (!cartResponse.data) {
+                console.log("[ProductInfo] No cart found, creating new cart");
+                const createCartResponse = await cartService.createCart(
+                    userId,
+                    { 
+                        userId 
+                    },
+                    session.user.access_token
+                );
+                
+                if (!createCartResponse.data?.id) {
+                    throw new Error("Failed to create cart");
+                }
+                
+                cartId = createCartResponse.data.id;
+                console.log("[ProductInfo] Cart created:", cartId);
+            } else {
+                cartId = cartResponse.data.id;
+                console.log("[ProductInfo] Using existing cart:", cartId);
+            }
+
+            // Create cart item
+            await cartService.createCartItem(
+                userId,
+                { 
+                    cartId,
+                    productVariantId: selectedVariant.id,
+                    quantity,
+                },
+                session.user.access_token
+            );
+
+            console.log("[ProductInfo] Cart item created successfully");
+            setToastMessage("Added to cart successfully");
+            setToastType("success");
+            setShowToast(true);
+        } catch (error) {
+            console.error("[ProductInfo] Add to cart failed:", error);
+            setToastMessage("Failed to add to cart");
+            setToastType("error");
+            setShowToast(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Handle size selection - color will auto-adjust via useEffect
     const handleSizeSelect = (size: string) => {
@@ -286,9 +367,10 @@ export default function ProductInfo({
                 </div>
                 <button 
                     className="flex-1 bg-black text-white py-3 px-6 font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    disabled={!selectedVariant || displayStock === 0}
+                    disabled={!selectedVariant || displayStock === 0 || isLoading}
+                    onClick={handleAddToCart}
                 >
-                    {displayStock === 0 ? "Out of Stock" : "Add to cart"}
+                    {isLoading ? "Adding..." : displayStock === 0 ? "Out of Stock" : "Add to cart"}
                 </button>
             </div>
 
@@ -338,6 +420,15 @@ export default function ProductInfo({
                 </div>
                 <div className="text-xs text-gray-500">Guarantee safe & secure checkout</div>
             </div>
+
+            {/* Toast notification */}
+            {showToast && (
+                <Toast
+                    message={toastMessage}
+                    type={toastType}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
         </div>
     );
 }

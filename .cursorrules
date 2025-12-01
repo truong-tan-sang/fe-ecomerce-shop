@@ -69,13 +69,25 @@
 - Services:
   - Use `sendRequest<T>()` with typed DTOs.
   - Accept optional `accessToken?: string` and add headers when provided.
+  - Add debug logs for API requests/responses to verify integration:
+    ```ts
+    console.log("[ServiceName] Request data:", requestData);
+    const response = await sendRequest<IBackendRes<T>>({ ... });
+    console.log("[ServiceName] Response:", response);
+    ```
 - Components:
   - Keep state types explicit (e.g., `type Gender = "MALE" | "FEMALE" | "OTHER" | ""`).
   - Do not rely on IIFEs for simple initializations—prefer direct assignment from typed data.
   - Provide empty states and fallbacks for optional fields.
+  - Add debug logs for important state changes or actions:
+    ```ts
+    console.log("[ComponentName] Action performed:", actionData);
+    ```
 - Logging:
-  - Log minimal context around API requests/responses when debugging.
+  - Use descriptive log prefixes with component/service names in square brackets (e.g., `[ProductDetail]`, `[CartService]`).
+  - Log API requests, responses, and important state changes during development.
   - Avoid leaking full tokens; truncate when necessary.
+  - Remove or gate debug logs behind environment flags before production.
 
 ---
 
