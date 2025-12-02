@@ -209,7 +209,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 pt-32 md:pt-36">
           <div className="text-center text-gray-600">Đang tải...</div>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-32 md:pt-36">
         <h1 className="text-2xl font-bold mb-6">THANH TOÁN</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

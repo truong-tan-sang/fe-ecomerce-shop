@@ -71,7 +71,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-3 md:px-20 py-20 md:py-10">
+      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Left: Image Gallery */}
           <ProductGallery images={images} />

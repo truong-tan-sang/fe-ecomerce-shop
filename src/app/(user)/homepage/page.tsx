@@ -34,7 +34,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6">
+      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
         {/* Hero Banner */}
         <HeroBanner />
 

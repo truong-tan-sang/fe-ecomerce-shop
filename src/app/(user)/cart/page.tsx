@@ -173,9 +173,9 @@ export default function CartPage() {
     }
 
     return (
-        <div className="min-h-dvh flex flex-col">
+        <div className="min-h-dvh flex flex-col bg-gray-50">
             <Header />
-            <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6">
+            <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-8 pt-32 md:pt-36">
                 {/* Header Row */}
                 <div className="grid grid-cols-[24px_1fr_120px_160px_120px_80px] items-center gap-3 border bg-white px-4 py-3 text-sm text-gray-600">
                     <input

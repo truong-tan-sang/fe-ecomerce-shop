@@ -11,7 +11,7 @@ export default function ProfileLayout({
     <div className="min-h-dvh flex flex-col">
       <Header />
       <ProfileDataProvider>
-        <main className="flex flex-1 px-20 gap-2">
+        <main className="flex flex-1 px-20 gap-2 pt-32 md:pt-36">
           <ProfileSidebar />
           <div className="flex-1 py-6">{children}</div>
         </main>
