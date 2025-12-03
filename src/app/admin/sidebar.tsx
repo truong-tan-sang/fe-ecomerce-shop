@@ -89,6 +89,12 @@ export default function Sidebar() {
                   Add Products
                 </Link>
                 <Link
+                  href="/admin/product-variants/add"
+                  className={linkClass("/admin/product-variants/add")}
+                >
+                  Add Product Variant
+                </Link>
+                <Link
                   href="/admin/products/media"
                   className={linkClass("/admin/products/media")}
                 >
