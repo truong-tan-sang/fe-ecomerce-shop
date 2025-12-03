@@ -1,10 +1,25 @@
 import { sendRequest } from "@/utils/api";
-import type { ProductDto, PaginatedProductsResponse, GetProductsParams } from "@/dto/product";
+import type { ProductDto, PaginatedProductsResponse, GetProductsParams, CreateProductDto } from "@/dto/product";
 import type { ProductDetailDto, ProductVariantDto, ReviewDto, CreateReviewDto, UpdateReviewDto } from "@/dto/product-detail";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 export const productService = {
+  async createProduct(data: CreateProductDto, accessToken: string): Promise<IBackendRes<ProductDto>> {
+    const url = `${BACKEND_URL}/products`;
+    console.log("[ProductService] Creating product:", data);
+    const response = await sendRequest<IBackendRes<ProductDto>>({
+      url,
+      method: "POST",
+      body: data,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log("[ProductService] Create product response:", response);
+    return response;
+  },
+
   async getAllProducts(
     params: GetProductsParams & { accessToken?: string }
   ): Promise<IBackendRes<ProductDto[]>> {
