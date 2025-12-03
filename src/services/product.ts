@@ -11,8 +11,6 @@ export const productService = {
     const { page = 1, perPage = 20, accessToken } = params;
     const url = `${BACKEND_URL}/products`;
     console.log("[ProductService] Fetching all products:", { page, perPage });
-    // TODO: Backend currently returns flat array, not paginated response
-    // When backend implements pagination, change return type to IBackendRes<PaginatedProductsResponse>
     const response = await sendRequest<IBackendRes<ProductDto[]>>({
       url,
       method: "GET",

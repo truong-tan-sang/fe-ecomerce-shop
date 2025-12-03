@@ -1,41 +1,47 @@
-import { sendRequest } from "../utils/api";
+import { sendRequest } from "@/utils/api";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+export interface UserDto {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  status?: "ACTIVE" | "INACTIVE" | "VIP";
+}
 
 export interface IUpdateUserDto {
   firstName?: string;
   lastName?: string;
-  email?: string; // usually read-only in profile edit
+  email?: string;
   phone?: string;
-  password?: string; // not used here; separate change-password flow
+  password?: string;
   username?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 export const userService = {
-  async getUser(id: string, accessToken: string) {
-    if (!id) throw new Error("Missing user id for fetch");
-    const url = `${BACKEND_URL}/user/${id}`;
-    return sendRequest<any>({
-      url,
+  getAll: (accessToken?: string) =>
+    sendRequest<IBackendRes<UserDto[]>>({
+      url: `${BASE_URL}/user`,
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  },
-  async updateUser(id: string, data: IUpdateUserDto, accessToken: string) {
-    if (!id) throw new Error("Missing user id for update");
-    const url = `${BACKEND_URL}/user/${id}`;
-    return sendRequest<any>({
-      url,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    }),
+
+  getUser: (id: string, accessToken: string) =>
+    sendRequest<IBackendRes<UserDto>>({
+      url: `${BASE_URL}/user/${id}`,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+
+  updateUser: (id: string, data: IUpdateUserDto, accessToken: string) =>
+    sendRequest<IBackendRes<UserDto>>({
+      url: `${BASE_URL}/user/${id}`,
       method: "PATCH",
       body: data,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
 };
 
 export type UserServiceType = typeof userService;
