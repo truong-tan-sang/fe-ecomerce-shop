@@ -20,19 +20,21 @@ function Login() {
   const [showLoader, setShowLoader] = useState(false);
   // Removed modal-based change password in favor of dedicated page
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const redirectAfterLoginByOAuthMethod = useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/login");
-    } else if (status === "authenticated") {
-      // Admin redirect to dashboard
-      // void router.push("/dashboard");
-
-      // Customer redirect to homepage
-      router.push("/homepage");
+    } else if (status === "authenticated" && session?.user) {
+      // Role-based redirect: check both role and isAdmin flag
+      const isAdmin = session.user.role === "ADMIN" || session.user.isAdmin === true;
+      if (isAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/homepage");
+      }
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -93,7 +95,8 @@ function Login() {
 
       setShowLoader(false);
     } else {
-      router.push("/homepage");
+      // Refresh session to get updated user data with role
+      window.location.href = "/";
     }
   };
 

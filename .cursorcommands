@@ -1,0 +1,40 @@
+# Custom Commands for fe-ecomerce-shop
+
+## /gitpush
+**Purpose**: Smart git commit and push workflow
+
+**Actions**:
+1. Check all changed files with `git status` and `git diff`
+2. Group changes into logical commits:
+   - New features (new files/major functionality)
+   - Bug fixes (fixes, error handling)
+   - Refactoring (code improvements, renames)
+   - Styling (UI/CSS changes)
+   - Config/dependencies (package.json, tsconfig, etc.)
+   - Documentation (README, comments)
+3. For each group:
+   - Stage related files: `git add <files>`
+   - Create descriptive commit: `git commit -m "type(scope): clear description"`
+   - Show what was committed
+4. Push all commits: `git push origin <current-branch>`
+5. Summarize what was pushed
+
+**Commit format**: `type(scope): description`
+- Types: feat, fix, refactor, style, chore, docs
+- Example: `feat(admin): add collapsible sidebar with shadcn components`
+
+## /tsc
+**Purpose**: Quick TypeScript check
+
+**Actions**:
+1. Run `npx tsc --noEmit`
+2. If errors: show them and offer to fix
+3. If clean: confirm "✓ TypeScript passes"
+
+## /test
+**Purpose**: Run project tests
+
+**Actions**:
+1. Run `npm test` or `npm run test`
+2. Show results
+3. If failures: offer to investigate and fix
