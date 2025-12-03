@@ -1,11 +1,15 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import { JWT } from "next-auth/jwt";
 
+type UserRole = "USER" | "ADMIN" | "OPERATOR" | "";
+
 interface IUser {
   id: string;
   name: string;
   email: string;
   access_token: string;
+  role?: UserRole;
+  isAdmin?: boolean;
 }
 declare module "next-auth/jwt" {
   /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */

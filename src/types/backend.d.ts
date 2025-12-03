@@ -34,6 +34,8 @@ declare global {
       id: string;
       name: string;
       email: string;
+      role: "USER" | "ADMIN" | "OPERATOR";
+      isAdmin: boolean;
     };
     access_token: string;
   }
