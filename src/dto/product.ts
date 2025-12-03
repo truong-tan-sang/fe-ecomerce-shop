@@ -41,6 +41,8 @@ export interface CreateProductDto {
   stockKeepingUnit: string;
   stock: number;
   createByUserId: number;
+  categoryId: number;
+  voucherId?: number;
 }
 
 export interface UpdateProductDto {
