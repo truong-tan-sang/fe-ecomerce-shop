@@ -65,13 +65,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (res.statusCode === 201) {
           // return user object with their profile data
           return {
-            id: res.data?.user?.id,
+            id: String(res.data?.user?.id),
             name: res.data?.user?.name,
             email: res.data?.user?.email,
             access_token: res.data?.access_token,
             role: res.data?.user?.role,
             isAdmin: res.data?.user?.isAdmin,
-          };
+          } as any;
         } else if (+res.statusCode === 401) {
           throw new InvalidEmailPasswordError();
         } else if (+res.statusCode === 400) {
@@ -84,6 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   pages: {
     signIn: "/auth/login/",
+    error: "/auth/login/",
   },
   secret: process.env.AUTH_SECRET,
   callbacks: {
@@ -149,6 +150,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           console.log("✅ Backend user response:", JSON.stringify(backendData, null, 2));
 
+          // Detailed logging of backend response structure
+          console.log("📋 Backend Response Details:", {
+            statusCode: backendData.statusCode || backendData.statusCode,
+            messageFromBackend: backendData.message || "No message",
+            userCreated: !!backendData.data?.user,
+            userId: backendData.data?.user?.id,
+            userEmail: backendData.data?.user?.email,
+            userName: backendData.data?.user?.name,
+            accessTokenExists: !!backendData.data?.access_token,
+            accessTokenLength: backendData.data?.access_token?.length || 0,
+            userRole: backendData.data?.user?.role,
+            userIsAdmin: backendData.data?.user?.isAdmin,
+            allDataKeys: Object.keys(backendData.data || {}),
+          });
+
           // Attach backend data to user object for session
           const accessToken = backendData.data?.access_token;
           const role = backendData.data?.user?.role;
@@ -157,19 +173,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (!accessToken) {
             console.error("❌ No access_token in backend response");
+            console.error("❌ Expected path: backendData.data.access_token");
+            console.error("❌ Actual data:", backendData.data);
             return false;
           }
 
-          user.access_token = accessToken;
-          user.role = role;
-          user.isAdmin = isAdmin;
+          console.log("✅ Access token retrieved successfully:", {
+            tokenPrefix: accessToken.substring(0, 20) + "...",
+            tokenType: typeof accessToken,
+          });
+
+          (user as any).access_token = accessToken;
+          (user as any).role = role;
+          (user as any).isAdmin = isAdmin;
           user.id = String(userId);
 
           console.log("✅ User data attached to session:", {
             id: user.id,
             email: user.email,
-            role: user.role,
-            isAdmin: user.isAdmin,
+            role: (user as any).role,
+            isAdmin: (user as any).isAdmin,
           });
 
           return true;
@@ -178,6 +201,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (error instanceof Error) {
             console.error("❌ Error message:", error.message);
             console.error("❌ Error stack:", error.stack);
+          } else {
+            console.error("❌ Unknown error type:", typeof error, error);
           }
           return false;
         }
@@ -185,10 +210,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       
       return true;
     },
-    jwt({ token, user, account }) {
+    jwt({ token, user }) {
       if (user) {
         // User is available during sign-in
-        token.user = user as IUser;
+        token.user = {
+          id: user.id || "",
+          name: user.name || "",
+          email: user.email || "",
+          access_token: (user as any).access_token || "",
+          role: (user as any).role,
+          isAdmin: (user as any).isAdmin,
+          firstName: (user as any).firstName,
+          lastName: (user as any).lastName,
+          image: (user.image || undefined) as string | undefined,
+        };
       }
       return token;
     },
