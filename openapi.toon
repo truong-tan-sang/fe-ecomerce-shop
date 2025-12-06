@@ -1,0 +1,5355 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters: []      responses:
+        200:
+          description: 
+      summary: Hello word!
+      tags: items[1]:
+          - App
+  /user:
+    get:
+      operationId: UserController_getAllUsers
+      parameters: []      responses:
+        200:
+          description: User list found!
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/UserEntity
+      security: items[1]:
+          - bearer: []      summary: Get user list
+      tags: items[1]:
+          - User
+    post:
+      operationId: UserController_createAnUser
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateUserDto
+      responses:
+        201:
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserEntity
+      summary: Add a new user
+      tags: items[1]:
+          - User
+  /user/{id}:
+    get:
+      operationId: UserController_getUserDetailById
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: User found!
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserEntity
+      summary: Get user detail by ID
+      tags: items[1]:
+          - User
+    delete:
+      operationId: UserController_deleteUserById
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserEntity
+      summary: Delete a user
+      tags: items[1]:
+          - User
+    patch:
+      operationId: UserController_updateAnUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateUserDto
+      responses:
+        200:
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserEntity
+      summary: Update a user
+      tags: items[1]:
+          - User
+  /user/{id}/address-list:
+    get:
+      operationId: UserController_getAddressOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: User address list found!
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/AddressEntity
+      summary: Get address list of a user
+      tags: items[1]:
+          - User
+  /user/{id}/shop-office:
+    get:
+      operationId: UserController_getShopOfficeOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: User shop office found!
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShopOfficeEntity
+      security: items[1]:
+          - bearer: []      summary: Get shop office of a user
+      tags: items[1]:
+          - User
+  /user/{id}/avatar:
+    get:
+      operationId: UserController_getAvatarOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get avatar of user
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/MediaEntity
+      summary: Get avatar of user
+      tags: items[1]:
+          - User
+  /user/{id}/created-voucher-list:
+    get:
+      operationId: UserController_getAllVouchersCreatedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get vouchers are created by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/VoucherEntity
+      security: items[1]:
+          - bearer: []      summary: Get vouchers are created by a user
+      tags: items[1]:
+          - User
+  /user/{id}/product-list:
+    get:
+      operationId: UserController_getAllProductsCreatedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get products are created by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductEntity
+      security: items[1]:
+          - bearer: []      summary: Get products are created by a user
+      tags: items[1]:
+          - User
+  /user/{id}/product-variant-list:
+    get:
+      operationId: UserController_getAllProductVariantsCreatedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get product variants are created by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductVariantEntity
+      security: items[1]:
+          - bearer: []      summary: Get product variants are created by a user
+      tags: items[1]:
+          - User
+  /user/{id}/category-list:
+    get:
+      operationId: UserController_getAllCategoryCreatedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get categories are created by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/CategoryEntity
+      security: items[1]:
+          - bearer: []      summary: Get categories are created by a user
+      tags: items[1]:
+          - User
+  /user/{id}/order-list:
+    get:
+      operationId: UserController_getAllOrdersCreatedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get orders are created by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/OrderEntity
+      summary: Get orders are created by a user
+      tags: items[1]:
+          - User
+  /user/{id}/processed-order-list:
+    get:
+      operationId: UserController_getAllOrdersProcessedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get orders are processed by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/OrderEntity
+      security: items[1]:
+          - bearer: []      summary: Get orders are processed by a user
+      tags: items[1]:
+          - User
+  /user/{id}/processed-shipment-list:
+    get:
+      operationId: UserController_getAllShipmentsProcessedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get shipments are processed by a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ShipmentEntity
+      security: items[1]:
+          - bearer: []      summary: Get shipments are processed by a user
+      tags: items[1]:
+          - User
+  /user/{id}/request-list:
+    get:
+      operationId: UserController_getRequestsOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get requests of user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/RequestEntity
+      summary: Get requests of user
+      tags: items[1]:
+          - User
+  /user/{id}/processed-request-list:
+    get:
+      operationId: UserController_getRequestsProcessedByUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get processed requests of user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/RequestEntity
+      security: items[1]:
+          - bearer: []      summary: Get processed requests of user
+      tags: items[1]:
+          - User
+  /user/{id}/size-profile-list:
+    get:
+      operationId: UserController_getSizeProfilesOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get size-profiles of user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/SizeProfileEntity
+      summary: Get size-profiles of user
+      tags: items[1]:
+          - User
+  /user/{id}/review-list:
+    get:
+      operationId: UserController_getReviewsOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get reviews of user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ReviewEntity
+      summary: Get reviews of user
+      tags: items[1]:
+          - User
+  /user/{id}/cart:
+    post:
+      operationId: UserController_createANewCart
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateCartDto
+      responses:
+        201:
+          description: Create a new cart (only initial id user in cart table. Do not add any cart items)
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new cart (only initial id user in cart table. Do not add any cart items)
+      tags: items[1]:
+          - User
+    get:
+      operationId: UserController_getCartIdOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get cart id of user (only get id user in cart table. Do not get any cart items)
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartEntity
+      summary: Get cart id of user (only get id user in cart table. Do not get any cart items)
+      tags: items[1]:
+          - User
+    patch:
+      operationId: UserController_updateUserCart
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateCartDto
+      responses:
+        200:
+          description: Update one cart (only update id user in cart table. Do not add any cart items)
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartEntity
+      security: items[1]:
+          - bearer: []      summary: Update one cart (only update id user in cart table. Do not add any cart items)
+      tags: items[1]:
+          - User
+  /user/{id}/cart/cart-item:
+    post:
+      operationId: UserController_AddANewCart
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateCartItemDto
+      responses:
+        201:
+          description: Add a new product variant (cart item) to cart
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Add a new product variant (cart item) to cart
+      tags: items[1]:
+          - User
+  /user/{id}/cart/cart-details:
+    get:
+      operationId: UserController_getUserCartDetails
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get user cart with cart items detail
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartEntity
+      security: items[1]:
+          - bearer: []      summary: Get user cart with cart items detail
+      tags: items[1]:
+          - User
+  /user/{id}/saved-voucher-list:
+    get:
+      operationId: UserController_getSavedVouchersOfUser
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        200:
+          description: Get saved vouchers of user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/UserVoucherEntity
+      summary: Get saved vouchers of user
+      tags: items[1]:
+          - User
+  /auth/login:
+    post:
+      operationId: AuthController_handleLogin
+      parameters: []      responses:
+        201:
+          description: 
+      summary: Login account
+      tags: items[1]:
+          - Auth
+  /auth/profile:
+    get:
+      operationId: AuthController_getProfile
+      parameters: []      responses:
+        200:
+          description: 
+      summary: Get profile of account
+      tags: items[1]:
+          - Auth
+  /auth/signup:
+    post:
+      operationId: AuthController_register
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateAuthDto
+      responses:
+        201:
+          description: 
+      summary: Register a new user
+      tags: items[1]:
+          - Auth
+  /auth/check-code:
+    post:
+      operationId: AuthController_checkCode
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CodeAuthDto
+      responses:
+        201:
+          description: 
+      summary: Check code active account
+      tags: items[1]:
+          - Auth
+  /auth/retry-active:
+    post:
+      operationId: AuthController_retryActive
+      parameters: []      responses:
+        201:
+          description: 
+      summary: Retry active account
+      tags: items[1]:
+          - Auth
+  /auth/retry-password:
+    post:
+      operationId: AuthController_retryPassword
+      parameters: []      responses:
+        201:
+          description: 
+      summary: User retry password
+      tags: items[1]:
+          - Auth
+  /auth/change-password:
+    post:
+      operationId: AuthController_changePassword
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/ChangePasswordAuthDto
+      responses:
+        201:
+          description: 
+      summary: User change password
+      tags: items[1]:
+          - Auth
+  /mail/hello-mail:
+    post:
+      operationId: MailController_sendHelloMail
+      parameters: []      responses:
+        201:
+          description: 
+      summary: Send hello mail from shop
+      tags: items[1]:
+          - Mail
+  /mail:
+    post:
+      operationId: MailController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateMailDto
+      responses:
+        201:
+          description: 
+      summary: Send custom mail
+      tags: items[1]:
+          - Mail
+  /products:
+    post:
+      operationId: ProductsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateProductDto
+      responses:
+        201:
+          description: Create a new product
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new product
+      tags: items[1]:
+          - Products
+    get:
+      operationId: ProductsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductEntity
+      summary: Get all products
+      tags: items[1]:
+          - Products
+  /products/{id}:
+    get:
+      operationId: ProductsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one product
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductEntity
+      summary: Get one product
+      tags: items[1]:
+          - Products
+    patch:
+      operationId: ProductsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateProductDto
+      responses:
+        200:
+          description: Update one product
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductEntity
+      security: items[1]:
+          - bearer: []      summary: Update one product
+      tags: items[1]:
+          - Products
+    delete:
+      operationId: ProductsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one product
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductEntity
+      security: items[1]:
+          - bearer: []      summary: Delete one product
+      tags: items[1]:
+          - Products
+  /products/{id}/product-variants:
+    get:
+      operationId: ProductsController_getAllProductVariantsOfProduct
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all product-variants of this product
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductVariantEntity
+      summary: Get all product-variants of this product
+      tags: items[1]:
+          - Products
+  /products/{id}/reviews:
+    get:
+      operationId: ProductsController_getAllReviewsOfProduct
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all reviews of this product
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ReviewEntity
+      summary: Get all reviews of this product
+      tags: items[1]:
+          - Products
+  /category:
+    post:
+      operationId: CategoryController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateCategoryDto
+      responses:
+        201:
+          description: Create a new category
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CategoryEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new category
+      tags: items[1]:
+          - Category
+    get:
+      operationId: CategoryController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/CategoryEntity
+      summary: Get all categories
+      tags: items[1]:
+          - Category
+  /category/{id}:
+    get:
+      operationId: CategoryController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get a category
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CategoryEntity
+      summary: Get a category
+      tags: items[1]:
+          - Category
+    patch:
+      operationId: CategoryController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateCategoryDto
+      responses:
+        201:
+          description: Update a category
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CategoryEntity
+      security: items[1]:
+          - bearer: []      summary: Update a category
+      tags: items[1]:
+          - Category
+    delete:
+      operationId: CategoryController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        201:
+          description: Delete a category
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CategoryEntity
+      security: items[1]:
+          - bearer: []      summary: Delete a category
+      tags: items[1]:
+          - Category
+  /category/{id}/sub-categories:
+    get:
+      operationId: CategoryController_getAllSubCategoriesOfCategory
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all sub-category of category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/CategoryEntity
+      summary: Get all sub-category of category
+      tags: items[1]:
+          - Category
+  /category/{id}/products:
+    get:
+      operationId: CategoryController_getAllProductsOfCategory
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all products of category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductEntity
+      summary: Get all products of category
+      tags: items[1]:
+          - Category
+  /address:
+    post:
+      operationId: AddressController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateAddressDto
+      responses:
+        201:
+          description: Create a new address
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/AddressEntity
+      summary: Create a new address
+      tags: items[1]:
+          - Address
+    get:
+      operationId: AddressController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/AddressEntity
+      summary: Get all addresses
+      tags: items[1]:
+          - Address
+  /address/{id}:
+    get:
+      operationId: AddressController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get an address
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/AddressEntity
+      summary: Get an address
+      tags: items[1]:
+          - Address
+    patch:
+      operationId: AddressController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateAddressDto
+      responses:
+        200:
+          description: Update an address
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/AddressEntity
+      summary: Update an address
+      tags: items[1]:
+          - Address
+    delete:
+      operationId: AddressController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete an address
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/AddressEntity
+      summary: Delete an address
+      tags: items[1]:
+          - Address
+  /size-profiles:
+    post:
+      operationId: SizeProfilesController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateSizeProfileDto
+      responses:
+        201:
+          description: Create a new size profile
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/SizeProfileEntity
+      summary: Create a new size profile
+      tags: items[1]:
+          - SizeProfiles
+    get:
+      operationId: SizeProfilesController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all size profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/SizeProfileEntity
+      summary: Get all size profiles
+      tags: items[1]:
+          - SizeProfiles
+  /size-profiles/{id}:
+    get:
+      operationId: SizeProfilesController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one size profile
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/SizeProfileEntity
+      summary: Get one size profile
+      tags: items[1]:
+          - SizeProfiles
+    patch:
+      operationId: SizeProfilesController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateSizeProfileDto
+      responses:
+        200:
+          description: Update one size profile
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/SizeProfileEntity
+      summary: Update one size profile
+      tags: items[1]:
+          - SizeProfiles
+    delete:
+      operationId: SizeProfilesController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one size profile
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/SizeProfileEntity
+      summary: Delete one size profile
+      tags: items[1]:
+          - SizeProfiles
+  /product-variants:
+    post:
+      operationId: ProductVariantsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Product variant image file
+                productId:
+                  type: number
+                  example: 1315
+                createByUserId:
+                  type: number
+                  example: 852
+                variantName:
+                  type: string
+                  example: name of product variant
+                variantColor:
+                  type: string
+                  example: red
+                variantSize:
+                  type: string
+                  example: XL
+                price:
+                  type: number
+                  example: 46546
+                stock:
+                  type: number
+                  example: 851
+                stockKeepingUnit:
+                  type: string
+                  example: EWDGDSED715545D
+                voucherId:
+                  type: number
+                  example: 1325
+                createdAt:
+                  type: string
+                  format: date-time
+                updatedAt:
+                  type: string
+                  format: date-time
+              required: items[9]:
+                  - file
+                  - productId
+                  - createByUserId
+                  - variantName
+                  - variantColor
+                  - variantSize
+                  - price
+                  - stock
+                  - stockKeepingUnit
+      responses:
+        201:
+          description: Create a new product variant
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductVariantEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new product variant
+      tags: items[1]:
+          - ProductVariants
+    get:
+      operationId: ProductVariantsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all product variant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ProductVariantEntity
+      summary: Get all product variant
+      tags: items[1]:
+          - ProductVariants
+  /product-variants/{id}:
+    get:
+      operationId: ProductVariantsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one product variant
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductVariantEntity
+      summary: Get one product variant
+      tags: items[1]:
+          - ProductVariants
+    patch:
+      operationId: ProductVariantsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateProductVariantDto
+      responses:
+        200:
+          description: Update a product variant
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductVariantEntity
+      security: items[1]:
+          - bearer: []      summary: Update a product variant
+      tags: items[1]:
+          - ProductVariants
+    delete:
+      operationId: ProductVariantsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete a product variant
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ProductVariantEntity
+      security: items[1]:
+          - bearer: []      summary: Delete a product variant
+      tags: items[1]:
+          - ProductVariants
+  /product-variants/{id}/review-list:
+    get:
+      operationId: ProductVariantsController_getReviewsOfProductVariant
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all reviews of product variant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ReviewEntity
+      summary: Get all reviews of product variant
+      tags: items[1]:
+          - ProductVariants
+  /product-variants/{id}/media-list:
+    get:
+      operationId: ProductVariantsController_getAllMediaOfProductVariant
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all medias of product variant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/MediaEntity
+      summary: Get all medias of product variant
+      tags: items[1]:
+          - ProductVariants
+  /reviews:
+    post:
+      operationId: ReviewsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateReviewDto
+      responses:
+        201:
+          description: Create a new review
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReviewEntity
+      summary: Create a new review
+      tags: items[1]:
+          - Reviews
+    get:
+      operationId: ReviewsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ReviewEntity
+      summary: Get all reviews
+      tags: items[1]:
+          - Reviews
+  /reviews/{id}:
+    get:
+      operationId: ReviewsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get a review
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReviewEntity
+      summary: Get a review
+      tags: items[1]:
+          - Reviews
+    patch:
+      operationId: ReviewsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateReviewDto
+      responses:
+        200:
+          description: Update a review
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReviewEntity
+      summary: Update a review
+      tags: items[1]:
+          - Reviews
+    delete:
+      operationId: ReviewsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete a review
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReviewEntity
+      summary: Delete a review
+      tags: items[1]:
+          - Reviews
+  /reviews/{id}/media-list:
+    get:
+      operationId: ReviewsController_getAllMediaOfReview
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all media of review
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/MediaEntity
+      summary: Get all media of review
+      tags: items[1]:
+          - Reviews
+  /media:
+    post:
+      operationId: MediaController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateMediaDto
+      responses:
+        201:
+          description: Create a new media file. Please use upload file functions in aws-s3 instead
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/MediaEntity
+      summary: Create a new media file. Please use upload file functions in aws-s3 instead
+      tags: items[1]:
+          - Media
+    get:
+      operationId: MediaController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all media files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/MediaEntity
+      summary: Get all media files
+      tags: items[1]:
+          - Media
+  /media/{id}:
+    get:
+      operationId: MediaController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one media file
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/MediaEntity
+      summary: Get one media file
+      tags: items[1]:
+          - Media
+    patch:
+      operationId: MediaController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateMediaDto
+      responses:
+        200:
+          description: Update one media file
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/MediaEntity
+      summary: Update one media file
+      tags: items[1]:
+          - Media
+    delete:
+      operationId: MediaController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one media file
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/MediaEntity
+      summary: Delete one media file
+      tags: items[1]:
+          - Media
+  /orders:
+    post:
+      operationId: OrdersController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateOrderDto
+      responses:
+        201:
+          description: Create a new order
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderEntity
+      summary: Create a new order
+      tags: items[1]:
+          - Orders
+    get:
+      operationId: OrdersController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/OrderEntity
+      summary: Get all orders
+      tags: items[1]:
+          - Orders
+  /orders/order-detail-list:
+    get:
+      operationId: OrdersController_getAllOrdersWithDetailInformation
+      parameters: []      responses:
+        200:
+          description: Get all orders with their detail information
+      summary: Get all orders with their detail information
+      tags: items[1]:
+          - Orders
+  /orders/{id}:
+    get:
+      operationId: OrdersController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one order
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderEntity
+      summary: Get one order
+      tags: items[1]:
+          - Orders
+    patch:
+      operationId: OrdersController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateOrderDto
+      responses:
+        200:
+          description: Update one order
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderEntity
+      summary: Update one order
+      tags: items[1]:
+          - Orders
+    delete:
+      operationId: OrdersController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one order
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderEntity
+      summary: Delete one order
+      tags: items[1]:
+          - Orders
+  /orders/{id}/order-detail:
+    get:
+      operationId: OrdersController_getOrderDetailInformation
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get order detail information of one order
+      summary: Get order detail information of one order
+      tags: items[1]:
+          - Orders
+  /orders/{id}/order-item-list-detail:
+    get:
+      operationId: OrdersController_getOrderItemListDetailInformation
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get order item list detail information of one order
+      summary: Get order item list detail information of one order
+      tags: items[1]:
+          - Orders
+  /orders/{id}/order-shipments-detail:
+    get:
+      operationId: OrdersController_getOrderShipmentsDetailInformation
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get order shipments detail information of one order
+      summary: Get order shipments detail information of one order
+      tags: items[1]:
+          - Orders
+  /orders/{id}/order-payment-detail:
+    get:
+      operationId: OrdersController_getOrderPaymentDetailInformation
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get order payment detail information of one order
+      summary: Get order payment detail information of one order
+      tags: items[1]:
+          - Orders
+  /orders/{id}/order-request-detail:
+    get:
+      operationId: OrdersController_getOrderRequestDetailInformation
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get order request detail information of one order
+      summary: Get order request detail information of one order
+      tags: items[1]:
+          - Orders
+  /order-items:
+    post:
+      operationId: OrderItemsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateOrderItemDto
+      responses:
+        201:
+          description: Create a new order item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderItemEntity
+      summary: Create a new order item
+      tags: items[1]:
+          - OrderItems
+    get:
+      operationId: OrderItemsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all order items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/OrderItemEntity
+      summary: Get all order items
+      tags: items[1]:
+          - OrderItems
+  /order-items/{id}:
+    get:
+      operationId: OrderItemsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one order item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderItemEntity
+      summary: Get one order item
+      tags: items[1]:
+          - OrderItems
+    patch:
+      operationId: OrderItemsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateOrderItemDto
+      responses:
+        200:
+          description: Update one order item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderItemEntity
+      summary: Update one order item
+      tags: items[1]:
+          - OrderItems
+    delete:
+      operationId: OrderItemsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one order item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/OrderItemEntity
+      summary: Delete one order item
+      tags: items[1]:
+          - OrderItems
+  /shipments:
+    post:
+      operationId: ShipmentsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateShipmentDto
+      responses:
+        201:
+          description: Create a new shipment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShipmentEntity
+      summary: Create a new shipment
+      tags: items[1]:
+          - Shipments
+    get:
+      operationId: ShipmentsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ShipmentEntity
+      summary: Get all shipments
+      tags: items[1]:
+          - Shipments
+  /shipments/{id}:
+    get:
+      operationId: ShipmentsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one shipment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShipmentEntity
+      summary: Get one shipment
+      tags: items[1]:
+          - Shipments
+    patch:
+      operationId: ShipmentsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateShipmentDto
+      responses:
+        200:
+          description: Update one shipment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShipmentEntity
+      security: items[1]:
+          - bearer: []      summary: Update one shipment
+      tags: items[1]:
+          - Shipments
+    delete:
+      operationId: ShipmentsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one shipment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShipmentEntity
+      security: items[1]:
+          - bearer: []      summary: Delete one shipment
+      tags: items[1]:
+          - Shipments
+  /payments:
+    post:
+      operationId: PaymentsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreatePaymentDto
+      responses:
+        201:
+          description: Create a new payment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/PaymentEntity
+      summary: Create a new payment
+      tags: items[1]:
+          - Payments
+    get:
+      operationId: PaymentsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/PaymentEntity
+      summary: Get all payments
+      tags: items[1]:
+          - Payments
+  /payments/{id}:
+    get:
+      operationId: PaymentsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one payment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/PaymentEntity
+      summary: Get one payment
+      tags: items[1]:
+          - Payments
+    patch:
+      operationId: PaymentsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdatePaymentDto
+      responses:
+        200:
+          description: Update one payment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/PaymentEntity
+      summary: Update one payment
+      tags: items[1]:
+          - Payments
+    delete:
+      operationId: PaymentsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one payment
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/PaymentEntity
+      summary: Delete one payment
+      tags: items[1]:
+          - Payments
+  /cart-items:
+    post:
+      operationId: CartItemsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateCartItemDto
+      responses:
+        201:
+          description: Create a new cart item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new cart item
+      tags: items[1]:
+          - CartItems
+    get:
+      operationId: CartItemsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Get all cart items
+      tags: items[1]:
+          - CartItems
+  /cart-items/{id}:
+    get:
+      operationId: CartItemsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one cart item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Get one cart item
+      tags: items[1]:
+          - CartItems
+    patch:
+      operationId: CartItemsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateCartItemDto
+      responses:
+        200:
+          description: Update one cart item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Update one cart item
+      tags: items[1]:
+          - CartItems
+    delete:
+      operationId: CartItemsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one cart item
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/CartItemEntity
+      security: items[1]:
+          - bearer: []      summary: Delete one cart item
+      tags: items[1]:
+          - CartItems
+  /vouchers:
+    post:
+      operationId: VouchersController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateVoucherDto
+      responses:
+        201:
+          description: Create a new voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/VoucherEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new voucher
+      tags: items[1]:
+          - Vouchers
+    get:
+      operationId: VouchersController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all vouchers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/VoucherEntity
+      summary: Get all vouchers
+      tags: items[1]:
+          - Vouchers
+  /vouchers/{id}:
+    get:
+      operationId: VouchersController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get a voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/VoucherEntity
+      summary: Get a voucher
+      tags: items[1]:
+          - Vouchers
+    patch:
+      operationId: VouchersController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateVoucherDto
+      responses:
+        200:
+          description: Update a voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/VoucherEntity
+      security: items[1]:
+          - bearer: []      summary: Update a voucher
+      tags: items[1]:
+          - Vouchers
+    delete:
+      operationId: VouchersController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete a voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/VoucherEntity
+      security: items[1]:
+          - bearer: []      summary: Delete a voucher
+      tags: items[1]:
+          - Vouchers
+  /vouchers/{id}/all-categories-applied:
+    get:
+      operationId: VouchersController_getAllCategoriesAreAppliedThisVoucher
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all categories are applied this voucher
+      summary: Get all categories are applied this voucher
+      tags: items[1]:
+          - Vouchers
+  /vouchers/{id}/all-products-applied:
+    get:
+      operationId: VouchersController_getAllProductsAreAppliedThisVoucher
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all products are applied this voucher
+      summary: Get all products are applied this voucher
+      tags: items[1]:
+          - Vouchers
+  /vouchers/{id}/all-product-variants-applied:
+    get:
+      operationId: VouchersController_getAllProductVariantsAreAppliedThisVoucher
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all product-variants are applied this voucher
+      summary: Get all product-variants are applied this voucher
+      tags: items[1]:
+          - Vouchers
+  /user-vouchers:
+    post:
+      operationId: UserVouchersController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateUserVoucherDto
+      responses:
+        201:
+          description: Create a new user voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserVoucherEntity
+      summary: Create a new user voucher
+      tags: items[1]:
+          - UserVouchers
+    get:
+      operationId: UserVouchersController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all user vouchers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/UserVoucherEntity
+      summary: Get all user vouchers
+      tags: items[1]:
+          - UserVouchers
+  /user-vouchers/{id}:
+    get:
+      operationId: UserVouchersController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one user voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserVoucherEntity
+      summary: Get one user voucher
+      tags: items[1]:
+          - UserVouchers
+    patch:
+      operationId: UserVouchersController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateUserVoucherDto
+      responses:
+        200:
+          description: Update one user voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserVoucherEntity
+      summary: Update one user voucher
+      tags: items[1]:
+          - UserVouchers
+    delete:
+      operationId: UserVouchersController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one user voucher
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/UserVoucherEntity
+      summary: Delete one user voucher
+      tags: items[1]:
+          - UserVouchers
+  /requests:
+    post:
+      operationId: RequestsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateRequestDto
+      responses:
+        201:
+          description: Create a new request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/RequestEntity
+      summary: Create a new request
+      tags: items[1]:
+          - Requests
+    get:
+      operationId: RequestsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/RequestEntity
+      summary: Get all requests
+      tags: items[1]:
+          - Requests
+  /requests/{id}:
+    get:
+      operationId: RequestsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/RequestEntity
+      summary: Get one request
+      tags: items[1]:
+          - Requests
+    patch:
+      operationId: RequestsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateRequestDto
+      responses:
+        200:
+          description: Update one request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/RequestEntity
+      summary: Update one request
+      tags: items[1]:
+          - Requests
+    delete:
+      operationId: RequestsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/RequestEntity
+      summary: Delete one request
+      tags: items[1]:
+          - Requests
+  /return-requests:
+    post:
+      operationId: ReturnRequestsController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateReturnRequestDto
+      responses:
+        201:
+          description: Create a new return request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReturnRequestEntity
+      security: items[1]:
+          - bearer: []      summary: Create a new return request
+      tags: items[1]:
+          - ReturnRequests
+    get:
+      operationId: ReturnRequestsController_findAll
+      parameters: []      responses:
+        200:
+          description: Get all return requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ReturnRequestEntity
+      summary: Get all return requests
+      tags: items[1]:
+          - ReturnRequests
+  /return-requests/{id}:
+    get:
+      operationId: ReturnRequestsController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get one return request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReturnRequestEntity
+      summary: Get one return request
+      tags: items[1]:
+          - ReturnRequests
+    patch:
+      operationId: ReturnRequestsController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateReturnRequestDto
+      responses:
+        200:
+          description: Update one return request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReturnRequestEntity
+      security: items[1]:
+          - bearer: []      summary: Update one return request
+      tags: items[1]:
+          - ReturnRequests
+    delete:
+      operationId: ReturnRequestsController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete one return request
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ReturnRequestEntity
+      security: items[1]:
+          - bearer: []      summary: Delete one return request
+      tags: items[1]:
+          - ReturnRequests
+  /aws-s3/admin/list-files:
+    get:
+      operationId: AwsS3Controller_listFiles
+      parameters: items[1]:
+          - name: folderUrl
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Get all files from one folder of server Do not contain / character in last. And folder url is in url field of media table. And folder url is in url field of media table but delete file name by front-end
+      security: items[1]:
+          - bearer: []      summary: Get all files from one folder of server. Do not contain / character in last. And folder url is in url field of media table but delete file name by front-end
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/download-file:
+    get:
+      operationId: AwsS3Controller_downloadFile
+      parameters: items[1]:
+          - name: targetFileUrl
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Download file from server. And target file url is in url field of media table
+      security: items[1]:
+          - bearer: []      summary: Download file from server. And target file url is in url field of media table
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/build-public-media-url:
+    get:
+      operationId: AwsS3Controller_buildPublicMediaUrl
+      parameters: items[1]:
+          - name: key
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Build a https link for media file stored in S3 bucket using its key
+      summary: Build a https link for media file stored in S3 bucket using its key
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/{adminId}/upload-logo-shop-file:
+    post:
+      operationId: AwsS3Controller_uploadLogoShopFile
+      parameters: items[1]:
+          - name: adminId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Logo shop file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload logo shop file to server
+      security: items[1]:
+          - bearer: []      summary: Upload logo shop file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/{adminId}/upload-banner-shop-file:
+    post:
+      operationId: AwsS3Controller_uploadBannerShopFile
+      parameters: items[1]:
+          - name: adminId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Banner shop file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload banner shop file to server
+      security: items[1]:
+          - bearer: []      summary: Upload banner shop file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/{adminId}/upload-one-product-file/{productVariantId}:
+    post:
+      operationId: AwsS3Controller_uploadOneProductFile
+      parameters: items[2]:
+          - name: adminId
+          required: true
+          in: path
+          schema:
+            type: string
+          - name: productVariantId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Product file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload one product file to server
+      security: items[1]:
+          - bearer: []      summary: Upload one product file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/{adminId}/upload-many-product-file/{productVariantId}:
+    post:
+      operationId: AwsS3Controller_uploadManyProductFile
+      parameters: items[2]:
+          - name: adminId
+          required: true
+          in: path
+          schema:
+            type: string
+          - name: productVariantId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Product files (images or videos, max 10)
+              required: items[1]:
+                  - files
+      responses:
+        200:
+          description: Upload many product file to server
+      security: items[1]:
+          - bearer: []      summary: Upload many product file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/admin/{adminId}/upload-one-category-file:
+    post:
+      operationId: AwsS3Controller_uploadOneCategoryFile
+      parameters: items[1]:
+          - name: adminId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Category file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload one category file to server
+      security: items[1]:
+          - bearer: []      summary: Upload one category file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/user/{userId}/upload-one-user-avatar-file:
+    post:
+      operationId: AwsS3Controller_uploadOneUserAvatarFile
+      parameters: items[1]:
+          - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: User avatar file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload one user avatar file to server
+      security: items[1]:
+          - bearer: []      summary: Upload one user avatar file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/user/{userId}/upload-many-user-avatar-file:
+    post:
+      operationId: AwsS3Controller_uploadManyUserAvatarFile
+      parameters: items[1]:
+          - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: User avatar files (images or videos, max 10)
+              required: items[1]:
+                  - files
+      responses:
+        200:
+          description: Upload many user avatar file to server
+      security: items[1]:
+          - bearer: []      summary: Upload many user avatar file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/user/{userId}/upload-one-review-file/{reviewId}:
+    post:
+      operationId: AwsS3Controller_uploadOneProductReviewFile
+      parameters: items[2]:
+          - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+          - name: reviewId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Review file (image or video)
+              required: items[1]:
+                  - file
+      responses:
+        200:
+          description: Upload one review file to server
+      security: items[1]:
+          - bearer: []      summary: Upload one review file to server
+      tags: items[1]:
+          - AwsS3
+  /aws-s3/user/{userId}/upload-many-review-file/{reviewId}:
+    post:
+      operationId: AwsS3Controller_uploadManyReviewFile
+      parameters: items[2]:
+          - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+          - name: reviewId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Review files (images or videos, max 10)
+              required: items[1]:
+                  - files
+      responses:
+        200:
+          description: Upload many review product file to server
+      security: items[1]:
+          - bearer: []      summary: Upload many review product file to server
+      tags: items[1]:
+          - AwsS3
+  /shop-offices:
+    post:
+      operationId: ShopOfficesController_create
+      parameters: []      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/CreateShopOfficeDto
+      responses:
+        200:
+          description: Add new a shop office
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShopOfficeEntity
+      security: items[1]:
+          - bearer: []      summary: Add new a shop office
+      tags: items[1]:
+          - ShopOffices
+    get:
+      operationId: ShopOfficesController_findAll
+      parameters: []      responses:
+        200:
+          description:  shop office list found!
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: #/components/schemas/ShopOfficeEntity
+      summary: Get shop office list
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{id}:
+    get:
+      operationId: ShopOfficesController_findOne
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office found!
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/ShopOfficeEntity
+      summary: Get shop office detail by ID
+      tags: items[1]:
+          - ShopOffices
+    patch:
+      operationId: ShopOfficesController_update
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/UpdateShopOfficeDto
+      responses:
+        200:
+          description: 
+      security: items[1]:
+          - bearer: []      summary: Update a shop office
+      tags: items[1]:
+          - ShopOffices
+    delete:
+      operationId: ShopOfficesController_remove
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: 
+      security: items[1]:
+          - bearer: []      summary: Delete a shop office
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{id}/manager-list:
+    get:
+      operationId: ShopOfficesController_findAllManagersOfShopOffice
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office"s manager list found!
+      summary: Get shop office"s manager list by ID shop office
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{id}/address:
+    get:
+      operationId: ShopOfficesController_findAddressOfShopOffice
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office"s address found!
+      summary: Get shop office"s address by ID shop office
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{id}/product-list:
+    get:
+      operationId: ShopOfficesController_findAllProductsOfShopOffice
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office"s products found!
+      summary: Get shop office"s products by ID shop office
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{id}/category-list:
+    get:
+      operationId: ShopOfficesController_findAllCategoryOfShopOffice
+      parameters: items[1]:
+          - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office"s categories found!
+      summary: Get shop office"s categories by ID shop office
+      tags: items[1]:
+          - ShopOffices
+  /shop-offices/{shopId}/category/{categoryId}/product-list:
+    get:
+      operationId: ShopOfficesController_findAllProductsOfCategoryOfShopOffice
+      parameters: items[2]:
+          - name: shopId
+          required: true
+          in: path
+          schema:
+            type: string
+          - name: categoryId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: shop office"s products of category found!
+      summary: Get shop office"s products of one category by ID shop office and ID category
+      tags: items[1]:
+          - ShopOffices
+info:
+  title: BE Ecomerce Shop
+  description: 
+  version: 1.0
+  contact:
+tags: []servers: []components:
+  schemas:
+    UserEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+          description: User ID
+        firstName:
+          type: string
+          example: John
+          description: First name
+        lastName:
+          type: string
+          example: Doe
+          description: Last name
+        gender:
+          type: string
+          enum: items[3]:
+              - MALE
+              - FEMALE
+              - OTHER
+          description: Gender
+        email:
+          type: string
+          example: user@example.com
+          description: Email address
+        phone:
+          type: string
+          example: 0123456789
+          description: Phone number
+        username:
+          type: string
+          example: johndoe
+          description: Username
+        password:
+          type: string
+          example: hashedpassword
+          description: Password hash
+        role:
+          type: string
+          enum: items[3]:
+              - USER
+              - ADMIN
+              - OPERATOR
+          description: User role
+        isActive:
+          type: boolean
+          example: true
+          description: Account active status
+        codeActive:
+          type: string
+          example: 123e4567-e89b-12d3-a456-426614174000
+          description: Activation code
+        codeActiveExpire:
+          format: date-time
+          type: string
+          example: 2024-12-31T23:59:59Z
+          description: Activation code expiry
+        points:
+          type: number
+          example: 100
+          description: Loyalty points
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00Z
+          description: Created at
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00Z
+          description: Updated at
+        staffCode:
+          type: string
+          example: STF001
+          description: Staff code
+        isAdmin:
+          type: boolean
+          example: false
+          description: Is admin
+        shopOfficeId:
+          format: int64
+          type: integer
+          example: 1
+          description: Shop office ID
+        loyaltyCard:
+          type: string
+          example: LOYAL123
+          description: Loyalty card number
+      required: items[12]:
+          - id
+          - email
+          - username
+          - password
+          - role
+          - isActive
+          - codeActive
+          - codeActiveExpire
+          - points
+          - createdAt
+          - updatedAt
+          - isAdmin
+    CreateUserDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        gender:
+          type: string
+          example: MALE | FEMALE | OTHER
+        email:
+          type: string
+          example: john.doe@example.com
+        phone:
+          type: string
+          example: 1234567890
+        password:
+          type: string
+          example: password123
+        username:
+          type: string
+          example: johndoe
+        role:
+          type: string
+          example: USER | ADMIN | OPERATOR
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.360Z
+        isActive:
+          type: boolean
+          example: false
+        codeActive:
+          type: string
+          example: false
+        codeActiveExpire:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.360Z
+        staffCode:
+          type: string
+          example: ADFASFD-4654231-DAFDS
+        isAdmin:
+          type: boolean
+          example: false
+        loyaltyCard:
+          type: string
+          example: 0987985465231
+      required: items[15]:
+          - firstName
+          - lastName
+          - gender
+          - email
+          - phone
+          - password
+          - username
+          - role
+          - createdAt
+          - isActive
+          - codeActive
+          - codeActiveExpire
+          - staffCode
+          - isAdmin
+          - loyaltyCard
+    UpdateUserDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        gender:
+          type: string
+          example: MALE
+          enum: items[3]:
+              - MALE
+              - FEMALE
+              - OTHER
+        email:
+          type: string
+          example: john.doe@example.com
+        phone:
+          type: string
+          example: 1234567890
+        password:
+          type: string
+          example: password123
+        username:
+          type: string
+          example: johndoe
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.368Z
+      required: items[8]:
+          - firstName
+          - lastName
+          - gender
+          - email
+          - phone
+          - password
+          - username
+          - updatedAt
+    AddressEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          type: object
+          example: 1
+          nullable: true
+        street:
+          type: string
+          example: 123 Main Street
+        ward:
+          type: string
+          example: Ward 1
+        district:
+          type: string
+          example: District 1
+        province:
+          type: string
+          example: Ho Chi Minh City
+        zipCode:
+          type: string
+          example: 70000
+        country:
+          type: string
+          example: Vietnam
+        shopOfficeId:
+          type: object
+          example: 1
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[11]:
+          - id
+          - userId
+          - street
+          - ward
+          - district
+          - province
+          - zipCode
+          - country
+          - shopOfficeId
+          - createdAt
+          - updatedAt
+    ShopOfficeEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        shopName:
+          type: string
+          example: Main Store
+      required: items[2]:
+          - id
+          - shopName
+    MediaEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        url:
+          type: string
+          example: https://s3.amazonaws.com/bucket/file.jpg
+        type:
+          type: string
+          enum: items[3]:
+              - IMAGE
+              - VIDEO
+              - DOCUMENT
+          example: IMAGE
+        reviewId:
+          type: object
+          example: 1
+          nullable: true
+        userId:
+          type: object
+          example: 1
+          nullable: true
+        productVariantId:
+          type: object
+          example: 1
+          nullable: true
+        isShopLogo:
+          type: boolean
+          example: false
+        isShopBanner:
+          type: boolean
+          example: false
+        isCategoryFile:
+          type: boolean
+          example: false
+        isAvatarFile:
+          type: boolean
+          example: false
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[12]:
+          - id
+          - url
+          - type
+          - reviewId
+          - userId
+          - productVariantId
+          - isShopLogo
+          - isShopBanner
+          - isCategoryFile
+          - isAvatarFile
+          - createdAt
+          - updatedAt
+    VoucherEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: SAVE20
+        description:
+          type: object
+          example: 20% off on all items
+          nullable: true
+        discountType:
+          type: string
+          enum: items[2]:
+              - PERCENTAGE
+              - FIXED_AMOUNT
+          example: FIXED_AMOUNT
+        discountValue:
+          type: number
+          example: 20
+        validFrom:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        validTo:
+          format: date-time
+          type: string
+          example: 2024-12-31T23:59:59.999Z
+        usageLimit:
+          type: object
+          example: 100
+          nullable: true
+        timesUsed:
+          type: number
+          example: 5
+        isActive:
+          type: boolean
+          example: true
+        createdBy:
+          format: int64
+          type: integer
+          example: 1
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[13]:
+          - id
+          - code
+          - description
+          - discountType
+          - discountValue
+          - validFrom
+          - validTo
+          - usageLimit
+          - timesUsed
+          - isActive
+          - createdBy
+          - createdAt
+          - updatedAt
+    ProductEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Product Name
+        description:
+          type: object
+          example: Product description
+          nullable: true
+        price:
+          type: number
+          example: 99.99
+        stockKeepingUnit:
+          type: string
+          example: SKU123456
+        stock:
+          type: number
+          example: 100
+        categoryId:
+          type: object
+          example: 1
+          nullable: true
+        createByUserId:
+          format: int64
+          type: integer
+          example: 1
+        voucherId:
+          type: object
+          example: 1
+          nullable: true
+        shopOfficeId:
+          type: object
+          example: 1
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[12]:
+          - id
+          - name
+          - description
+          - price
+          - stockKeepingUnit
+          - stock
+          - categoryId
+          - createByUserId
+          - voucherId
+          - shopOfficeId
+          - createdAt
+          - updatedAt
+    ProductVariantEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        productId:
+          format: int64
+          type: integer
+          example: 1315
+        createByUserId:
+          format: int64
+          type: integer
+          example: 852
+        variantName:
+          type: string
+          example: name of product variant
+        variantColor:
+          type: string
+          example: red
+        variantSize:
+          type: string
+          example: XL
+        price:
+          type: number
+          example: 46546
+        stock:
+          type: number
+          example: 851
+        stockKeepingUnit:
+          type: string
+          example: EWDGDSED715545D
+        voucherId:
+          type: object
+          example: 1325
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[12]:
+          - id
+          - productId
+          - createByUserId
+          - variantName
+          - variantColor
+          - variantSize
+          - price
+          - stock
+          - stockKeepingUnit
+          - voucherId
+          - createdAt
+          - updatedAt
+    CategoryEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Electronics
+        description:
+          type: object
+          example: Electronic devices and accessories
+          nullable: true
+        parentId:
+          type: object
+          example: 1
+          nullable: true
+        createByUserId:
+          format: int64
+          type: integer
+          example: 1
+        voucherId:
+          type: object
+          example: 1
+          nullable: true
+        shopOfficeId:
+          type: object
+          example: 1
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[9]:
+          - id
+          - name
+          - description
+          - parentId
+          - createByUserId
+          - voucherId
+          - shopOfficeId
+          - createdAt
+          - updatedAt
+    OrderEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        shippingAddressId:
+          format: int64
+          type: integer
+          example: 1
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 1
+        orderDate:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        status:
+          type: string
+          enum: items[6]:
+              - PENDING
+              - PROCESSING
+              - SHIPPED
+              - DELIVERED
+              - CANCELLED
+              - RETURNED
+          example: PENDING
+        subTotal:
+          type: number
+          example: 100
+        shippingFee:
+          type: number
+          example: 10
+        discount:
+          type: number
+          example: 5
+        totalAmount:
+          type: number
+          example: 105
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[12]:
+          - id
+          - userId
+          - shippingAddressId
+          - processByStaffId
+          - orderDate
+          - status
+          - subTotal
+          - shippingFee
+          - discount
+          - totalAmount
+          - createdAt
+          - updatedAt
+    ShipmentEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        orderId:
+          format: int64
+          type: integer
+          example: 1
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 1
+        estimatedDelivery:
+          format: date-time
+          type: string
+          example: 2024-01-05T00:00:00.000Z
+        deliveredAt:
+          type: object
+          example: 2024-01-05T00:00:00.000Z
+          nullable: true
+        estimatedShipDate:
+          format: date-time
+          type: string
+          example: 2024-01-02T00:00:00.000Z
+        shippedAt:
+          type: object
+          example: 2024-01-02T00:00:00.000Z
+          nullable: true
+        carrier:
+          type: string
+          example: FedEx
+        trackingNumber:
+          type: string
+          example: TRACK123456
+        status:
+          type: string
+          enum: items[6]:
+              - WAITING_FOR_PICKUP
+              - IN_TRANSIT
+              - OUT_FOR_DELIVERY
+              - DELIVERED
+              - DELIVERED_FAILED
+              - RETURNED_TO_SENDER
+          example: WAITING_FOR_PICKUP
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[12]:
+          - id
+          - orderId
+          - processByStaffId
+          - estimatedDelivery
+          - deliveredAt
+          - estimatedShipDate
+          - shippedAt
+          - carrier
+          - trackingNumber
+          - status
+          - createdAt
+          - updatedAt
+    RequestEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 1
+        orderId:
+          format: int64
+          type: integer
+          example: 1
+        subject:
+          type: string
+          example: Product Return Request
+        description:
+          type: string
+          example: The product arrived damaged and I would like to return it.
+        status:
+          type: string
+          enum: items[4]:
+              - PENDING
+              - IN_PROGRESS
+              - APPROVED
+              - REJECTED
+          example: PENDING
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[9]:
+          - id
+          - userId
+          - processByStaffId
+          - orderId
+          - subject
+          - description
+          - status
+          - createdAt
+          - updatedAt
+    SizeProfileEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        heightCm:
+          type: object
+          example: 175.5
+          nullable: true
+        weightKg:
+          type: object
+          example: 70
+          nullable: true
+        chestCm:
+          type: object
+          example: 95
+          nullable: true
+        hipCm:
+          type: object
+          example: 90
+          nullable: true
+        sleeveLengthCm:
+          type: object
+          example: 60
+          nullable: true
+        inseamCm:
+          type: object
+          example: 80
+          nullable: true
+        shoulderLengthCm:
+          type: object
+          example: 45
+          nullable: true
+        bodyType:
+          type: object
+          example: Athletic
+          nullable: true
+        description:
+          type: object
+          example: Regular fit preferred
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[13]:
+          - id
+          - userId
+          - heightCm
+          - weightKg
+          - chestCm
+          - hipCm
+          - sleeveLengthCm
+          - inseamCm
+          - shoulderLengthCm
+          - bodyType
+          - description
+          - createdAt
+          - updatedAt
+    ReviewEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        productId:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        productVariantId:
+          format: int64
+          type: integer
+          example: 1
+        rating:
+          type: number
+          example: 5
+          minimum: 1
+          maximum: 5
+        comment:
+          type: object
+          example: Great product!
+          nullable: true
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[8]:
+          - id
+          - productId
+          - userId
+          - productVariantId
+          - rating
+          - comment
+          - createdAt
+          - updatedAt
+    CreateCartDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.381Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.382Z
+      required: items[3]:
+          - userId
+          - createdAt
+          - updatedAt
+    CartEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[4]:
+          - id
+          - userId
+          - createdAt
+          - updatedAt
+    CreateCartItemDto:
+      type: object
+      properties:
+        cartId:
+          format: int64
+          type: integer
+          example: 4741
+        productVariantId:
+          format: int64
+          type: integer
+          example: 4741
+        quantity:
+          type: number
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.393Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.393Z
+      required: items[5]:
+          - cartId
+          - productVariantId
+          - quantity
+          - createdAt
+          - updatedAt
+    CartItemEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        cartId:
+          format: int64
+          type: integer
+          example: 1
+        productVariantId:
+          format: int64
+          type: integer
+          example: 1
+        quantity:
+          type: number
+          example: 2
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[6]:
+          - id
+          - cartId
+          - productVariantId
+          - quantity
+          - createdAt
+          - updatedAt
+    UpdateCartDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.381Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.382Z
+    UserVoucherEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        voucherId:
+          format: int64
+          type: integer
+          example: 1
+        useVoucherAt:
+          type: object
+          example: 2024-01-01T00:00:00.000Z
+          nullable: true
+        saveVoucherAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        voucherStatus:
+          type: string
+          enum: items[4]:
+              - AVAILABLE
+              - SAVED
+              - USED
+              - EXPIRED
+          example: SAVED
+      required: items[6]:
+          - id
+          - userId
+          - voucherId
+          - useVoucherAt
+          - saveVoucherAt
+          - voucherStatus
+    CreateAuthDto:
+      type: object
+      properties:
+        username:
+          type: string
+          example: JohnDoe465465
+        email:
+          type: string
+          example: xample@gmail.com
+        password:
+          type: string
+          example: JohnDoe465465454
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        phone:
+          type: string
+          example: 1234567890
+        role:
+          type: string
+          example: USER
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.562Z
+        isActive:
+          type: boolean
+          example: false
+        codeActive:
+          type: string
+          example: fddsafds4564521dfsaf
+        codeActiveExpire:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.562Z
+      required: items[11]:
+          - username
+          - email
+          - password
+          - firstName
+          - lastName
+          - phone
+          - role
+          - createdAt
+          - isActive
+          - codeActive
+          - codeActiveExpire
+    CodeAuthDto:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 4654
+        codeActive:
+          type: string
+          example: fdsafdiuowuroi465872dsafd
+      required: items[2]:
+          - id
+          - codeActive
+    ChangePasswordAuthDto:
+      type: object
+      properties:
+        codeActive:
+          type: string
+          example: safdsafdewr4656121
+        password:
+          type: string
+          example: JohnDoe465465
+        confirmPassword:
+          type: string
+          example: JohnDoe465465
+        email:
+          type: string
+          example: xample@gmail.com
+      required: items[4]:
+          - codeActive
+          - password
+          - confirmPassword
+          - email
+    CreateMailDto:
+      type: object
+      properties:
+        to_email:
+          type: string
+          example: xample@gmail.com
+        from_email:
+          type: string
+          example: xample@gmail.com
+        subject:
+          type: string
+          example: Activation email for your account
+        text:
+          type: string
+          example: Hello John Doe
+        name:
+          type: string
+          example: John Doe
+        activationCode:
+          type: string
+          example: 1234567
+      required: items[6]:
+          - to_email
+          - from_email
+          - subject
+          - text
+          - name
+          - activationCode
+    CreateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Sample product name
+        description:
+          type: string
+          example: Sample product description
+        price:
+          type: number
+          example: 12
+        stockKeepingUnit:
+          type: string
+          example: ADSFDSAF1463218FA
+        stock:
+          type: number
+          example: 25
+        createByUserId:
+          format: int64
+          type: integer
+          example: 1231
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.734Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.734Z
+        categoryId:
+          format: int64
+          type: integer
+          example: 1325
+        voucherId:
+          format: int64
+          type: integer
+          example: 1325
+      required: items[10]:
+          - name
+          - description
+          - price
+          - stockKeepingUnit
+          - stock
+          - createByUserId
+          - createdAt
+          - updatedAt
+          - categoryId
+          - voucherId
+    UpdateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Sample product name
+        description:
+          type: string
+          example: Sample product description
+        price:
+          type: number
+          example: 12
+        stockKeepingUnit:
+          type: string
+          example: ADSFDSAF1463218FA
+        stock:
+          type: number
+          example: 25
+        createByUserId:
+          format: int64
+          type: integer
+          example: 1231
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.734Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.734Z
+        categoryId:
+          format: int64
+          type: integer
+          example: 1325
+        voucherId:
+          format: int64
+          type: integer
+          example: 1325
+    CreateCategoryDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: sample name of category
+        description:
+          type: string
+          example: description for category
+        parentId:
+          format: int64
+          type: integer
+          example: 1231
+        createByUserId:
+          format: int64
+          type: integer
+          example: 12314
+        voucherId:
+          format: int64
+          type: integer
+          example: 1325
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.788Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.788Z
+      required: items[7]:
+          - name
+          - description
+          - parentId
+          - createByUserId
+          - voucherId
+          - createdAt
+          - updatedAt
+    UpdateCategoryDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: sample name of category
+        description:
+          type: string
+          example: description for category
+        parentId:
+          format: int64
+          type: integer
+          example: 1231
+        createByUserId:
+          format: int64
+          type: integer
+          example: 12314
+        voucherId:
+          format: int64
+          type: integer
+          example: 1325
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.788Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.788Z
+    CreateAddressDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        street:
+          type: string
+          example: Ho Xuan Huong Street
+        ward:
+          type: string
+          example: Dong Hoa
+        district:
+          type: string
+          example: Di An
+        province:
+          type: string
+          example: Binh Duong
+        zipCode:
+          type: string
+          example: ADSAFD797654FDAFD
+        country:
+          type: string
+          example: Binh Duong
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.831Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.831Z
+      required: items[9]:
+          - userId
+          - street
+          - ward
+          - district
+          - province
+          - zipCode
+          - country
+          - createdAt
+          - updatedAt
+    UpdateAddressDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 1
+        street:
+          type: string
+          example: Ho Xuan Huong Street
+        ward:
+          type: string
+          example: Dong Hoa
+        district:
+          type: string
+          example: Di An
+        province:
+          type: string
+          example: Binh Duong
+        zipCode:
+          type: string
+          example: ADSAFD797654FDAFD
+        country:
+          type: string
+          example: Binh Duong
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.831Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.831Z
+    CreateSizeProfileDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 1321546
+        heightCm:
+          type: number
+          example: 135.5
+        weightKg:
+          type: number
+          example: 85.5
+        chestCm:
+          type: number
+          example: 86.5
+        hipCm:
+          type: number
+          example: 87.5
+        sleeveLengthCm:
+          type: number
+          example: 112.2
+        shoulderLengthCm:
+          type: number
+          example: 86
+        inseamCm:
+          type: number
+          example: 90
+        bodyType:
+          type: string
+          example: Body fat
+        description:
+          type: string
+          example: This is profile of John. He like wide t shirt and long trouser
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.875Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.875Z
+      required: items[12]:
+          - userId
+          - heightCm
+          - weightKg
+          - chestCm
+          - hipCm
+          - sleeveLengthCm
+          - shoulderLengthCm
+          - inseamCm
+          - bodyType
+          - description
+          - createdAt
+          - updatedAt
+    UpdateSizeProfileDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 1321546
+        heightCm:
+          type: number
+          example: 135.5
+        weightKg:
+          type: number
+          example: 85.5
+        chestCm:
+          type: number
+          example: 86.5
+        hipCm:
+          type: number
+          example: 87.5
+        sleeveLengthCm:
+          type: number
+          example: 112.2
+        shoulderLengthCm:
+          type: number
+          example: 86
+        inseamCm:
+          type: number
+          example: 90
+        bodyType:
+          type: string
+          example: Body fat
+        description:
+          type: string
+          example: This is profile of John. He like wide t shirt and long trouser
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.875Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.875Z
+    UpdateProductVariantDto:
+      type: object
+      properties:
+        productId:
+          format: int64
+          type: integer
+          example: 1315
+        createByUserId:
+          format: int64
+          type: integer
+          example: 852
+        variantName:
+          type: string
+          example: name of product variant
+        variantColor:
+          type: string
+          example: red
+        variantSize:
+          type: string
+          example: XL
+        price:
+          type: number
+          example: 46546
+        stock:
+          type: number
+          example: 851
+        stockKeepingUnit:
+          type: string
+          example: EWDGDSED715545D
+        voucherId:
+          format: int64
+          type: integer
+          example: 1325
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.191Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.191Z
+    CreateReviewDto:
+      type: object
+      properties:
+        productId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        rating:
+          type: number
+          example: 5
+        comment:
+          type: string
+          example: Perfect
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.398Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.398Z
+      required: items[7]:
+          - productId
+          - userId
+          - productVariantId
+          - rating
+          - comment
+          - createdAt
+          - updatedAt
+    UpdateReviewDto:
+      type: object
+      properties:
+        productId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        rating:
+          type: number
+          example: 5
+        comment:
+          type: string
+          example: Perfect
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.398Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.398Z
+    CreateMediaDto:
+      type: object
+      properties:
+        url:
+          type: string
+          example: https://i.ytimg.com/vi/yYDE9gMvMbU/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCn1eyWanaA18fPw7QhCCTftHALFA
+        type:
+          type: string
+          example: VIDEO | IMAGE | DOCUMENT
+        reviewId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        isShopLogo:
+          type: boolean
+          example: false
+        isShopBanner:
+          type: boolean
+          example: false
+        isCategoryFile:
+          type: boolean
+          example: false
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.435Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.435Z
+      required: items[10]:
+          - url
+          - type
+          - reviewId
+          - userId
+          - productVariantId
+          - isShopLogo
+          - isShopBanner
+          - isCategoryFile
+          - createdAt
+          - updatedAt
+    UpdateMediaDto:
+      type: object
+      properties:
+        url:
+          type: string
+          example: https://i.ytimg.com/vi/yYDE9gMvMbU/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCn1eyWanaA18fPw7QhCCTftHALFA
+        type:
+          type: string
+          example: VIDEO | IMAGE | DOCUMENT
+        reviewId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        isShopLogo:
+          type: boolean
+          example: false
+        isShopBanner:
+          type: boolean
+          example: false
+        isCategoryFile:
+          type: boolean
+          example: false
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.435Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.435Z
+    CreateOrderDto:
+      type: object
+      properties:
+        shippingAddressId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 851
+        orderDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.550Z
+        status:
+          type: string
+          example: PENDING
+        subTotal:
+          type: number
+          example: 851
+        shippingFee:
+          type: number
+          example: 851
+        discount:
+          type: number
+          example: 851
+        totalAmount:
+          type: number
+          example: 851
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.551Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.551Z
+      required: items[11]:
+          - shippingAddressId
+          - userId
+          - processByStaffId
+          - orderDate
+          - status
+          - subTotal
+          - shippingFee
+          - discount
+          - totalAmount
+          - createdAt
+          - updatedAt
+    UpdateOrderDto:
+      type: object
+      properties:
+        shippingAddressId:
+          format: int64
+          type: integer
+          example: 851
+        userId:
+          format: int64
+          type: integer
+          example: 851
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 851
+        orderDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.550Z
+        status:
+          type: string
+          example: PENDING
+        subTotal:
+          type: number
+          example: 851
+        shippingFee:
+          type: number
+          example: 851
+        discount:
+          type: number
+          example: 851
+        totalAmount:
+          type: number
+          example: 851
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.551Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.551Z
+    CreateOrderItemDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        quantity:
+          type: number
+          example: 851
+        unitPrice:
+          type: number
+          example: 851
+        totalPrice:
+          type: number
+          example: 851
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.594Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.594Z
+      required: items[7]:
+          - orderId
+          - productVariantId
+          - quantity
+          - unitPrice
+          - totalPrice
+          - createdAt
+          - updatedAt
+    OrderItemEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        orderId:
+          format: int64
+          type: integer
+          example: 1
+        productVariantId:
+          format: int64
+          type: integer
+          example: 1
+        quantity:
+          type: number
+          example: 2
+        unitPrice:
+          type: number
+          example: 50
+        totalPrice:
+          type: number
+          example: 100
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[8]:
+          - id
+          - orderId
+          - productVariantId
+          - quantity
+          - unitPrice
+          - totalPrice
+          - createdAt
+          - updatedAt
+    UpdateOrderItemDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 851
+        productVariantId:
+          format: int64
+          type: integer
+          example: 851
+        quantity:
+          type: number
+          example: 851
+        unitPrice:
+          type: number
+          example: 851
+        totalPrice:
+          type: number
+          example: 851
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.594Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.594Z
+    CreateShipmentDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 455
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 455
+        estimatedDelivery:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        deliveredAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        estimatedShipDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        shippedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        carrier:
+          type: string
+          example: Important and quick
+        trackingNumber:
+          type: string
+          example: kjhkjdsfhds65442324sdfds
+        status:
+          type: string
+          example: PENDING
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+      required: items[11]:
+          - orderId
+          - processByStaffId
+          - estimatedDelivery
+          - deliveredAt
+          - estimatedShipDate
+          - shippedAt
+          - carrier
+          - trackingNumber
+          - status
+          - createdAt
+          - updatedAt
+    UpdateShipmentDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 455
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 455
+        estimatedDelivery:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        deliveredAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        estimatedShipDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        shippedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        carrier:
+          type: string
+          example: Important and quick
+        trackingNumber:
+          type: string
+          example: kjhkjdsfhds65442324sdfds
+        status:
+          type: string
+          example: PENDING
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.644Z
+    CreatePaymentDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 4741
+        transactionId:
+          type: string
+          example: fdsafhdsakjfh56465ewrewr
+        paymentMethod:
+          type: string
+          example: COD | VNPAY | MOMO
+        paymentDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.682Z
+        amount:
+          type: number
+          example: 4741
+        status:
+          type: string
+          example: PENDING
+      required: items[6]:
+          - orderId
+          - transactionId
+          - paymentMethod
+          - paymentDate
+          - amount
+          - status
+    PaymentEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        orderId:
+          format: int64
+          type: integer
+          example: 1
+        transactionId:
+          type: string
+          example: TXN123456789
+        paymentMethod:
+          type: string
+          example: Credit Card
+        paymentDate:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        amount:
+          type: number
+          example: 105
+        status:
+          type: string
+          enum: items[4]:
+              - PENDING
+              - PAID
+              - FAILED
+              - REFUNDED
+          example: PENDING
+      required: items[7]:
+          - id
+          - orderId
+          - transactionId
+          - paymentMethod
+          - paymentDate
+          - amount
+          - status
+    UpdatePaymentDto:
+      type: object
+      properties:
+        orderId:
+          format: int64
+          type: integer
+          example: 4741
+        transactionId:
+          type: string
+          example: fdsafhdsakjfh56465ewrewr
+        paymentMethod:
+          type: string
+          example: COD | VNPAY | MOMO
+        paymentDate:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.682Z
+        amount:
+          type: number
+          example: 4741
+        status:
+          type: string
+          example: PENDING
+    UpdateCartItemDto:
+      type: object
+      properties:
+        cartId:
+          format: int64
+          type: integer
+          example: 4741
+        productVariantId:
+          format: int64
+          type: integer
+          example: 4741
+        quantity:
+          type: number
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.393Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:41.393Z
+    CreateVoucherDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: fdsakjfhds4655456ewrew
+        description:
+          type: string
+          example: free ship
+        discountType:
+          type: string
+          example: FIXED_AMOUNT
+        discountValue:
+          type: number
+          example: 465
+        validFrom:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        validTo:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        usageLimit:
+          type: number
+          example: 4741
+        timesUsed:
+          type: number
+          example: 4741
+        isActive:
+          type: boolean
+          example: false
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        createdBy:
+          format: int64
+          type: integer
+          example: 4567
+      required: items[12]:
+          - code
+          - description
+          - discountType
+          - discountValue
+          - validFrom
+          - validTo
+          - usageLimit
+          - timesUsed
+          - isActive
+          - createdAt
+          - updatedAt
+          - createdBy
+    UpdateVoucherDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: fdsakjfhds4655456ewrew
+        description:
+          type: string
+          example: free ship
+        discountType:
+          type: string
+          example: FIXED_AMOUNT
+        discountValue:
+          type: number
+          example: 465
+        validFrom:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        validTo:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        usageLimit:
+          type: number
+          example: 4741
+        timesUsed:
+          type: number
+          example: 4741
+        isActive:
+          type: boolean
+          example: false
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.772Z
+        createdBy:
+          format: int64
+          type: integer
+          example: 4567
+    CreateUserVoucherDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        voucherId:
+          format: int64
+          type: integer
+          example: 4741
+        useVoucherAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.810Z
+        saveVoucherAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.810Z
+        voucherStatus:
+          type: string
+          example: AVAILABLE
+      required: items[5]:
+          - userId
+          - voucherId
+          - useVoucherAt
+          - saveVoucherAt
+          - voucherStatus
+    UpdateUserVoucherDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        voucherId:
+          format: int64
+          type: integer
+          example: 4741
+        useVoucherAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.810Z
+        saveVoucherAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.810Z
+        voucherStatus:
+          type: string
+          example: AVAILABLE
+    CreateRequestDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 4741
+        orderId:
+          format: int64
+          type: integer
+          example: 4741
+        subject:
+          type: string
+          example: return request
+        description:
+          type: string
+          example: I want to return this product in order. Because it"s wide
+        status:
+          type: string
+          example: PENDING
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.848Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.848Z
+      required: items[8]:
+          - userId
+          - processByStaffId
+          - orderId
+          - subject
+          - description
+          - status
+          - createdAt
+          - updatedAt
+    UpdateRequestDto:
+      type: object
+      properties:
+        userId:
+          format: int64
+          type: integer
+          example: 4741
+        processByStaffId:
+          format: int64
+          type: integer
+          example: 4741
+        orderId:
+          format: int64
+          type: integer
+          example: 4741
+        subject:
+          type: string
+          example: return request
+        description:
+          type: string
+          example: I want to return this product in order. Because it"s wide
+        status:
+          type: string
+          example: PENDING
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.848Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.848Z
+    CreateReturnRequestDto:
+      type: object
+      properties:
+        requestId:
+          format: int64
+          type: integer
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.890Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.890Z
+      required: items[3]:
+          - requestId
+          - createdAt
+          - updatedAt
+    ReturnRequestEntity:
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+          example: 1
+        requestId:
+          format: int64
+          type: integer
+          example: 1
+        createdAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2024-01-01T00:00:00.000Z
+      required: items[4]:
+          - id
+          - requestId
+          - createdAt
+          - updatedAt
+    UpdateReturnRequestDto:
+      type: object
+      properties:
+        requestId:
+          format: int64
+          type: integer
+          example: 4741
+        createdAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.890Z
+        updatedAt:
+          format: date-time
+          type: string
+          example: 2025-12-04T07:22:42.890Z
+    CreateShopOfficeDto:
+      type: object
+      properties:
+    UpdateShopOfficeDto:
+      type: object
+      properties:

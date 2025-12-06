@@ -82,17 +82,15 @@ function Login() {
 
     if (res?.error) {
       //error
+      console.error("Login error:", res?.error);
+      
       if (res?.code === 2) {
         setIsModalOpen(true);
         setUserEmail(user.email);
         return;
       }
 
-      notification.error({
-        message: "Error login",
-        description: res?.error,
-      });
-
+      console.error("Login failed:", res?.error);
       setShowLoader(false);
     } else {
       // Refresh session to get updated user data with role

@@ -2,6 +2,7 @@ import { sendRequest } from "@/utils/api";
 import {
   ChangePasswordRequest,
   CheckCodeRequest,
+  CreateUserByGoogleAccountDto,
   LoginRequest,
   LoginResponse,
   RetryActiveRequest,
@@ -16,6 +17,25 @@ export const authService = {
   login: (body: LoginRequest) =>
     sendRequest<IBackendRes<LoginResponse>>({
       url: `${BASE_URL}/auth/login`,
+      method: "POST",
+      body,
+    }),
+
+  googleAuth: () =>
+    sendRequest<IBackendRes<LoginResponse>>({
+      url: `${BASE_URL}/auth/google`,
+      method: "GET",
+    }),
+
+  googleAuthRedirect: () =>
+    sendRequest<IBackendRes<LoginResponse>>({
+      url: `${BASE_URL}/auth/google/google-redirect`,
+      method: "GET",
+    }),
+
+  createUserByGoogleAccount: (body: CreateUserByGoogleAccountDto) =>
+    sendRequest<IBackendRes<LoginResponse>>({
+      url: `${BASE_URL}/user/google-account`,
       method: "POST",
       body,
     }),
