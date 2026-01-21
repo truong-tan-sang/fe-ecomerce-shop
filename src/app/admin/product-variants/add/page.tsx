@@ -233,7 +233,7 @@ export default function AddProductVariantPage() {
                         className="w-full justify-between"
                       >
                         {formData.productId
-                          ? products.find((product) => parseInt(product.id) === formData.productId)?.name
+                          ? products.find((product) => product.id === formData.productId)?.name
                           : "Select a product..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -255,7 +255,7 @@ export default function AddProductVariantPage() {
                                   });
                                   setFormData((prev) => ({
                                     ...prev,
-                                    productId: parseInt(product.id),
+                                    productId: product.id,
                                   }));
                                   setOpen(false);
                                 }}
@@ -263,7 +263,7 @@ export default function AddProductVariantPage() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    formData.productId === parseInt(product.id) ? "opacity-100" : "opacity-0"
+                                    formData.productId === product.id ? "opacity-100" : "opacity-0"
                                   )}
                                 />
                                 {product.name}

@@ -4,7 +4,7 @@ import Header from "@/components/header/navbar";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cartService } from "@/services/cart";
 import { orderService } from "@/services/order";
 import { addressService } from "@/services/address";
@@ -24,6 +24,9 @@ export default function CheckoutPage() {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedItemIdsParam = searchParams.get('items') || '';
+  const selectedItemIds = new Set(selectedItemIdsParam ? selectedItemIdsParam.split(',').map(Number) : []);
 
   // Load cart items
   useEffect(() => {
@@ -52,7 +55,19 @@ export default function CheckoutPage() {
           return;
         }
 
-        const itemsParsed: CartItemWithDetails[] = cartItems.map((ci: any) => ({
+        // Filter items by selected IDs from query parameter
+        // If no selection param, use all items (backward compatibility)
+        const filteredItems = selectedItemIds.size > 0 
+          ? cartItems.filter((ci: any) => selectedItemIds.has(ci.id))
+          : cartItems;
+
+        if (filteredItems.length === 0) {
+          console.log("[CheckoutPage] No selected items found, redirecting...");
+          router.push("/cart");
+          return;
+        }
+
+        const itemsParsed: CartItemWithDetails[] = filteredItems.map((ci: any) => ({
           id: ci.id,
           cartId: ci.cartId,
           productVariantId: ci.productVariantId,

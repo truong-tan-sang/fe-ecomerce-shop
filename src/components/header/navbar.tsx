@@ -174,7 +174,7 @@ export default function Header() {
                 className="w-56 lg:w-72 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
                 autoComplete="off"
               />
-              <button type="submit" className="px-4 bg-black hover:bg-gray-800 transition-colors text-white" aria-label="Tìm kiếm">
+              <button type="submit" className="px-4 bg-black hover:bg-gray-900 transition-colors text-white cursor-pointer" aria-label="Tìm kiếm">
                 <i className="fa-solid fa-magnifying-glass" />
               </button>
             </form>
@@ -182,7 +182,7 @@ export default function Header() {
             <Link href="/product/1" className="hidden" aria-hidden>
               {/* hidden placeholder to keep focus order deterministic */}
             </Link>
-            <Link href="/cart" title="Giỏ hàng" className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors">
+            <Link href="/cart" title="Giỏ hàng" className="p-2 hover:bg-white/20 transition-colors">
               <i className="fa-solid fa-cart-shopping" />
             </Link>
           </div>

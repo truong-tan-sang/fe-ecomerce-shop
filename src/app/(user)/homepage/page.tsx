@@ -17,7 +17,7 @@ export default async function HomePage() {
 
   try {
     console.log("[HomePage] Fetching initial products with token:", accessToken?.substring(0, 20));
-    const res = await productService.getAllProducts({ page: 1, perPage: 20, accessToken });
+    const res = await productService.getAllProducts({ page: 1, perPage: 20});
     console.log("[HomePage] Products API response:", res);
     
     // Backend returns products directly in data array (no pagination meta)

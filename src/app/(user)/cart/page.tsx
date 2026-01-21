@@ -294,7 +294,10 @@ export default function CartPage() {
                         <button
                             className="ml-2 bg-black text-white px-6 py-3 font-semibold hover:bg-gray-800 whitespace-nowrap disabled:bg-gray-300 disabled:cursor-not-allowed"
                             disabled={selectedCount === 0}
-                            onClick={() => router.push("/checkout")}
+                            onClick={() => {
+                                const selectedIdsParam = Array.from(selectedIds).join(',');
+                                router.push(`/checkout?items=${selectedIdsParam}`);
+                            }}
                         >
                             Mua hàng
                         </button>

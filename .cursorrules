@@ -5,6 +5,7 @@
 - Run `npx tsc --noEmit` after changes.
 - Services use `sendRequest<IBackendRes<T>>()` with typed DTOs.
 - Protected endpoints: `Authorization: Bearer <token>`.
+- Any clickable control (`button`, clickable `div`, custom triggers) must use a visible pointer cursor (Tailwind `cursor-pointer` or CSS `cursor: pointer`).
 
 ## File Structure
 - Services: `src/services/<entity>.ts` → export `<entity>Service`
