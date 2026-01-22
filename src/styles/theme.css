@@ -1,0 +1,126 @@
+/* Light Theme (Default) */
+:root {
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-tertiary: #f0f0f0;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Text */
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border-primary: #000000;
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-lighter: rgba(0, 0, 0, 0.05);
+
+  /* Shadows */
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 40px rgba(0, 0, 0, 0.16), 0 20px 60px rgba(0, 0, 0, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Cards & Components */
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.1);
+  --input-bg: #ffffff;
+  --input-border: #d0d0d0;
+  --input-text: #000000;
+
+  /* Accents & Game UI */
+  --accent-primary: #000000;
+  --accent-secondary: #ffffff;
+  --ui-glow: rgba(255, 255, 255, 0.12);
+  --ui-shape-primary: rgba(0, 0, 0, 0.05);
+  --ui-shape-hover: rgba(0, 0, 0, 0.2);
+  --ui-corner: rgba(0, 0, 0, 0.4);
+  --ui-scan: rgba(255, 255, 255, 0.3);
+  --ui-grid: rgba(0, 0, 0, 0.03);
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
+  --status-info: #3b82f6;
+
+  /* Gradients */
+  --gradient-header: linear-gradient(to bottom, #ffffff, #f9f9f9);
+  --gradient-info: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  --gradient-toast: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
+
+  /* Additional Components */
+  --bg-button: #000000;
+  --border-accent: rgba(0, 0, 0, 0.2);
+}
+
+/* Dark Theme */
+[data-theme="dark"],
+html.dark {
+  /* Backgrounds */
+  --bg-primary: #0c0c0c;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
+  --text-inverse: #000000;
+
+  /* Borders */
+  --border-primary: #ffffff;
+  --border-light: rgba(255, 255, 255, 0.15);
+  --border-lighter: rgba(255, 255, 255, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 12px 40px rgba(255, 255, 255, 0.12), 0 20px 60px rgba(255, 255, 255, 0.06), inset 0 -2px 0 rgba(255, 255, 255, 0.1);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Cards & Components */
+  --card-bg: #1a1a1a;
+  --card-border: rgba(255, 255, 255, 0.1);
+  --input-bg: #111111;
+  --input-border: #404040;
+  --input-text: #ffffff;
+
+  /* Accents & Game UI */
+  --accent-primary: #ffffff;
+  --accent-secondary: #000000;
+  --ui-glow: rgba(255, 255, 255, 0.12);
+  --ui-shape-primary: rgba(255, 255, 255, 0.05);
+  --ui-shape-hover: rgba(255, 255, 255, 0.2);
+  --ui-corner: rgba(255, 255, 255, 0.4);
+  --ui-scan: rgba(255, 255, 255, 0.3);
+  --ui-grid: rgba(255, 255, 255, 0.03);
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
+  --status-info: #3b82f6;
+
+  /* Gradients */
+  --gradient-header: linear-gradient(to bottom, #0c0c0c, #1a1a1a);
+  --gradient-info: linear-gradient(to bottom, #1a1a1a, #0c0c0c);
+  --gradient-toast: linear-gradient(to bottom, rgba(12,12,12,0.95), rgba(26,26,26,0.9));
+
+  /* Additional Components */
+  --bg-button: #ffffff;
+  --border-accent: rgba(255, 255, 255, 0.2);
+}
+
+/* Base element styling with theme variables */
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 300ms, color 300ms;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}

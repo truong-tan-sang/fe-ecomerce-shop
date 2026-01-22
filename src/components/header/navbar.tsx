@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { Moon, Sun } from "lucide-react";
+import { theme } from "@/lib/theme";
 
 type NavLinkProps = {
   label: string;
@@ -35,6 +37,7 @@ export default function Header() {
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isDark, setIsDark] = useState(false);
 
   // Handle scroll to show/hide header
   useEffect(() => {
@@ -53,6 +56,12 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
+
+  // Check dark mode on mount
+  useEffect(() => {
+    const dark = document.documentElement.classList.contains("dark");
+    setIsDark(dark);
+  }, []);
 
   // Close account menu when clicking outside
   useEffect(() => {
@@ -81,58 +90,84 @@ export default function Header() {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 w-full bg-gradient-to-b from-[#121212] to-[#1a1a1a] text-white shadow z-50 transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header 
+      className={`fixed top-0 left-0 right-0 w-full text-[var(--text-primary)] shadow-lg z-50 transition-all duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
+      style={{
+        background: theme.gradient.header,
+        boxShadow: theme.shadow.lg,
+      }}
+    >
       {/* Top utility bar */}
       <div className="mx-auto max-w-7xl px-3 md:px-6">
-        <div className="flex items-center justify-end gap-5 py-2 text-xs text-white/70">
+        <div className="flex items-center justify-end gap-5 py-2 text-xs" style={{ color: theme.text.tertiary }}>
           <span className="hidden sm:inline-flex items-center gap-2"><i className="fa-regular fa-circle-question" aria-hidden /> Hỗ trợ</span>
           <span className="hidden sm:inline-flex items-center gap-2"><i className="fa-regular fa-bell" aria-hidden /> Thông báo</span>
           <span className="hidden md:inline-flex items-center gap-2"><i className="fa-solid fa-globe" aria-hidden /> Tiếng Việt</span>
+          
+          {/* Theme toggle */}
+          <button
+            onClick={() => {
+              (window as any).toggleTheme?.();
+              setIsDark(!isDark);
+            }}
+            className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          
           <div className="relative" ref={accountMenuRef}>
             <button
               onMouseEnter={() => setShowAccountMenu(true)}
               onClick={() => setShowAccountMenu(!showAccountMenu)}
-              className="inline-flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
             >
               <i className="fa-regular fa-user" aria-hidden /> Tài khoản
             </button>
             {showAccountMenu && (
               <div 
-                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 text-gray-700 border border-gray-200"
+                className="absolute right-0 mt-2 w-48 rounded-md py-1 border"
+                style={{
+                  background: theme.bg.secondary,
+                  color: theme.text.secondary,
+                  borderColor: theme.border.light,
+                  boxShadow: theme.shadow.lg,
+                }}
                 onMouseLeave={() => setShowAccountMenu(false)}
               >
                 <Link
                   href="/profile"
-                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm transition-opacity hover:opacity-80"
                   onClick={() => setShowAccountMenu(false)}
                 >
                   Thông tin cá nhân
                 </Link>
                 <Link
                   href="/profile/notifications"
-                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm transition-opacity hover:opacity-80"
                   onClick={() => setShowAccountMenu(false)}
                 >
                   Thông báo
                 </Link>
                 <Link
                   href="/profile/orders"
-                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm transition-opacity hover:opacity-80"
                   onClick={() => setShowAccountMenu(false)}
                 >
                   Đơn hàng
                 </Link>
                 <Link
                   href="/profile/vouchers"
-                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm transition-opacity hover:opacity-80"
                   onClick={() => setShowAccountMenu(false)}
                 >
                   Voucher
                 </Link>
-                <hr className="my-1" />
+                <hr className="my-1" style={{ borderColor: theme.border.light }} />
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                  className="block w-full text-left px-4 py-2 text-sm transition-opacity hover:opacity-80"
+                  style={{ color: theme.status.error }}
                 >
                   Đăng xuất
                 </button>
@@ -153,6 +188,15 @@ export default function Header() {
               width={110}
               height={32}
               priority
+              className="dark:hidden"
+            />
+            <Image
+              src="/LOGO-dark.svg"
+              alt="Logo"
+              width={110}
+              height={32}
+              priority
+              className="hidden dark:block"
             />
           </Link>
 
@@ -167,14 +211,18 @@ export default function Header() {
 
           {/* Search + cart */}
           <div className="ml-auto flex items-center gap-3 md:gap-4">
-            <form onSubmit={onSearch} className="hidden md:flex items-stretch bg-white border border-gray-300">
+            <form onSubmit={onSearch} className="hidden md:flex items-stretch border" style={{ borderColor: theme.border.light }}>
               <input
                 name="q"
                 placeholder="Tìm kiếm sản phẩm"
-                className="w-56 lg:w-72 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                className="w-56 lg:w-72 px-3 py-2 text-sm focus:outline-none"
+                style={{
+                  background: theme.bg.primary,
+                  color: theme.text.primary,
+                }}
                 autoComplete="off"
               />
-              <button type="submit" className="px-4 bg-black hover:bg-gray-900 transition-colors text-white cursor-pointer" aria-label="Tìm kiếm">
+              <button type="submit" className="px-4 transition-opacity hover:opacity-80 text-white cursor-pointer" style={{ background: theme.bg.button }} aria-label="Tìm kiếm">
                 <i className="fa-solid fa-magnifying-glass" />
               </button>
             </form>
@@ -182,7 +230,7 @@ export default function Header() {
             <Link href="/product/1" className="hidden" aria-hidden>
               {/* hidden placeholder to keep focus order deterministic */}
             </Link>
-            <Link href="/cart" title="Giỏ hàng" className="p-2 hover:bg-white/20 transition-colors">
+            <Link href="/cart" title="Giỏ hàng" className="p-2 transition-opacity hover:opacity-80 cursor-pointer">
               <i className="fa-solid fa-cart-shopping" />
             </Link>
           </div>
