@@ -3,19 +3,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import ColorSwatch from "./ColorSwatch";
-import type { ProductVariantDto } from "@/dto/product-detail";
+import type { ProductVariantEntity } from "@/dto/product-variant";
+import type { ColorEntity } from "@/dto/color";
 import { cartService } from "@/services/cart";
 import Toast from "../toast";
-
-// Hard-coded standard sizes and colors
-const STANDARD_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
-const STANDARD_COLORS = [
-    { name: "Black", hex: "#000000" },
-    { name: "Blue", hex: "#3b82f6" },
-    { name: "Green", hex: "#22c55e" },
-    { name: "Red", hex: "#ef4444" },
-    { name: "White", hex: "#ffffff" },
-] as const;
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ApiError } from "@/utils/api-error";
 
 interface ProductInfoProps {
     brand: string;
@@ -25,7 +19,9 @@ interface ProductInfoProps {
     basePrice: number;
     viewersCount: number;
     baseStock: number;
-    variants: ProductVariantDto[];
+    variants: ProductVariantEntity[];
+    colors: ColorEntity[];
+    onColorChange?: (colorId: number) => void;
 }
 
 export default function ProductInfo({
@@ -37,9 +33,41 @@ export default function ProductInfo({
     viewersCount,
     baseStock,
     variants,
+    colors,
+    onColorChange,
 }: ProductInfoProps) {
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
-    const [selectedColor, setSelectedColor] = useState<string | null>(null);
+    const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
+
+    // Build color lookup: colorId → ColorEntity
+    const colorMap = useMemo(() => new Map(colors.map((c) => [c.id, c])), [colors]);
+
+    // Extract unique sizes from variants (ordered by first appearance)
+    const allSizes = useMemo(() => {
+        const seen = new Set<string>();
+        const result: string[] = [];
+        for (const v of variants) {
+            const size = v.variantSize?.toUpperCase();
+            if (size && !seen.has(size)) {
+                seen.add(size);
+                result.push(size);
+            }
+        }
+        return result;
+    }, [variants]);
+
+    // Extract unique colorIds present in this product's variants
+    const allColorIds = useMemo(() => {
+        const seen = new Set<number>();
+        const result: number[] = [];
+        for (const v of variants) {
+            if (v.colorId && !seen.has(v.colorId)) {
+                seen.add(v.colorId);
+                result.push(v.colorId);
+            }
+        }
+        return result;
+    }, [variants]);
     const [quantity, setQuantity] = useState(1);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
@@ -47,20 +75,20 @@ export default function ProductInfo({
     const [isLoading, setIsLoading] = useState(false);
     const { data: session } = useSession();
 
-    // Find the currently selected variant based on size and color
+    // Find the currently selected variant based on size and colorId
     const selectedVariant = useMemo(() => {
-        if (!selectedSize || !selectedColor) return null;
-        
-        return variants.find(v => 
-            v.variantSize?.toUpperCase() === selectedSize.toUpperCase() && 
-            v.variantColor?.toLowerCase() === selectedColor.toLowerCase()
+        if (!selectedSize || !selectedColorId) return null;
+
+        return variants.find(v =>
+            v.variantSize?.toUpperCase() === selectedSize.toUpperCase() &&
+            v.colorId === selectedColorId
         ) || null;
-    }, [selectedSize, selectedColor, variants]);
+    }, [selectedSize, selectedColorId, variants]);
 
     // Get available sizes (those with total stock > 0 across all colors)
     const availableSizes = useMemo(() => {
         const sizeStockMap = new Map<string, number>();
-        
+
         variants.forEach(v => {
             if (v.variantSize) {
                 const sizeUpper = v.variantSize.toUpperCase();
@@ -68,8 +96,7 @@ export default function ProductInfo({
                 sizeStockMap.set(sizeUpper, currentStock + (v.stock || 0));
             }
         });
-        
-        // Return sizes with total stock > 0
+
         return new Set(
             Array.from(sizeStockMap.entries())
                 .filter(([_, stock]) => stock > 0)
@@ -77,23 +104,21 @@ export default function ProductInfo({
         );
     }, [variants]);
 
-    // Get available colors for the currently selected size (colors with stock > 0)
-    const availableColors = useMemo(() => {
-        if (!selectedSize) return new Set<string>();
-        
-        const colors = new Set<string>();
-        
+    // Get available colorIds for the currently selected size (colors with stock > 0)
+    const availableColorIds = useMemo(() => {
+        if (!selectedSize) return new Set<number>();
+
+        const ids = new Set<number>();
         variants.forEach(v => {
             if (
-                v.variantSize?.toUpperCase() === selectedSize.toUpperCase() && 
-                v.variantColor && 
+                v.variantSize?.toUpperCase() === selectedSize.toUpperCase() &&
+                v.colorId &&
                 (v.stock || 0) > 0
             ) {
-                colors.add(v.variantColor.toLowerCase());
+                ids.add(v.colorId);
             }
         });
-        
-        return colors;
+        return ids;
     }, [variants, selectedSize]);
 
     // Calculate displayed values based on selection
@@ -109,26 +134,25 @@ export default function ProductInfo({
     // Auto-select first available size if none selected
     useEffect(() => {
         if (!selectedSize && availableSizes.size > 0) {
-            const firstAvailable = STANDARD_SIZES.find(s => availableSizes.has(s));
+            const firstAvailable = allSizes.find(s => availableSizes.has(s));
             if (firstAvailable) setSelectedSize(firstAvailable);
         }
-    }, [selectedSize, availableSizes]);
+    }, [selectedSize, availableSizes, allSizes]);
 
     // Auto-select color when size changes or no color selected
     useEffect(() => {
-        if (selectedSize && availableColors.size > 0) {
-            // If current color is available for this size, keep it
-            if (selectedColor && availableColors.has(selectedColor)) {
+        if (selectedSize && availableColorIds.size > 0) {
+            if (selectedColorId && availableColorIds.has(selectedColorId)) {
                 return;
             }
-            
-            // Otherwise, select the first available color
-            const firstAvailable = STANDARD_COLORS.find(c => availableColors.has(c.name.toLowerCase()));
+
+            const firstAvailable = allColorIds.find(id => availableColorIds.has(id));
             if (firstAvailable) {
-                setSelectedColor(firstAvailable.name.toLowerCase());
+                setSelectedColorId(firstAvailable);
+                onColorChange?.(firstAvailable);
             }
         }
-    }, [selectedSize, availableColors, selectedColor]);
+    }, [selectedSize, availableColorIds, selectedColorId, allColorIds, onColorChange]);
 
     const incrementQty = () => setQuantity((q) => Math.min(q + 1, displayStock));
     const decrementQty = () => setQuantity((q) => Math.max(q - 1, 1));
@@ -153,32 +177,35 @@ export default function ProductInfo({
 
         try {
             // Get or create user cart
-            let cartResponse = await cartService.getCartById(
-                userId,
-                session.user.access_token
-            );
-            
             let cartId: number;
-            
-            if (!cartResponse.data) {
-                console.log("[ProductInfo] No cart found, creating new cart");
-                const createCartResponse = await cartService.createCart(
+
+            try {
+                const cartResponse = await cartService.getCartById(
                     userId,
-                    { 
-                        userId 
-                    },
                     session.user.access_token
                 );
-                
-                if (!createCartResponse.data?.id) {
-                    throw new Error("Failed to create cart");
-                }
-                
-                cartId = createCartResponse.data.id;
-                console.log("[ProductInfo] Cart created:", cartId);
-            } else {
-                cartId = cartResponse.data.id;
+                cartId = cartResponse.data!.id;
                 console.log("[ProductInfo] Using existing cart:", cartId);
+            } catch (err) {
+                // Backend throws 404 (NotFoundException) when no cart exists,
+                // but its own catch block re-wraps it as 400 (BadRequestException) — handle both
+                if (err instanceof ApiError && (err.statusCode === 404 || err.statusCode === 400)) {
+                    console.log("[ProductInfo] No cart found, creating new cart");
+                    const createCartResponse = await cartService.createCart(
+                        userId,
+                        { userId },
+                        session.user.access_token
+                    );
+
+                    if (!createCartResponse.data?.id) {
+                        throw new Error("Failed to create cart");
+                    }
+
+                    cartId = createCartResponse.data.id;
+                    console.log("[ProductInfo] Cart created:", cartId);
+                } else {
+                    throw err;
+                }
             }
 
             // Create cart item
@@ -210,15 +237,14 @@ export default function ProductInfo({
     const handleSizeSelect = (size: string) => {
         if (availableSizes.has(size)) {
             setSelectedSize(size);
-            // useEffect will handle color selection/adjustment
         }
     };
 
-    // Handle color selection
-    const handleColorSelect = (colorName: string) => {
-        const colorLower = colorName.toLowerCase();
-        if (availableColors.has(colorLower)) {
-            setSelectedColor(colorLower);
+    // Handle color selection by colorId
+    const handleColorSelect = (colorId: number) => {
+        if (availableColorIds.has(colorId)) {
+            setSelectedColorId(colorId);
+            onColorChange?.(colorId);
         }
     };
 
@@ -230,9 +256,9 @@ export default function ProductInfo({
             {/* Title & Favorite */}
             <div className="flex items-start justify-between gap-4">
                 <h1 className="text-2xl md:text-3xl font-bold text-black">{name}</h1>
-                <button className="p-2 hover:bg-gray-100 rounded transition-colors" aria-label="Add to favorites">
+                <Button variant="ghost" size="icon" aria-label="Add to favorites">
                     <i className="far fa-heart text-xl" />
-                </button>
+                </Button>
             </div>
 
             {/* Rating */}
@@ -278,55 +304,62 @@ export default function ProductInfo({
             </div>
 
             {/* Size selector */}
+            {allSizes.length > 0 && (
             <div>
                 <div className="text-sm font-semibold text-black mb-2">
                     Size: {selectedSize || "Select a size"}
                 </div>
-                <div className="flex gap-2">
-                    {STANDARD_SIZES.map((size) => {
+                <div className="flex flex-wrap gap-2">
+                    {allSizes.map((size) => {
                         const isAvailable = availableSizes.has(size);
                         const isSelected = selectedSize === size;
-                        
+
                         return (
-                            <button
+                            <Button
                                 key={size}
+                                variant={isSelected ? "default" : "outline"}
                                 onClick={() => handleSizeSelect(size)}
                                 disabled={!isAvailable}
-                                className={`px-4 py-2 border text-sm font-medium transition-all ${
+                                className={`px-4 py-2 text-sm font-medium ${
                                     isSelected
                                         ? "bg-black text-white border-black"
                                         : isAvailable
                                             ? "bg-white text-black border-gray-300 hover:border-black"
-                                            : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                            : "bg-gray-100 text-gray-400 border-gray-200"
                                 }`}
                             >
                                 {size}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
             </div>
+            )}
 
             {/* Color selector */}
+            {allColorIds.length > 0 && (
             <div>
                 <div className="text-sm font-semibold text-black mb-2">
-                    Màu: {selectedColor ? STANDARD_COLORS.find(c => c.name.toLowerCase() === selectedColor)?.name : "Select a color"}
+                    Màu: {selectedColorId ? colorMap.get(selectedColorId)?.name ?? "Unknown" : "Select a color"}
                 </div>
-                <div className="flex gap-3">
-                    {STANDARD_COLORS.map((c) => {
-                        const isAvailable = availableColors.has(c.name.toLowerCase());
-                        const isSelected = selectedColor === c.name.toLowerCase();
-                        
+                <div className="flex flex-wrap gap-3">
+                    {allColorIds.map((cId) => {
+                        const colorEntity = colorMap.get(cId);
+                        if (!colorEntity) return null;
+                        const isAvailable = availableColorIds.has(cId);
+                        const isSelected = selectedColorId === cId;
+
                         return (
-                            <button
-                                key={c.name}
-                                onClick={() => handleColorSelect(c.name)}
+                            <Button
+                                key={cId}
+                                variant="ghost"
+                                onClick={() => handleColorSelect(cId)}
                                 disabled={!isAvailable}
-                                className={`relative ${!isAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
-                                title={c.name}
+                                className={`relative p-0 h-auto ${!isAvailable ? 'opacity-40' : ''}`}
+                                title={colorEntity.name}
                             >
                                 <ColorSwatch
-                                    color={c.hex}
+                                    color={colorEntity.hexCode}
                                     variant={isSelected ? "clicked-lg" : "large"}
                                     onClick={() => {}}
                                 />
@@ -335,59 +368,62 @@ export default function ProductInfo({
                                         <div className="w-full h-0.5 bg-gray-400 rotate-45 transform origin-center"></div>
                                     </div>
                                 )}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
             </div>
+            )}
 
             {/* Quantity & Add to cart */}
             <div className="flex gap-3">
                 <div className="flex items-center border border-gray-300">
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={decrementQty}
-                        className="px-4 py-3 hover:bg-gray-100 transition-colors"
+                        className="px-4 py-3 h-auto"
                         aria-label="Decrease quantity"
                     >
                         -
-                    </button>
-                    <input
+                    </Button>
+                    <Input
                         type="text"
                         value={quantity}
                         readOnly
-                        className="w-16 text-center py-3 border-x border-gray-300 focus:outline-none"
+                        className="w-16 text-center py-3 h-auto border-x border-y-0 border-gray-300 shadow-none focus-visible:ring-0"
                     />
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={incrementQty}
-                        className="px-4 py-3 hover:bg-gray-100 transition-colors"
+                        className="px-4 py-3 h-auto"
                         aria-label="Increase quantity"
                     >
                         +
-                    </button>
+                    </Button>
                 </div>
-                <button 
-                    className="flex-1 bg-black text-white py-3 px-6 font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                <Button
+                    className="flex-1 bg-black text-white py-3 px-6 h-auto font-semibold hover:bg-gray-800"
                     disabled={!selectedVariant || displayStock === 0 || isLoading}
                     onClick={handleAddToCart}
                 >
                     {isLoading ? "Adding..." : displayStock === 0 ? "Out of Stock" : "Add to cart"}
-                </button>
+                </Button>
             </div>
 
             {/* Action buttons */}
             <div className="grid grid-cols-2 gap-3 text-sm">
-                <button className="flex items-center justify-center gap-2 border border-gray-300 py-3 hover:bg-gray-50 transition-colors">
+                <Button variant="outline" className="py-3 h-auto border-gray-300">
                     <i className="fas fa-balance-scale" />
                     So sánh
-                </button>
-                <button className="flex items-center justify-center gap-2 border border-gray-300 py-3 hover:bg-gray-50 transition-colors">
+                </Button>
+                <Button variant="outline" className="py-3 h-auto border-gray-300">
                     <i className="far fa-question-circle" />
                     Ask a question
-                </button>
-                <button className="col-span-2 flex items-center justify-center gap-2 border border-gray-300 py-3 hover:bg-gray-50 transition-colors">
+                </Button>
+                <Button variant="outline" className="col-span-2 py-3 h-auto border-gray-300">
                     <i className="fas fa-share-alt" />
                     Share
-                </button>
+                </Button>
             </div>
 
             {/* Shipping info */}

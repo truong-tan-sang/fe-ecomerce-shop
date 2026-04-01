@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { addressService } from "@/services/address";
 import type { CreateAddressDto, AddressDto } from "@/dto/address";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -289,12 +291,13 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
           <h2 className="text-lg font-bold">
             {editAddress ? "Cập nhật địa chỉ" : "Thêm địa chỉ mới"}
           </h2>
-          <button
+          <Button
+            variant="ghost"
             onClick={onClose}
-            className="text-gray-600 hover:text-black text-2xl leading-none"
+            className="text-gray-600 hover:text-black text-2xl leading-none h-auto p-1"
           >
             ×
-          </button>
+          </Button>
         </div>
 
         {/* Form */}
@@ -305,9 +308,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Họ và tên người nhận
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black"
                 value={formData.recipientName}
                 onChange={(e) => handleChange("recipientName", e.target.value)}
                 placeholder="Nhập họ tên"
@@ -317,9 +319,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Số điện thoại người nhận
               </label>
-              <input
+              <Input
                 type="tel"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black"
                 value={formData.recipientPhone}
                 onChange={(e) => handleChange("recipientPhone", e.target.value)}
                 placeholder="Nhập số điện thoại"
@@ -332,9 +333,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
             <label className="block text-sm font-medium mb-1">
               Địa chỉ <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               type="text"
-              className="w-full border px-3 py-2 focus:outline-none focus:border-black"
               value={formData.street}
               onChange={(e) => handleChange("street", e.target.value)}
               placeholder="Số nhà, tên đường"
@@ -348,9 +348,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Tỉnh/Thành phố <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black"
                 value={provinceSearch}
                 onChange={(e) => {
                   setProvinceSearch(e.target.value);
@@ -384,9 +383,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Quận/Huyện <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black disabled:bg-gray-50"
                 value={districtSearch}
                 onChange={(e) => {
                   setDistrictSearch(e.target.value);
@@ -396,6 +394,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
                 placeholder="Tìm quận/huyện"
                 disabled={!formData.province}
                 required
+                className="disabled:bg-gray-50"
               />
               {showDistrictDropdown && districts.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-black max-h-60 overflow-y-auto">
@@ -419,9 +418,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Phường/Xã <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black disabled:bg-gray-50"
                 value={wardSearch}
                 onChange={(e) => {
                   setWardSearch(e.target.value);
@@ -431,6 +429,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
                 placeholder="Tìm phường/xã"
                 disabled={!formData.district}
                 required
+                className="disabled:bg-gray-50"
               />
               {showWardDropdown && wards.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-black max-h-60 overflow-y-auto">
@@ -458,9 +457,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Mã bưu điện
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 focus:outline-none focus:border-black"
                 value={formData.zipCode}
                 onChange={(e) => handleChange("zipCode", e.target.value)}
                 placeholder="Nhập mã bưu điện"
@@ -470,9 +468,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               <label className="block text-sm font-medium mb-1">
                 Quốc gia
               </label>
-              <input
+              <Input
                 type="text"
-                className="w-full border px-3 py-2 bg-gray-50"
+                className="bg-gray-50"
                 value={formData.country}
                 onChange={(e) => handleChange("country", e.target.value)}
                 readOnly
@@ -489,21 +487,22 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 border border-black bg-white text-black px-4 py-3 hover:bg-gray-100 transition-colors"
+              className="flex-1 border-black px-4 py-3 h-auto"
               disabled={isSubmitting}
             >
               Hủy
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex-1 border border-black bg-black text-white px-4 py-3 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 bg-black text-white px-4 py-3 h-auto hover:bg-gray-800 disabled:bg-gray-400"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Đang lưu..." : editAddress ? "Cập nhật" : "Thêm địa chỉ"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

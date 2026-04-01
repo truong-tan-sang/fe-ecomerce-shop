@@ -8,6 +8,10 @@ import { addressService } from "../../services/address";
 import { useSession } from "next-auth/react";
 import AddressModal from "./AddressModal";
 import type { AddressDto } from "@/dto/address";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const subTabs = ["Hồ sơ", "Bảng Size", "Địa chỉ", "Đổi mật khẩu", "Xóa tài khoản"];
 
@@ -142,25 +146,18 @@ export default function ProfileContent() {
 
         try {
             const res = await userService.updateUser(
-                profile.id,
+                String(profile.id),
                 updatePayload,
                 session.user.access_token as string
             );
-            console.log("=== Backend Response ===");
-            console.log(JSON.stringify(res, null, 2));
-            console.log("=======================");
-            
-            if ((res as any)?.statusCode && (res as any).statusCode >= 400) {
-                setError((res as any).message || "Cập nhật thất bại");
-            } else {
-                setMessage("Cập nhật thành công");
-                setIsEditing(false);
-            }
-        } catch (e: any) {
-            console.error("=== Update Error ===");
-            console.error(e);
-            console.error("===================");
-            setError(e?.message || "Lỗi không xác định");
+            console.log("[ProfileContent] Update response:", JSON.stringify(res, null, 2));
+            setMessage("Cập nhật thành công");
+            setIsEditing(false);
+        } catch (error) {
+            console.error("[ProfileContent] Update error:", error);
+            const { ApiError } = await import("@/utils/api-error");
+            const msg = error instanceof ApiError ? error.message : "Lỗi không xác định";
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -171,17 +168,18 @@ export default function ProfileContent() {
             {/* Sub-tabs */}
             <div className="flex gap-0 mb-6 bg-white">
                 {subTabs.map((tab) => (
-                    <button
+                    <Button
                         key={tab}
+                        variant="ghost"
                         onClick={() => setActiveSubTab(tab)}
-                        className={`flex-1 text-center text-sm transition-all p-3 ${
+                        className={`flex-1 text-center text-sm h-auto p-3 ${
                             activeSubTab === tab
                                 ? "font-bold text-black relative after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-black"
                                 : "text-gray-600 hover:text-black"
                         }`}
                     >
                         {tab}
-                    </button>
+                    </Button>
                 ))}
             </div>
             <div className="bg-white px-14 py-10">            
@@ -192,89 +190,73 @@ export default function ProfileContent() {
                         {/* Left column - Form */}
                         <div className="flex-1 space-y-4 pr-8">
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Tên người dùng</label>
-                                <input
+                                <Label className="text-sm text-gray-600 font-normal">Tên người dùng</Label>
+                                <Input
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Nhập tên người dùng"
                                     disabled={!isEditing}
-                                    className="border px-3 py-2 text-sm disabled:bg-gray-50"
+                                    className="text-sm disabled:bg-gray-50"
                                 />
                             </div>
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Họ và tên</label>
-                                <input
+                                <Label className="text-sm text-gray-600 font-normal">Họ và tên</Label>
+                                <Input
                                     type="text"
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
                                     placeholder="Nhập họ và tên"
                                     disabled={!isEditing}
-                                    className="border px-3 py-2 text-sm disabled:bg-gray-50"
+                                    className="text-sm disabled:bg-gray-50"
                                 />
                             </div>
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Email</label>
-                                <input
+                                <Label className="text-sm text-gray-600 font-normal">Email</Label>
+                                <Input
                                     type="email"
                                     value={profile?.email || ""}
                                     readOnly
-                                    className="border px-3 py-2 text-sm bg-gray-50 text-gray-500"
+                                    className="text-sm bg-gray-50 text-gray-500"
                                 />
                             </div>
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Số điện thoại</label>
-                                <input
+                                <Label className="text-sm text-gray-600 font-normal">Số điện thoại</Label>
+                                <Input
                                     type="text"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
                                     placeholder="Nhập số điện thoại"
                                     disabled={!isEditing}
-                                    className="border px-3 py-2 text-sm disabled:bg-gray-50"
+                                    className="text-sm disabled:bg-gray-50"
                                 />
                             </div>
 
                             {/* Gender selection */}
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
-                                <label className="text-sm text-gray-600">Giới tính</label>
-                                <div className="flex gap-6">
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value="MALE"
-                                            checked={gender === "MALE"}
-                                            onChange={(e) => setGender(e.target.value as Gender)}
-                                            disabled={!isEditing}
-                                        />
+                                <Label className="text-sm text-gray-600 font-normal">Giới tính</Label>
+                                <RadioGroup
+                                    value={gender}
+                                    onValueChange={(value) => setGender(value as Gender)}
+                                    disabled={!isEditing}
+                                    className="flex gap-6"
+                                >
+                                    <Label className="flex items-center gap-2 cursor-pointer font-normal">
+                                        <RadioGroupItem value="MALE" />
                                         <span>Nam</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value="FEMALE"
-                                            checked={gender === "FEMALE"}
-                                            onChange={(e) => setGender(e.target.value as Gender)}
-                                            disabled={!isEditing}
-                                        />
+                                    </Label>
+                                    <Label className="flex items-center gap-2 cursor-pointer font-normal">
+                                        <RadioGroupItem value="FEMALE" />
                                         <span>Nữ</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value="OTHER"
-                                            checked={gender === "OTHER"}
-                                            onChange={(e) => setGender(e.target.value as Gender)}
-                                            disabled={!isEditing}
-                                        />
+                                    </Label>
+                                    <Label className="flex items-center gap-2 cursor-pointer font-normal">
+                                        <RadioGroupItem value="OTHER" />
                                         <span>Khác</span>
-                                    </label>
-                                </div>
+                                    </Label>
+                                </RadioGroup>
                             </div>
 
                             {/* Unsupported field group (gender) removed per OpenAPI absence */}
@@ -286,7 +268,7 @@ export default function ProfileContent() {
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                                 <div />
                                 <div className="flex flex-col gap-2">
-                                    <button
+                                    <Button
                                         onClick={() => {
                                             if (isEditing) {
                                                 handleSave();
@@ -295,10 +277,10 @@ export default function ProfileContent() {
                                             }
                                         }}
                                         disabled={loading}
-                                        className="bg-black text-white px-6 py-2 text-sm font-semibold hover:bg-gray-800 w-fit disabled:opacity-60"
+                                        className="bg-black text-white px-6 py-2 h-auto text-sm font-semibold hover:bg-gray-800 w-fit"
                                     >
                                         {loading ? "Đang lưu..." : isEditing ? "Lưu" : "Sửa hồ sơ"}
-                                    </button>
+                                    </Button>
                                     {message && <div className="text-green-600 text-sm">{message}</div>}
                                     {error && <div className="text-red-600 text-sm">{error}</div>}
                                 </div>
@@ -315,9 +297,9 @@ export default function ProfileContent() {
                                     className="object-cover"
                                 />
                             </div>
-                            <button className="text-sm border border-gray-300 px-4 py-2 hover:bg-gray-50">
+                            <Button variant="outline" className="text-sm border-gray-300 px-4 py-2 h-auto">
                                 Chọn Ảnh
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -331,12 +313,12 @@ export default function ProfileContent() {
                 <div>
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-lg font-bold">Địa chỉ của tôi</h2>
-                        <button
+                        <Button
                             onClick={handleAddAddress}
-                            className="bg-black text-white px-4 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2"
+                            className="bg-black text-white px-4 py-2 h-auto text-sm hover:bg-gray-800 flex items-center gap-2"
                         >
                             <span>+</span> Thêm địa chỉ mới
-                        </button>
+                        </Button>
                     </div>
 
                     {isLoadingAddresses ? (
@@ -345,12 +327,13 @@ export default function ProfileContent() {
                         <div className="border border-dashed border-gray-300 p-12 text-center text-gray-500">
                             <i className="fa-solid fa-location-dot text-4xl mb-4 text-gray-300" />
                             <p>Bạn chưa có địa chỉ nào</p>
-                            <button
+                            <Button
+                                variant="outline"
                                 onClick={handleAddAddress}
-                                className="mt-4 border border-black bg-white text-black px-4 py-2 text-sm hover:bg-gray-100"
+                                className="mt-4 border-black px-4 py-2 h-auto text-sm"
                             >
                                 Thêm địa chỉ mới
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -386,25 +369,28 @@ export default function ProfileContent() {
                                             </div>
                                             
                                             <div className="flex gap-2 ml-4">
-                                                <button
+                                                <Button
+                                                    variant="outline"
                                                     onClick={() => handleDeleteAddress(address.id)}
-                                                    className="text-red-600 border border-red-600 px-3 py-1 text-sm hover:bg-red-50"
+                                                    className="text-red-600 border-red-600 px-3 py-1 h-auto text-sm hover:bg-red-50 hover:text-red-600"
                                                 >
                                                     Xóa
-                                                </button>
-                                                <button
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
                                                     onClick={() => handleEditAddress(address)}
-                                                    className="border border-black px-3 py-1 text-sm hover:bg-gray-100"
+                                                    className="border-black px-3 py-1 h-auto text-sm"
                                                 >
                                                     Cập nhật
-                                                </button>
+                                                </Button>
                                                 {!isDefault && (
-                                                    <button
+                                                    <Button
+                                                        variant="outline"
                                                         onClick={() => handleSetDefaultAddress(address.id)}
-                                                        className="border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
+                                                        className="border-gray-300 px-3 py-1 h-auto text-sm"
                                                     >
                                                         Đặt làm mặc định
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </div>
                                         </div>

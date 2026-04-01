@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Star } from "lucide-react";
-import type { ProductVariantDto } from "@/dto/product-detail";
+import type { ProductVariantEntity } from "@/dto/product-variant";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ReviewFormProps {
   productId: number;
   userId: number;
-  variants: ProductVariantDto[];
+  variants: ProductVariantEntity[];
   initialData?: {
     reviewId: number;
     rating: number;
@@ -93,13 +95,15 @@ export default function ReviewForm({
         <label className="block text-sm font-medium mb-2">Rating</label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
-            <button
+            <Button
               key={star}
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onMouseEnter={() => setHoveredRating(star)}
               onMouseLeave={() => setHoveredRating(0)}
               onClick={() => setRating(star)}
-              className="p-1 hover:scale-110 transition-transform"
+              className="p-1 h-auto w-auto hover:scale-110 transition-transform"
             >
               <Star
                 size={24}
@@ -109,7 +113,7 @@ export default function ReviewForm({
                     : "fill-none stroke-gray-400"
                 }
               />
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -121,20 +125,17 @@ export default function ReviewForm({
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
           {variants.map((variant) => (
-            <button
+            <Button
               key={variant.id}
               type="button"
+              variant={selectedVariantId === variant.id ? "default" : "outline"}
               onClick={() => setSelectedVariantId(variant.id)}
               disabled={variant.stock === 0}
-              className={`
-                border p-3 text-left transition-colors text-sm
-                ${
-                  selectedVariantId === variant.id
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300 hover:border-gray-500"
-                }
-                ${variant.stock === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-              `}
+              className={`h-auto p-3 text-left justify-start flex-col items-start text-sm ${
+                selectedVariantId === variant.id
+                  ? "bg-black text-white border-black"
+                  : "border-gray-300 hover:border-gray-500"
+              } ${variant.stock === 0 ? "opacity-50" : ""}`}
             >
               <div className="font-medium">
                 {variant.variantSize} - {variant.variantColor}
@@ -142,7 +143,7 @@ export default function ReviewForm({
               <div className="text-xs mt-1 opacity-75">
                 {variant.stock === 0 ? "Out of stock" : `Stock: ${variant.stock}`}
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -150,12 +151,12 @@ export default function ReviewForm({
       {/* Comment */}
       <div className="mb-4">
         <label className="block text-sm font-medium mb-2">Your Review</label>
-        <textarea
+        <Textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share your thoughts about this product..."
           rows={4}
-          className="w-full border border-gray-300 p-3 focus:outline-none focus:border-black"
+          className="border-gray-300 p-3 focus-visible:border-black resize-none"
           disabled={isSubmitting}
         />
       </div>
@@ -169,23 +170,24 @@ export default function ReviewForm({
 
       {/* Actions */}
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 border border-black bg-black text-white px-4 py-2 hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 bg-black text-white px-4 py-2 h-auto hover:bg-gray-900"
         >
           {isSubmitting ? "Submitting..." : initialData ? "Update Review" : "Submit Review"}
-        </button>
-        
+        </Button>
+
         {onCancel && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 border border-black bg-white text-black px-4 py-2 hover:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 border-black px-4 py-2 h-auto"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

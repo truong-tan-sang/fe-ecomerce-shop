@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { orderService } from "@/services/order";
 import type { OrderDto } from "@/dto/order";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const VND = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
@@ -45,9 +47,14 @@ export default function OrdersContent() {
     const statusMap: Record<string, { text: string; color: string }> = {
       PENDING: { text: "ĐANG XỬ LÝ", color: "text-orange-600" },
       PROCESSING: { text: "ĐANG XỬ LÝ", color: "text-orange-600" },
+      PAYMENT_PROCESSING: { text: "CHỜ THANH TOÁN", color: "text-amber-600" },
+      PAYMENT_CONFIRMED: { text: "ĐÃ THANH TOÁN", color: "text-blue-600" },
+      WAITING_FOR_PICKUP: { text: "CHỜ LẤY HÀNG", color: "text-blue-600" },
       SHIPPED: { text: "ĐANG GIAO", color: "text-blue-600" },
       DELIVERED: { text: "ĐÃ GIAO", color: "text-green-600" },
+      COMPLETED: { text: "HOÀN THÀNH", color: "text-green-600" },
       CANCELLED: { text: "ĐÃ HUỶ", color: "text-red-600" },
+      RETURNED: { text: "ĐÃ TRẢ HÀNG", color: "text-red-600" },
     };
     return statusMap[status] || { text: status, color: "text-gray-600" };
   };
@@ -68,14 +75,14 @@ export default function OrdersContent() {
       <div className="mb-6">
         <div className="flex items-center gap-3 max-w-2xl">
           <div className="flex-1 flex items-stretch border">
-            <input
+            <Input
               type="text"
               placeholder="Tìm kiếm theo Tên Shop, ID đơn hàng hoặc Tên Sản phẩm"
-              className="flex-1 px-4 py-2 text-sm focus:outline-none"
+              className="flex-1 text-sm border-0 shadow-none focus-visible:ring-0"
             />
-            <button className="px-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <Button variant="ghost" className="px-4 bg-gray-50 hover:bg-gray-100 h-auto">
               <i className="fa-solid fa-magnifying-glass text-gray-600" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -126,24 +133,24 @@ export default function OrdersContent() {
                   <div className="flex items-center gap-2">
                     {order.status === "DELIVERED" ? (
                       <>
-                        <button className="px-4 py-2 border border-black text-sm font-semibold hover:bg-gray-100">
+                        <Button variant="outline" className="px-4 py-2 h-auto border-black text-sm font-semibold">
                           Đánh giá
-                        </button>
-                        <button className="px-4 py-2 border border-gray-300 text-sm hover:bg-gray-100">
+                        </Button>
+                        <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm">
                           Yêu cầu trả hàng/hoàn tiền
-                        </button>
-                        <button className="px-4 py-2 border border-gray-300 text-sm hover:bg-gray-100">
+                        </Button>
+                        <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm">
                           Mua lại
-                        </button>
+                        </Button>
                       </>
                     ) : order.status === "CANCELLED" ? (
-                      <button className="px-4 py-2 border border-gray-300 text-sm hover:bg-gray-100">
+                      <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm">
                         Mua lại
-                      </button>
+                      </Button>
                     ) : (
-                      <button className="px-4 py-2 border border-red-500 text-red-600 text-sm font-semibold hover:bg-red-50">
+                      <Button variant="outline" className="px-4 py-2 h-auto border-red-500 text-red-600 text-sm font-semibold hover:bg-red-50 hover:text-red-600">
                         Yêu cầu hủy
-                      </button>
+                      </Button>
                     )}
                   </div>
                   <div className="text-right">

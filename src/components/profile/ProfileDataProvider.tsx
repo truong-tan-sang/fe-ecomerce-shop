@@ -17,15 +17,17 @@ export default async function ProfileDataProvider({
       const res = await userService.getUser(session.user.id, session.user.access_token);
       console.log("[ProfileDataProvider] /user/{id} response:", JSON.stringify(res, null, 2));
       if (res?.data) {
-        const d: any = res.data;
+        const d = res.data;
         profile = {
-          id: d.id || d._id || session.user.id,
-          name: d.name || d.fullName || session.user.name,
+          id: d.id || session.user.id,
+          name: d.name || session.user.name,
           email: d.email || session.user.email,
           phone: d.phone,
-          image: d.image || d.avatar,
+          image: d.image,
           username: d.username,
-          ...d,
+          gender: d.gender ?? undefined,
+          firstName: d.firstName ?? undefined,
+          lastName: d.lastName ?? undefined,
         };
         if (profile) {
           console.log("[ProfileDataProvider] Normalized profile id:", profile.id);

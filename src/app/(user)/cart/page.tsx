@@ -5,8 +5,13 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cartService } from "@/services/cart";
 import type { CartItemWithDetails } from "@/dto/cart-api";
+import { mapCartItemToDetails } from "@/dto/cart-api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const VND = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
@@ -36,23 +41,8 @@ export default function CartPage() {
                 );
 
                 console.log("[CartPage] Cart details:", cartDetailsResponse);
-                const payload = cartDetailsResponse.data as any;
-                const cartItems = Array.isArray(payload?.cartItems) ? payload.cartItems : [];
-                const itemsParsed: CartItemWithDetails[] = cartItems.map((ci: any) => ({
-                    id: ci.id,
-                    cartId: ci.cartId,
-                    productVariantId: ci.productVariantId,
-                    quantity: ci.quantity,
-                    createdAt: ci.createdAt,
-                    updatedAt: ci.updatedAt,
-                    productName: ci.productVariant?.variantName ?? undefined,
-                    variantSize: ci.productVariant?.variantSize ?? null,
-                    variantColor: ci.productVariant?.variantColor ?? null,
-                    price: ci.productVariant?.price ?? 0,
-                    imageUrl: ci.productVariant?.media?.[0]?.url ?? null,
-                }));
-
-                setItems(itemsParsed);
+                const cartItems = cartDetailsResponse.data?.cartItems ?? [];
+                setItems(cartItems.map(mapCartItemToDetails));
             } catch (error) {
                 console.error("[CartPage] Failed to load cart:", error);
                 setItems([]);
@@ -136,6 +126,9 @@ export default function CartPage() {
 
     const removeSelected = async () => {
         if (!session?.user?.access_token) return;
+        if (selectedIds.size === 0) return;
+
+        if (!window.confirm(`Xóa ${selectedIds.size} sản phẩm đã chọn?`)) return;
 
         const idsToRemove = Array.from(selectedIds);
         try {
@@ -155,7 +148,7 @@ export default function CartPage() {
             <div className="min-h-dvh flex flex-col">
                 <Header />
                 <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6">
-                    <div className="text-center py-12">Loading cart...</div>
+                    <div className="text-center py-12">Đang tải...</div>
                 </main>
             </div>
         );
@@ -166,7 +159,7 @@ export default function CartPage() {
             <div className="min-h-dvh flex flex-col">
                 <Header />
                 <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6">
-                    <div className="text-center py-12">Please log in to view your cart</div>
+                    <div className="text-center py-12">Vui lòng đăng nhập để xem giỏ hàng</div>
                 </main>
             </div>
         );
@@ -176,13 +169,16 @@ export default function CartPage() {
         <div className="min-h-dvh flex flex-col bg-gray-50">
             <Header />
             <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-8 pt-32 md:pt-36">
+                <Link href="/homepage" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-black mb-4 cursor-pointer">
+                    <i className="fa-solid fa-arrow-left text-xs" />
+                    Tiếp tục mua sắm
+                </Link>
+
                 {/* Header Row */}
                 <div className="grid grid-cols-[24px_1fr_120px_160px_120px_80px] items-center gap-3 border bg-white px-4 py-3 text-sm text-gray-600">
-                    <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded-none border border-black accent-black cursor-pointer"
+                    <Checkbox
                         checked={allSelected}
-                        onChange={(e) => toggleAll(e.target.checked)}
+                        onCheckedChange={(checked) => toggleAll(checked === true)}
                         aria-label="Chọn tất cả"
                     />
                     <div className="font-medium">Sản phẩm</div>
@@ -196,16 +192,14 @@ export default function CartPage() {
                 <div className="space-y-4 mt-4">
                     {items.length === 0 ? (
                         <div className="text-center py-12 bg-white">
-                            <p className="text-gray-600">Your cart is empty</p>
+                            <p className="text-gray-600">Giỏ hàng của bạn đang trống</p>
                         </div>
                     ) : (
                         items.map((it) => (
                             <div key={it.id} className="grid grid-cols-[24px_1fr_120px_160px_120px_80px] gap-3 items-center px-4 py-5 bg-white">
-                                <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded-none border border-black accent-black cursor-pointer"
+                                <Checkbox
                                     checked={selectedIds.has(it.id)}
-                                    onChange={(e) => toggleItem(it.id, e.target.checked)}
+                                    onCheckedChange={(checked) => toggleItem(it.id, checked === true)}
                                     aria-label="Chọn sản phẩm"
                                 />
 
@@ -234,26 +228,28 @@ export default function CartPage() {
                                 {/* Quantity */}
                                 <div className="justify-self-center">
                                     <div className="inline-flex border">
-                                        <button
-                                            className="px-3 py-2 hover:bg-gray-100"
+                                        <Button
+                                            variant="ghost"
+                                            className="px-3 py-2 h-auto"
                                             onClick={() => updateQuantity(it, it.quantity - 1)}
                                             aria-label="Giảm số lượng"
                                         >
                                             -
-                                        </button>
-                                        <input
-                                            className="w-12 text-center border-x py-2"
+                                        </Button>
+                                        <Input
+                                            className="w-12 text-center border-x border-y-0 py-2 h-auto shadow-none focus-visible:ring-0"
                                             type="text"
                                             readOnly
                                             value={it.quantity}
                                         />
-                                        <button
-                                            className="px-3 py-2 hover:bg-gray-100"
+                                        <Button
+                                            variant="ghost"
+                                            className="px-3 py-2 h-auto"
                                             onClick={() => updateQuantity(it, it.quantity + 1)}
                                             aria-label="Tăng số lượng"
                                         >
                                             +
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -262,7 +258,7 @@ export default function CartPage() {
 
                                 {/* Actions */}
                                 <div className="justify-self-end">
-                                    <button className="text-sm text-gray-600 hover:text-red-600" onClick={() => removeItem(it.id)}>Xóa</button>
+                                    <Button variant="ghost" className="text-sm text-gray-600 hover:text-red-600 h-auto p-0" onClick={() => removeItem(it.id)}>Xóa</Button>
                                 </div>
                             </div>
                         ))
@@ -272,18 +268,16 @@ export default function CartPage() {
                 {/* Footer actions */}
                 <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-4 border px-4 py-4 bg-white">
                     <div className="flex items-center gap-4 text-sm">
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded-none border border-black accent-black cursor-pointer"
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox
                                 checked={allSelected}
-                                onChange={(e) => toggleAll(e.target.checked)}
+                                onCheckedChange={(checked) => toggleAll(checked === true)}
                             />
                             Chọn tất cả ({items.length})
                         </label>
-                        <button className="text-gray-600 hover:text-red-600" onClick={removeSelected}>
+                        <Button variant="ghost" className="text-gray-600 hover:text-red-600 h-auto p-0" onClick={removeSelected}>
                             Xóa
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -291,8 +285,8 @@ export default function CartPage() {
                             Tổng cộng (<span className="font-medium">{selectedCount} Sản phẩm</span>):
                         </div>
                         <div className="text-xl font-bold text-black">{VND.format(total)}</div>
-                        <button
-                            className="ml-2 bg-black text-white px-6 py-3 font-semibold hover:bg-gray-800 whitespace-nowrap disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        <Button
+                            className="ml-2 bg-black text-white px-6 py-3 h-auto font-semibold hover:bg-gray-800 whitespace-nowrap disabled:bg-gray-300"
                             disabled={selectedCount === 0}
                             onClick={() => {
                                 const selectedIdsParam = Array.from(selectedIds).join(',');
@@ -300,7 +294,7 @@ export default function CartPage() {
                             }}
                         >
                             Mua hàng
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </main>

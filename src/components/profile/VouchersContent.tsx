@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 const mockVouchers = [
   {
     id: "1",
@@ -72,32 +75,32 @@ export default function VouchersContent() {
       <div className="mb-6">
         <div className="flex items-center gap-3 max-w-2xl">
           <div className="flex-1 flex items-stretch border">
-            <input
+            <Input
               type="text"
               placeholder="Tìm kiếm voucher theo mã hoặc tên"
-              className="flex-1 px-4 py-2 text-sm focus:outline-none"
+              className="flex-1 text-sm border-0 shadow-none focus-visible:ring-0"
             />
-            <button className="px-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <Button variant="ghost" className="px-4 bg-gray-50 hover:bg-gray-100 h-auto">
               <i className="fa-solid fa-magnifying-glass text-gray-600" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Filter tabs */}
       <div className="flex items-center gap-4 mb-6 border-b">
-        <button className="pb-2 text-sm font-bold text-black border-b-2 border-black">
+        <Button variant="ghost" className="pb-2 px-0 h-auto text-sm font-bold text-black border-b-2 border-black rounded-none hover:bg-transparent">
           Tất cả
-        </button>
-        <button className="pb-2 text-sm text-gray-600 hover:text-black">
+        </Button>
+        <Button variant="ghost" className="pb-2 px-0 h-auto text-sm text-gray-600 hover:text-black rounded-none hover:bg-transparent">
           Đang hoạt động
-        </button>
-        <button className="pb-2 text-sm text-gray-600 hover:text-black">
+        </Button>
+        <Button variant="ghost" className="pb-2 px-0 h-auto text-sm text-gray-600 hover:text-black rounded-none hover:bg-transparent">
           Sắp diễn ra
-        </button>
-        <button className="pb-2 text-sm text-gray-600 hover:text-black">
+        </Button>
+        <Button variant="ghost" className="pb-2 px-0 h-auto text-sm text-gray-600 hover:text-black rounded-none hover:bg-transparent">
           Đã hết hạn
-        </button>
+        </Button>
       </div>
 
       {/* Vouchers grid */}
@@ -127,9 +130,9 @@ export default function VouchersContent() {
                 <span className="flex-1 text-xs font-mono font-semibold">
                   {voucher.code}
                 </span>
-                <button className="text-xs text-blue-600 hover:underline">
+                <Button variant="link" className="text-xs text-blue-600 h-auto p-0">
                   Sao chép
-                </button>
+                </Button>
               </div>
 
               {/* Validity period */}
@@ -162,9 +165,9 @@ export default function VouchersContent() {
                     : "Đã hết hạn"}
                 </span>
                 {voucher.status === "active" && (
-                  <button className="text-xs text-blue-600 hover:underline font-semibold">
+                  <Button variant="link" className="text-xs text-blue-600 font-semibold h-auto p-0">
                     Dùng ngay
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

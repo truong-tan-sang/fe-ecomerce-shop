@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import ReviewItem from "./ReviewItem";
-import type { ReviewDto, ProductVariantDto } from "@/dto/product-detail";
+import type { ReviewDto } from "@/dto/product-detail";
+import type { ProductVariantEntity } from "@/dto/product-variant";
 
 interface ReviewSectionProps {
   productId: number;
   initialReviews: ReviewDto[];
-  variants: ProductVariantDto[];
+  variants: ProductVariantEntity[];
 }
 
 export default function ReviewSection({

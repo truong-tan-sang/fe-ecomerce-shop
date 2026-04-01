@@ -4,18 +4,17 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import ProductCard from "./ProductCard";
 import { ToastContainer } from "../toast";
-import { addToCart } from "@/utils/cart";
 import type { ProductDto } from "@/dto/product";
-
-const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80";
+import type { ColorEntity } from "@/dto/color";
 
 interface ProductGridProps {
   initialProducts: ProductDto[];
   initialPage: number;
   initialHasMore: boolean;
+  colors: ColorEntity[];
 }
 
-export default function ProductGrid({ initialProducts, initialPage, initialHasMore }: ProductGridProps) {
+export default function ProductGrid({ initialProducts, initialPage, initialHasMore, colors }: ProductGridProps) {
   const [products, setProducts] = useState<ProductDto[]>(initialProducts);
   const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -102,46 +101,16 @@ export default function ProductGrid({ initialProducts, initialPage, initialHasMo
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-2">
         {products.length > 0 ? (
-          products.map((product) => {
-            // Extract first image from product variants
-            const imageUrl = product.productVariants?.[0]?.media?.[0]?.mediaPath || PLACEHOLDER_IMAGE;
-
-            const handleQuickAdd = () => {
-              const variant = product.productVariants?.[0];
-              if (!variant) {
-                pushToast("Không có phiên bản để thêm vào giỏ", "error");
-                return;
-              }
-
-              addToCart({
-                productId: product.id,
-                productName: product.name,
-                variantId: variant.id,
-                variantSize: null,
-                variantColor: null,
-                price: variant.price ?? product.price,
-                qty: 1,
-                imageUrl,
-                selected: true,
-              });
-
-              pushToast("Đã thêm vào giỏ hàng", "success");
-            };
-            
-            return (
+          products.map((product) => (
               <ProductCard
                 key={product.id}
                 id={String(product.id)}
-                imageUrl={imageUrl}
                 name={product.name}
-                price={product.price ? `${product.price.toLocaleString('vi-VN')} ₫` : "Liên hệ"}
                 stock={product.stock}
-                variantCount={product.productVariants?.length ?? 0}
-                colors={[]}
-                onQuickAdd={handleQuickAdd}
+                variants={product.productVariants ?? []}
+                colors={colors}
               />
-            );
-          })
+          ))
         ) : (
           <div className="col-span-full text-center py-12 text-gray-500">
             Không có sản phẩm nào để hiển thị

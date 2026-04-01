@@ -2,8 +2,10 @@ import Header from "@/components/header/navbar";
 import HeroBanner from "@/components/home/HeroBanner";
 import ProductGrid from "@/components/product/ProductGrid";
 import { productService } from "@/services/product";
+import { colorService } from "@/services/color";
 import { auth } from "@/auth";
 import type { ProductDto } from "@/dto/product";
+import type { ColorEntity } from "@/dto/color";
 
 export default async function HomePage() {
   // Get session for access token
@@ -14,21 +16,31 @@ export default async function HomePage() {
   let initialProducts: ProductDto[] = [];
   let initialPage = 1;
   let initialHasMore = false;
+  let colors: ColorEntity[] = [];
 
   try {
-    console.log("[HomePage] Fetching initial products with token:", accessToken?.substring(0, 20));
-    const res = await productService.getAllProducts({ page: 1, perPage: 20});
-    console.log("[HomePage] Products API response:", res);
-    
+    console.log("[HomePage] Fetching initial products and colors");
+    const [productsRes, colorsRes] = await Promise.all([
+      productService.getAllProducts({ page: 1, perPage: 20 }),
+      colorService.getAllColors(),
+    ]);
+    console.log("[HomePage] Products API response:", productsRes);
+    console.log("[HomePage] Colors API response:", colorsRes);
+
     // Backend returns products directly in data array (no pagination meta)
-    if (res?.data && Array.isArray(res.data)) {
-      initialProducts = res.data;
+    if (productsRes?.data && Array.isArray(productsRes.data)) {
+      initialProducts = productsRes.data;
       initialPage = 1;
       initialHasMore = initialProducts.length === 20;
       console.log("[HomePage] Loaded", initialProducts.length, "products; hasMore:", initialHasMore);
     }
+
+    if (colorsRes?.data && Array.isArray(colorsRes.data)) {
+      colors = colorsRes.data;
+      console.log("[HomePage] Loaded", colors.length, "colors");
+    }
   } catch (error) {
-    console.error("[HomePage] Failed to fetch products:", error);
+    console.error("[HomePage] Failed to fetch products/colors:", error);
   }
 
   return (
@@ -51,10 +63,11 @@ export default async function HomePage() {
         </div>
 
         {/* Product Grid with Infinite Scroll */}
-        <ProductGrid 
+        <ProductGrid
           initialProducts={initialProducts}
           initialPage={initialPage}
           initialHasMore={initialHasMore}
+          colors={colors}
         />
       </main>
     </div>

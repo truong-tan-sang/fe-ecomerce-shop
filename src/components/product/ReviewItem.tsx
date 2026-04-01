@@ -1,11 +1,12 @@
 "use client";
 
 import { Star } from "lucide-react";
-import type { ReviewDto, ProductVariantDto } from "@/dto/product-detail";
+import type { ReviewDto } from "@/dto/product-detail";
+import type { ProductVariantEntity } from "@/dto/product-variant";
 
 interface ReviewItemProps {
   review: ReviewDto;
-  variant: ProductVariantDto | null;
+  variant: ProductVariantEntity | null;
 }
 
 export default function ReviewItem({ review, variant }: ReviewItemProps) {

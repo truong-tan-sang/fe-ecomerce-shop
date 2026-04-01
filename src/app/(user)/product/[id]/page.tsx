@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import Header from "@/components/header/navbar";
-import ProductGallery from "@/components/product/ProductGallery";
-import ProductInfo from "@/components/product/ProductInfo";
+import ProductDetailClient from "@/components/product/ProductDetailClient";
 import ReviewSection from "@/components/product/ReviewSection";
 import { productService } from "@/services/product";
-import type { ProductDetailDto, ProductVariantDto, ReviewDto } from "@/dto/product-detail";
-
-const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80";
+import { colorService } from "@/services/color";
+import type { ReviewDto } from "@/dto/product-detail";
+import type { ProductDto } from "@/dto/product";
+import type { ProductVariantEntity } from "@/dto/product-variant";
+import type { ColorEntity } from "@/dto/color";
 
 // Helper to calculate average rating
 function calculateAverageRating(reviews: ReviewDto[]): number {
@@ -30,26 +31,30 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const accessToken = session?.user?.access_token;
 
   // Fetch product data in parallel
-  let product: ProductDetailDto | null = null;
-  let variants: ProductVariantDto[] = [];
+  let product: ProductDto | null = null;
+  let variants: ProductVariantEntity[] = [];
   let reviews: ReviewDto[] = [];
+  let colors: ColorEntity[] = [];
 
   try {
     console.log(`[ProductDetail] Fetching data for product ${id}`);
-    
-    const [productRes, variantsRes, reviewsRes] = await Promise.all([
+
+    const [productRes, variantsRes, reviewsRes, colorsRes] = await Promise.all([
       productService.getProductById(id, accessToken),
       productService.getProductVariants(id, accessToken),
       productService.getProductReviews(id, accessToken),
+      colorService.getAllColors(),
     ]);
 
     console.log("[ProductDetail] Product response:", productRes);
     console.log("[ProductDetail] Variants response:", variantsRes);
     console.log("[ProductDetail] Reviews response:", reviewsRes);
+    console.log("[ProductDetail] Colors response:", colorsRes);
 
     product = productRes?.data || null;
     variants = Array.isArray(variantsRes?.data) ? variantsRes.data : [];
     reviews = Array.isArray(reviewsRes?.data) ? reviewsRes.data : [];
+    colors = Array.isArray(colorsRes?.data) ? colorsRes.data : [];
   } catch (error) {
     console.error("[ProductDetail] Failed to fetch product data:", error);
   }
@@ -63,31 +68,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const averageRating = calculateAverageRating(reviews);
   const reviewCount = reviews.length;
 
-  // Collect images from variants (placeholder if none)
-  const images = variants.length > 0 
-    ? [PLACEHOLDER_IMAGE] // TODO: Backend needs to provide variant images via media endpoint
-    : [PLACEHOLDER_IMAGE];
-
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
       <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left: Image Gallery */}
-          <ProductGallery images={images} />
-
-          {/* Right: Product Info */}
-          <ProductInfo
-            brand={product.name.split(' ')[0] || 'Brand'} // Extract brand from product name
-            name={product.name}
-            rating={averageRating}
-            reviewCount={reviewCount}
-            basePrice={product.price}
-            viewersCount={0} // TODO: Backend doesn't provide viewer count yet
-            baseStock={product.stock}
-            variants={variants}
-          />
-        </div>
+        <ProductDetailClient
+          brand={product.name.split(' ')[0] || 'Brand'}
+          name={product.name}
+          rating={averageRating}
+          reviewCount={reviewCount}
+          basePrice={product.price}
+          baseStock={product.stock}
+          variantsWithMedia={product.productVariants ?? []}
+          variants={variants}
+          colors={colors}
+        />
 
         {/* Review Section (display-only) */}
         <ReviewSection

@@ -2,13 +2,15 @@
 import React, { createContext, useContext } from "react";
 
 export type ProfileData = {
-  id: string;
+  id: string | number;
   name?: string;
   email: string;
   phone?: string;
   image?: string;
   username?: string;
-  [key: string]: any;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  firstName?: string;
+  lastName?: string;
 };
 
 const Ctx = createContext<ProfileData | null>(null);
