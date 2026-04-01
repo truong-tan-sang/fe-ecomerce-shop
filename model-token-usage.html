@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Claude Model Token Usage by Effort</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #e5e5e5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.3px; }
+    p.sub { font-size: 0.82rem; color: #888; margin-bottom: 36px; }
+    .chart-wrap {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 820px;
+    }
+    canvas { width: 100% !important; }
+    .legend {
+      display: flex;
+      gap: 24px;
+      margin-top: 28px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #ccc;
+    }
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+    }
+    .note {
+      margin-top: 24px;
+      font-size: 0.75rem;
+      color: #555;
+      text-align: center;
+    }
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 28px;
+      width: 100%;
+      max-width: 820px;
+    }
+    .stat-card {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .stat-card .label { font-size: 0.72rem; color: #666; text-transform: uppercase; letter-spacing: 0.6px; }
+    .stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+    .stat-card .model { font-size: 0.75rem; color: #777; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <h1>Claude Model Token Usage by Effort Level</h1>
+  <p class="sub">Average tokens consumed per request (input + thinking + output)</p>
+
+  <div class="chart-wrap">
+    <canvas id="chart" height="340"></canvas>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Most Efficient</div>
+      <div class="value" style="color:#60a5fa">~2.1K</div>
+      <div class="model">Haiku 4.5 · Low effort</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Balanced Default</div>
+      <div class="value" style="color:#a78bfa">~9.6K</div>
+      <div class="model">Sonnet 4.6 · Medium effort</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Max Capability</div>
+      <div class="value" style="color:#f97316">~52K</div>
+      <div class="model">Opus 4.6 · High effort</div>
+    </div>
+  </div>
+
+  <p class="note">* Illustrative averages. Actual usage varies by task complexity and prompt length. Thinking tokens apply to extended thinking budget.</p>
+
+  <script>
+    const efforts = ['Low Effort', 'Medium Effort', 'High Effort'];
+
+    // Approximate avg tokens (input + thinking + output) per request
+    const data = {
+      haiku:  [2100,  5800,  16400],   // fast, cheap — limited thinking
+      sonnet: [3400,  9600,  28500],   // balanced — good extended thinking
+      opus:   [5200,  18200, 52000],   // most capable — large thinking budget
+    };
+
+    const colors = {
+      haiku:  { bg: 'rgba(96,165,250,0.75)',  border: '#60a5fa' },
+      sonnet: { bg: 'rgba(167,139,250,0.75)', border: '#a78bfa' },
+      opus:   { bg: 'rgba(249,115,22,0.75)',  border: '#f97316' },
+    };
+
+    const ctx = document.getElementById('chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: efforts,
+        datasets: [
+          {
+            label: 'Haiku 4.5',
+            data: data.haiku,
+            backgroundColor: colors.haiku.bg,
+            borderColor: colors.haiku.border,
+            borderWidth: 1.5,
+            borderRadius: 5,
+          },
+          {
+            label: 'Sonnet 4.6',
+            data: data.sonnet,
+            backgroundColor: colors.sonnet.bg,
+            borderColor: colors.sonnet.border,
+            borderWidth: 1.5,
+            borderRadius: 5,
+          },
+          {
+            label: 'Opus 4.6',
+            data: data.opus,
+            backgroundColor: colors.opus.bg,
+            borderColor: colors.opus.border,
+            borderWidth: 1.5,
+            borderRadius: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#ccc',
+              font: { size: 12 },
+              boxWidth: 14,
+              borderRadius: 3,
+              useBorderRadius: true,
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const v = ctx.parsed.y;
+                return ` ${ctx.dataset.label}: ${v >= 1000 ? (v/1000).toFixed(1)+'K' : v} tokens`;
+              }
+            },
+            backgroundColor: '#222',
+            borderColor: '#333',
+            borderWidth: 1,
+            titleColor: '#eee',
+            bodyColor: '#ccc',
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#aaa', font: { size: 12 } },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            border: { color: '#333' },
+          },
+          y: {
+            ticks: {
+              color: '#888',
+              font: { size: 11 },
+              callback: v => v >= 1000 ? (v/1000) + 'K' : v,
+            },
+            grid: { color: 'rgba(255,255,255,0.07)' },
+            border: { color: '#333' },
+            title: {
+              display: true,
+              text: 'Avg Tokens per Request',
+              color: '#666',
+              font: { size: 11 },
+            },
+          },
+        },
+      },
+    });
+  </script>
+</body>
+</html>

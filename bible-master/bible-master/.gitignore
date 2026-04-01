@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.mcp.json
+node_modules/
+tmpclaude-*
+.claude/settings.local.json
+temp/

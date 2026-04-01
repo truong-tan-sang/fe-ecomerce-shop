@@ -1,0 +1,115 @@
+{
+  "default_project": "proj-a",
+  "workspaces": {
+    "ws1": {
+      "name": "Company A",
+      "folder": "ws1",
+      "comms_mcp": "ws1_ms365",
+      "detection_keywords": ["teams", "outlook", "company-a-people"],
+      "projects": {
+        "proj-a": {
+          "PLANE_WORKSPACE_SLUG": "your-workspace",
+          "PLANE_PROJECT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "PLANE_PROJECT_IDENTIFIER": "PROJA",
+          "PLANE_BASE_URL": "https://your-plane-instance.com",
+          "PLANE_MCP_SERVER_NAME": "ws1_plane",
+
+          "STATE_BACKLOG_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_TODO_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_IN_PROGRESS_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_DONE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_PASSED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_ANNOUNCED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_APPROVED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_DEPLOYED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_CANCELLED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "ESTIMATE_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_1_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_2_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_3_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_5_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_8_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_13_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "OUTLINE_BASE_URL": "https://your-outline-instance.com",
+          "OUTLINE_ROOT_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_SPECIFICATIONS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_VERSIONS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_CYCLES_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_TASK_REPORTS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_ROADMAP_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_COLLECTION_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "LABEL_INTAKE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_BUG_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_FEATURE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_TWEAK_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_IDEA_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_INQUIRY_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "env": {
+            "PLANE_API_KEY": "WS1_PLANE_API_KEY",
+            "OUTLINE_API_KEY": "WS1_OUTLINE_API_KEY",
+            "OUTLINE_API_URL": "WS1_OUTLINE_API_URL"
+          }
+        }
+      }
+    },
+    "ws2": {
+      "name": "Company B",
+      "folder": "ws2",
+      "comms_mcp": "ws2_slack",
+      "detection_keywords": ["slack", "gmail", "company-b-people"],
+      "projects": {
+        "proj-b": {
+          "PLANE_WORKSPACE_SLUG": "another-workspace",
+          "PLANE_PROJECT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "PLANE_PROJECT_IDENTIFIER": "PROJB",
+          "PLANE_BASE_URL": "https://your-plane-instance.com",
+          "PLANE_MCP_SERVER_NAME": "ws2_plane",
+
+          "STATE_BACKLOG_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_TODO_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_IN_PROGRESS_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_DONE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_PASSED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_ANNOUNCED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_APPROVED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_DEPLOYED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "STATE_CANCELLED_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "ESTIMATE_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_1_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_2_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_3_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_5_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_8_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "ESTIMATE_13_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "OUTLINE_BASE_URL": "https://your-outline-instance.com",
+          "OUTLINE_ROOT_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_SPECIFICATIONS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_VERSIONS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_CYCLES_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_TASK_REPORTS_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_ROADMAP_DOC_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "OUTLINE_COLLECTION_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "LABEL_INTAKE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_BUG_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_FEATURE_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_TWEAK_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_IDEA_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "LABEL_INQUIRY_UUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+
+          "env": {
+            "PLANE_API_KEY": "WS2_PLANE_API_KEY",
+            "OUTLINE_API_KEY": "WS2_OUTLINE_API_KEY",
+            "OUTLINE_API_URL": "WS2_OUTLINE_API_URL"
+          }
+        }
+      }
+    }
+  }
+}

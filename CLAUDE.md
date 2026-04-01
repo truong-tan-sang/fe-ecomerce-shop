@@ -1,0 +1,53 @@
+# Claude Code Project Rules for fe-ecomerce-shop
+
+## Core Principles
+- Never use `any`. Strictly type everything via DTOs from `openapi.json`.
+- Run `npx tsc --noEmit` after changes.
+- Services use `sendRequest<IBackendRes<T>>()` with typed DTOs.
+- Protected endpoints: `Authorization: Bearer <token>`.
+- Any clickable control (`button`, clickable `div`, custom triggers) must use a visible pointer cursor (Tailwind `cursor-pointer` or CSS `cursor: pointer`).
+- All border-radius must be 0 (sharp/geometric edges). The design system uses `--radius: 0`. Never add `rounded-*` classes unless explicitly overridden.
+
+## File Structure
+- Services: `src/services/<entity>.ts` → export `<entity>Service`
+- DTOs: `src/dto/<entity>.ts` → match OpenAPI names
+- Components: `src/components/<area>/` → use `"use client"` only when needed
+- Server components: use `auth()` for session/token
+
+## Task Workflow
+- For multi-step work: create TODO list first (what, which files, why)
+- After implementation: run `npx tsc --noEmit` and fix errors
+- Use `// TODO:` comments for future work
+
+## Logging
+- Format: `console.log("[ComponentName] message:", data);`
+- Log API requests/responses in services: `[ServiceName] Request/Response:`
+- Log important state changes in components
+- Don't leak full tokens (truncate if needed)
+
+## Admin Pages
+- Light theme, black/white accents
+- Use shadcn/ui components (Button, Table, Badge, etc.)
+- Collapsible sidebar, expanded menu sections
+- Active links: bold or bg-black
+
+## Examples
+```ts
+// Service
+getAllProducts(accessToken?: string) {
+  return sendRequest<IBackendRes<ProductDto[]>>({
+    url: `${BASE_URL}/products`,
+    method: "GET",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+}
+
+// Type-safe state
+type Gender = "MALE" | "FEMALE" | "OTHER" | "";
+const gender: Gender = profile?.gender || "";
+```
+
+## Custom Commands
+- `/gitpush` — Smart git commit & push (groups changes into logical commits)
+- `/tsc` — Run TypeScript check (`npx tsc --noEmit`)
+- `/test` — Run project tests

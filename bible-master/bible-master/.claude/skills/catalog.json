@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "description": "Bible Skills Library — reusable AI engineering skills organized by tech stack",
+  "categories": {
+    "project": "Monorepo structure and workspace configuration",
+    "react": "React patterns, naming, state management, code style",
+    "antd-v6": "Ant Design v6 component patterns and theming",
+    "tanstack": "TanStack Router, Query, Store patterns",
+    "supabase": "Supabase schema, SDK, auth, migrations, edge functions",
+    "env": "Environment variable management",
+    "meta": "Skills about skills — authoring, extending"
+  },
+  "skills": [
+    {
+      "name": "bible-project-structure",
+      "category": "project",
+      "description": "Monorepo root skeleton — where top-level directories live"
+    },
+    {
+      "name": "bible-react-naming",
+      "category": "react",
+      "description": "All naming conventions: pages, components, hooks, stores, routes, utilities"
+    },
+    {
+      "name": "bible-react-provider-context",
+      "category": "react",
+      "description": "Provider Context pattern with class State + useReducer"
+    },
+    {
+      "name": "bible-react-code-style",
+      "category": "react",
+      "description": "Concise arrows, inline handlers, eslint-disable prohibition"
+    },
+    {
+      "name": "bible-react-hotkeys",
+      "category": "react",
+      "description": "Keyboard shortcut patterns with react-hotkeys-hook"
+    },
+    {
+      "name": "bible-antd-components",
+      "category": "antd-v6",
+      "description": "ANTD v6 theme tokens, feedback, icons, component tokens, migration"
+    },
+    {
+      "name": "bible-tanstack-query-mutation",
+      "category": "tanstack",
+      "description": "TanStack Query hooks (useQ_*) and mutation hooks (useM_*)"
+    },
+    {
+      "name": "bible-tanstack-store",
+      "category": "tanstack",
+      "description": "TanStack Store for global state with granular selectors"
+    },
+    {
+      "name": "bible-tanstack-router",
+      "category": "tanstack",
+      "description": "File-based routing, guards, layout routes, navigation"
+    },
+    {
+      "name": "bible-supabase-rls-policies",
+      "category": "supabase",
+      "description": "Row Level Security: denormalized org_id, single-hop policies, BEFORE INSERT triggers"
+    },
+    {
+      "name": "bible-supabase-schema",
+      "category": "supabase",
+      "description": "Schema design: IDs, naming, FKs, junction tables, enums, JSONB"
+    },
+    {
+      "name": "bible-supabase-migrations",
+      "category": "supabase",
+      "description": "Migration workflow, templates, common operations, type generation"
+    },
+    {
+      "name": "bible-supabase-edge-functions",
+      "category": "supabase",
+      "description": "Deno edge functions: naming, structure, CORS, shared utilities"
+    },
+    {
+      "name": "bible-supabase-cli",
+      "category": "supabase",
+      "description": "Supabase CLI commands, psql access, debugging"
+    },
+    {
+      "name": "bible-supabase-auth",
+      "category": "supabase",
+      "description": "Authentication patterns: session, guards, membership, sign out"
+    },
+    {
+      "name": "bible-supabase-sdk",
+      "category": "supabase",
+      "description": "sb_* naming convention for all Supabase SDK operations"
+    },
+    {
+      "name": "bible-supabase-options",
+      "category": "supabase",
+      "description": "Co-located enum options with const_{Table}{Column}Options naming"
+    },
+    {
+      "name": "bible-env-variables",
+      "category": "env",
+      "description": "Centralized ENVs utility with zero direct import.meta.env access"
+    },
+    {
+      "name": "bible-skill-extension",
+      "category": "meta",
+      "description": "Convention for extending Bible skills without modifying them"
+    },
+    {
+      "name": "bible-authoring",
+      "category": "meta",
+      "description": "Guidelines for writing Bible-ready skills"
+    }
+  ]
+}
