@@ -400,6 +400,53 @@
         ]
       }
     },
+    "/user/{id}/shop-office": {
+      "get": {
+        "operationId": "UserController_getShopOfficeOfUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User shop office retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopOfficeEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - No valid JWT token provided"
+          },
+          "403": {
+            "description": "Forbidden - Only ADMIN/OPERATOR can access"
+          },
+          "404": {
+            "description": "Not Found - User or shop office not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get shop office of a user",
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/user/{id}/avatar": {
       "get": {
         "operationId": "UserController_getAvatarOfUser",
@@ -2076,6 +2123,10 @@
                   "voucherId": {
                     "type": "number",
                     "example": 1325
+                  },
+                  "shopOfficeId": {
+                    "type": "number",
+                    "example": 1325
                   }
                 },
                 "required": [
@@ -2275,6 +2326,10 @@
                     "example": 1325
                   },
                   "voucherId": {
+                    "type": "number",
+                    "example": 1325
+                  },
+                  "shopOfficeId": {
                     "type": "number",
                     "example": 1325
                   },
@@ -3067,6 +3122,51 @@
           }
         ],
         "summary": "Create a new address for order",
+        "tags": [
+          "Address"
+        ]
+      }
+    },
+    "/address/shop-office/{shopOfficeId}/ghn-address": {
+      "get": {
+        "description": "Retrieves the complete address information for a shop office from both the local database and the GHN (Giao Hàng Nhanh) shipping system. This endpoint validates that the shop office exists, has a registered GHN shop ID, and retrieves the corresponding GHN province, district, and ward details needed for shipping operations.",
+        "operationId": "AddressController_getGHNShopOfficeAddressByShopOfficeId",
+        "parameters": [
+          {
+            "name": "shopOfficeId",
+            "required": true,
+            "in": "path",
+            "description": "The shop office ID to retrieve address information for",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office address retrieved successfully from database and GHN system. Returns both the local address record and the validated GHN address components (province, district, ward) with their IDs required for shipping fee calculations and shipment creation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GHNShopOfficeAddressEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Failed to retrieve shop office address. This may occur if communication with GHN API fails or if the GHN address components cannot be resolved."
+          },
+          "404": {
+            "description": "Not Found - Shop office not found, shop office does not have an address in database, shop office is not registered with GHN (missing ghnShopId), shop office has incomplete GHN address information (missing province, district, or ward IDs), or the GHN province/district/ward could not be found in the GHN system."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get GHN shop office address by shop office ID",
         "tags": [
           "Address"
         ]
@@ -4378,13 +4478,10 @@
             }
           },
           "400": {
-            "description": "Bad Request - validation failed, checksum verification failed, insufficient stock, or order creation failed."
+            "description": "Bad Request."
           },
           "404": {
-            "description": "Not Found - user, shipping address, product variant, or related entity not found."
-          },
-          "500": {
-            "description": "Internal Server Error - missing server configuration or unexpected error during order creation."
+            "description": "Not Found."
           }
         },
         "security": [
@@ -4865,6 +4962,57 @@
         ]
       }
     },
+    "/orders/group-order-items-to-packages": {
+      "post": {
+        "description": "Groups order items by GHN shop ID, validates stock, and returns detailed package data used for shipping fee calculations and GHN order creation.",
+        "operationId": "OrdersController_groupOrderItemsToPackageShippingFollowingShopId",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Order items to group by GHN shop ID for shipping preparation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SecondCreateOrderItemsDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Packages grouped by GHN shop ID. Each key is a shop ID string and each value is a PackageDetail object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/PackageDetailDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Group order items into packages by shop office",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
     "/order-items": {
       "post": {
         "operationId": "OrderItemsController_create",
@@ -5196,42 +5344,41 @@
         ]
       }
     },
-    "/shipments/preview-shipping-fee-detail-and-discount-detail-and-price-detail-for-order": {
+    "/shipments/create-with-ghn": {
       "post": {
-        "description": "Builds package data from order items and validated address data, applies item-level vouchers (priority: variant > product > category), selects the best user voucher for package-level discount, calculates GHN shipping service/fee/ETA, and returns a package payload plus checksum information for later order creation validation.",
-        "operationId": "ShipmentsController_previewFeeAndDiscountAndPriceForOrder",
+        "description": "Creates multiple shipment records for an order with automatic GHN API integration. Handles multi-warehouse fulfillment by creating separate GHN shipping orders for each warehouse. Validates payment status (COD or PAID) before creating shipments. Used in order fulfillment workflow after order confirmation.",
+        "operationId": "ShipmentsController_createNewShipmentForOrderAndAutoCreateGHNShipment",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "Input for checkout preview. orderItems contains productVariantId and quantity per item. createNewAddressForOrderResponseDto must be the validated response from createNewAddressForOrder and is used to determine destination district/ward for GHN fee and ETA calculation.",
+          "description": "Shipment creation data with packages grouped by warehouse, validated delivery address, and GHN shipping configuration",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PreviewFeeAndDiscountAndPriceForOrderDto"
+                "$ref": "#/components/schemas/createNewShipmentForOrderAndAutoCreateGHNShipmentDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Preview calculated successfully. Returns a map keyed by ghnShopId. Each value contains checksumInformation (checksumIdInDB, checksumData) and PackageDetail (items, applied vouchers, subtotal, package-level discount, total price, GHN service, shipping fee, origin/destination codes, and expected delivery time).",
+          "201": {
+            "description": "Shipments created successfully and registered with GHN. Returns array of created shipment records (one per warehouse/package). Each shipment includes GHN order code, tracking number, and estimated delivery date.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/PreviewPackageDetailWithChecksumDto"
-                  },
-                  "description": "Map keyed by GHN shop ID for checkout preview package payload used by create-order"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShipmentEntity"
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Bad Request - Invalid preview input or business validation failed, such as empty order items, invalid address payload, missing userId in address payload, out-of-stock variant, or GHN fee/ETA calculation failure."
+            "description": "Bad Request - Invalid shipment data, GHN order creation failed, or database transaction failed. Check that packages contain valid product variants, GHN service configuration is correct, and shop offices are properly registered with GHN."
           },
           "404": {
-            "description": "Not Found - User not found, product variant not found, shop origin location cannot be resolved in GHN, or no GHN shipping service is available for the selected origin/destination route."
+            "description": "Not Found - Order not found, shop office not found for GHN shop ID, or order item not found for product variant. Verify that orderId exists, all GHN shop IDs in packages correspond to registered shop offices, and all product variants exist in order items."
           }
         },
         "security": [
@@ -5239,7 +5386,56 @@
             "bearer": []
           }
         ],
-        "summary": "Preview package pricing, voucher discounts, GHN shipping fee, and checksum before creating an order",
+        "summary": "Create shipments for order and automatically register with GHN shipping service",
+        "tags": [
+          "Shipments"
+        ]
+      }
+    },
+    "/shipments/preview-shipping-fee": {
+      "post": {
+        "description": "Calculates shipping fees and delivery estimates for each package from different warehouses using GHN API. Enriches package data with shipping costs, delivery times, and pickup/delivery location details. Used in checkout flow to display shipping costs to customers before order confirmation. Does not create actual shipments.",
+        "operationId": "ShipmentsController_previewShippingFeeForEachPackageForOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Package data grouped by GHN shop ID (warehouse) and validated delivery address with GHN location IDs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewShippingFeeForPackagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shipping fees calculated successfully. Returns the input packages enriched with: shipping fee amount, shipping service details (Express/Standard/Saving), expected delivery time, pickup location details (shop name/address/phone), and GHN district/ward codes for both pickup and delivery locations. Total shipping fee = sum of all package fees.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/PackageDetailDto"
+                  },
+                  "description": "Object with ghnShopId as keys and enriched PackageDetail as values"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Failed to calculate shipping fees. This may occur if GHN API communication fails, invalid package dimensions provided, or shipping service unavailable for the route."
+          },
+          "404": {
+            "description": "Not Found - Shop office not found for GHN shop ID, shop office has incomplete GHN address information (missing province/district/ward IDs), GHN province/district/ward not found in GHN system, or shipping service not available for the specified route."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview shipping fees for packages before creating shipments",
         "tags": [
           "Shipments"
         ]
@@ -5563,148 +5759,17 @@
         ]
       }
     },
-    "/payments/vnpay_ipn": {
-      "get": {
+    "/payments/vnpay-ipn": {
+      "post": {
         "operationId": "PaymentsController_handleVNPayIPNCall",
-        "parameters": [
-          {
-            "name": "vnp_TmnCode",
-            "required": true,
-            "in": "query",
-            "description": "Merchant TMN code - 8 alphanumeric characters",
-            "schema": {
-              "example": "L62FDD2R",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_Amount",
-            "required": true,
-            "in": "query",
-            "description": "Payment amount - Numeric string, VNPAY returns amount multiplied by 100",
-            "schema": {
-              "example": "15000000",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_BankCode",
-            "required": true,
-            "in": "query",
-            "description": "Bank code used for payment - 3-20 alphanumeric characters. Example: NCB",
-            "schema": {
-              "example": "NCB",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_OrderInfo",
-            "required": true,
-            "in": "query",
-            "description": "Payment description from original transaction - Vietnamese without accents",
-            "schema": {
-              "example": "Thanh toan don hang 12345",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_TransactionNo",
-            "required": true,
-            "in": "query",
-            "description": "Transaction code recorded in VNPAY system - 1-15 numeric characters",
-            "schema": {
-              "example": "20170829153052",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_ResponseCode",
-            "required": true,
-            "in": "query",
-            "description": "Response code from VNPAY (00 = success)",
-            "schema": {
-              "example": "00",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_TransactionStatus",
-            "required": true,
-            "in": "query",
-            "description": "Transaction status at VNPAY (00 = successful, others = failed)",
-            "schema": {
-              "example": "00",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_TxnRef",
-            "required": true,
-            "in": "query",
-            "description": "Merchant transaction reference from original request - 1-100 alphanumeric characters",
-            "schema": {
-              "example": "ORDER_12345",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_SecureHash",
-            "required": true,
-            "in": "query",
-            "description": "Secure hash from VNPAY callback - 32-256 alphanumeric characters for checksum verification",
-            "schema": {
-              "example": "5CC2F6B77D96B5D7F3B5E4C3D2A1E9F8B7C6D5E4F3A2B1C0D9E8F7A6B5C4D3",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_BankTranNo",
-            "required": false,
-            "in": "query",
-            "description": "Transaction code at bank - 1-255 alphanumeric characters",
-            "schema": {
-              "example": "NCB20170829152730",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_CardType",
-            "required": false,
-            "in": "query",
-            "description": "Type of account/card used: ATM, QRCODE",
-            "schema": {
-              "example": "ATM",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_PayDate",
-            "required": false,
-            "in": "query",
-            "description": "Payment date - Format: yyyyMMddHHmmss (14 numeric characters)",
-            "schema": {
-              "example": "20170829152730",
-              "type": "string"
-            }
-          },
-          {
-            "name": "vnp_SecureHashType",
-            "required": false,
-            "in": "query",
-            "description": "Secure hash type algorithm",
-            "schema": {
-              "example": "HmacSHA512",
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "description": "VNPay IPN callback data",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReturnQueryFromVNPayDto"
+                "$ref": "#/components/schemas/VerifyVNPayIPNCallDto"
               }
             }
           }
@@ -5903,7 +5968,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Partial payment update payload. Only payment fields are updated (status, amount, transaction/payment metadata). This endpoint does not create shipment records.",
+          "description": "Payment update data with status and optional transaction or method information. Also include shipmentCarrier for creating shipment when payment is marked as PAID",
           "content": {
             "application/json": {
               "schema": {
@@ -8123,6 +8188,535 @@
         ]
       }
     },
+    "/shop-offices": {
+      "post": {
+        "operationId": "ShopOfficesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Shop office creation data with address for GHN registration",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShopOfficeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Shop office created successfully and registered with GHN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopOfficeEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add new a shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      },
+      "get": {
+        "operationId": "ShopOfficesController_findAll",
+        "parameters": [
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopOfficeEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office list",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}": {
+      "get": {
+        "operationId": "ShopOfficesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopOfficeEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office detail by ID",
+        "tags": [
+          "ShopOffices"
+        ]
+      },
+      "patch": {
+        "operationId": "ShopOfficesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Shop office update data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShopOfficeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shop office updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopOfficeEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      },
+      "delete": {
+        "operationId": "ShopOfficesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopOfficeEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}/manager-list": {
+      "get": {
+        "operationId": "ShopOfficesController_findAllManagersOfShopOffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office manager list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office\"s manager list by ID shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}/address": {
+      "get": {
+        "operationId": "ShopOfficesController_findAddressOfShopOffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office address retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office\"s address by ID shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}/product-list": {
+      "get": {
+        "operationId": "ShopOfficesController_findAllProductsOfShopOffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office\"s products by ID shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}/category-list": {
+      "get": {
+        "operationId": "ShopOfficesController_findAllCategoryOfShopOffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office\"s categories by ID shop office",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{shopId}/category/{categoryId}/product-list": {
+      "get": {
+        "operationId": "ShopOfficesController_findAllProductsOfCategoryOfShopOffice",
+        "parameters": [
+          {
+            "name": "shopId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop office products of category retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopOfficeWithProductsEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "summary": "Get shop office\"s products of one category by ID shop office and ID category",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
+    "/shop-offices/{id}/ghn-details": {
+      "get": {
+        "operationId": "ShopOfficesController_getGHNShopOffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GHN shop office details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GHNShopDetailEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get GHN shop office details by shop office ID",
+        "tags": [
+          "ShopOffices"
+        ]
+      }
+    },
     "/color": {
       "post": {
         "operationId": "ColorController_create",
@@ -8638,6 +9232,12 @@
             "example": "STF001",
             "description": "Staff code"
           },
+          "shopOfficeId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1,
+            "description": "Shop office ID"
+          },
           "loyaltyCard": {
             "type": "string",
             "example": "LOYAL123",
@@ -8734,7 +9334,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.858Z"
+            "example": "2026-03-07T07:47:28.056Z"
           },
           "isActive": {
             "type": "boolean",
@@ -8742,20 +9342,26 @@
           },
           "codeActive": {
             "type": "string",
-            "example": "3f9780d0-c91e-43af-bed9-944842516a99"
+            "example": "745b3ebe-aef0-4521-9adb-d352269e7e72"
           },
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.859Z"
+            "example": "2026-03-07T07:47:28.057Z"
           },
           "staffCode": {
             "type": "string",
-            "example": "15c2f4c3-4dab-45f7-8e69-7acf510ad7cb"
+            "example": "45b31d7f-5b3d-4381-9c1e-21d9d036878e"
           },
           "loyaltyCard": {
             "type": "string",
             "example": "0987985465231"
+          },
+          "shopOfficeId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1,
+            "description": "Shop office ID"
           },
           "point": {
             "type": "number",
@@ -8834,7 +9440,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.858Z"
+            "example": "2026-03-07T07:47:28.056Z"
           },
           "isActive": {
             "type": "boolean",
@@ -8842,20 +9448,26 @@
           },
           "codeActive": {
             "type": "string",
-            "example": "3f9780d0-c91e-43af-bed9-944842516a99"
+            "example": "745b3ebe-aef0-4521-9adb-d352269e7e72"
           },
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.859Z"
+            "example": "2026-03-07T07:47:28.057Z"
           },
           "staffCode": {
             "type": "string",
-            "example": "15c2f4c3-4dab-45f7-8e69-7acf510ad7cb"
+            "example": "45b31d7f-5b3d-4381-9c1e-21d9d036878e"
           },
           "loyaltyCard": {
             "type": "string",
             "example": "0987985465231"
+          },
+          "shopOfficeId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1,
+            "description": "Shop office ID"
           },
           "point": {
             "type": "number",
@@ -8935,11 +9547,17 @@
           },
           "staffCode": {
             "type": "string",
-            "example": "15c2f4c3-4dab-45f7-8e69-7acf510ad7cb"
+            "example": "45b31d7f-5b3d-4381-9c1e-21d9d036878e"
           },
           "loyaltyCard": {
             "type": "string",
             "example": "0987985465231"
+          },
+          "shopOfficeId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1,
+            "description": "Shop office ID"
           },
           "point": {
             "type": "number",
@@ -8997,6 +9615,11 @@
             "type": "string",
             "example": "Vietnam"
           },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -9017,6 +9640,56 @@
           "province",
           "zipCode",
           "country",
+          "shopOfficeId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ShopOfficeEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1
+          },
+          "ghnShopId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 123456
+          },
+          "ghnShopProvinceId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 202
+          },
+          "ghnShopDistrictId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1542
+          },
+          "ghnShopWardCode": {
+            "type": "string",
+            "example": "21012"
+          },
+          "shopName": {
+            "type": "string",
+            "example": "Main Store"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "shopName",
           "createdAt",
           "updatedAt"
         ]
@@ -9341,6 +10014,11 @@
             "example": 1,
             "nullable": true
           },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -9377,6 +10055,7 @@
           "categoryId",
           "createByUserId",
           "voucherId",
+          "shopOfficeId",
           "createdAt",
           "updatedAt",
           "media",
@@ -9415,6 +10094,11 @@
             "example": 1,
             "nullable": true
           },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -9433,6 +10117,7 @@
           "parentId",
           "createByUserId",
           "voucherId",
+          "shopOfficeId",
           "createdAt",
           "updatedAt"
         ]
@@ -9458,6 +10143,11 @@
           "ghnOrderCode": {
             "type": "object",
             "example": "GHN12345",
+            "nullable": true
+          },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
             "nullable": true
           },
           "estimatedDelivery": {
@@ -9487,7 +10177,11 @@
           "carrier": {
             "type": "string",
             "examples": [
-              "Giao hàng nhanh"
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
             ],
             "example": "Giao hàng nhanh",
             "description": "Carrier for the shipment"
@@ -9504,14 +10198,14 @@
           "status": {
             "type": "string",
             "enum": [
-              "PENDING",
               "WAITING_FOR_PICKUP",
-              "SHIPPED",
+              "IN_TRANSIT",
+              "OUT_FOR_DELIVERY",
               "DELIVERED",
               "DELIVERED_FAILED",
-              "RETURNED"
+              "RETURNED_TO_SENDER"
             ],
-            "example": "PENDING"
+            "example": "WAITING_FOR_PICKUP"
           },
           "createdAt": {
             "format": "date-time",
@@ -9529,6 +10223,7 @@
           "orderId",
           "processByStaffId",
           "ghnOrderCode",
+          "shopOfficeId",
           "estimatedDelivery",
           "deliveredAt",
           "estimatedShipDate",
@@ -9757,9 +10452,9 @@
             "example": 1
           },
           "processByStaffId": {
-            "type": "object",
-            "example": 1,
-            "nullable": true
+            "format": "int64",
+            "type": "integer",
+            "example": 1
           },
           "description": {
             "type": "string",
@@ -9808,12 +10503,7 @@
             "$ref": "#/components/schemas/UserWithMediaEntity"
           },
           "processByStaff": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserWithMediaEntity"
-              }
-            ]
+            "$ref": "#/components/schemas/UserWithMediaEntity"
           },
           "shippingAddress": {
             "$ref": "#/components/schemas/AddressEntity"
@@ -9847,6 +10537,7 @@
           "id",
           "userId",
           "shippingAddressId",
+          "processByStaffId",
           "orderDate",
           "status",
           "subTotal",
@@ -9857,6 +10548,7 @@
           "createdAt",
           "updatedAt",
           "user",
+          "processByStaff",
           "shippingAddress",
           "shipments",
           "payment",
@@ -10023,12 +10715,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.875Z"
+            "example": "2026-03-07T07:47:28.078Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.875Z"
+            "example": "2026-03-07T07:47:28.078Z"
           }
         },
         "required": [
@@ -10088,12 +10780,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.885Z"
+            "example": "2026-03-07T07:47:28.088Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.888Z"
+            "example": "2026-03-07T07:47:28.088Z"
           }
         },
         "required": [
@@ -10199,12 +10891,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.875Z"
+            "example": "2026-03-07T07:47:28.078Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.875Z"
+            "example": "2026-03-07T07:47:28.078Z"
           }
         }
       },
@@ -10397,13 +11089,13 @@
             "example": "1234567890"
           },
           "role": {
-            "type": "string",
+            "type": "object",
             "example": "USER"
           },
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.284Z"
+            "example": "2026-03-07T07:47:28.537Z"
           },
           "isActive": {
             "type": "boolean",
@@ -10416,7 +11108,7 @@
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.284Z"
+            "example": "2026-03-07T07:47:28.537Z"
           }
         },
         "required": [
@@ -10596,6 +11288,11 @@
             "example": 1,
             "nullable": true
           },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -10618,6 +11315,7 @@
           "categoryId",
           "createByUserId",
           "voucherId",
+          "shopOfficeId",
           "createdAt",
           "updatedAt"
         ]
@@ -10651,12 +11349,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.516Z"
+            "example": "2026-03-07T07:47:28.756Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.516Z"
+            "example": "2026-03-07T07:47:28.756Z"
           }
         },
         "required": [
@@ -10698,12 +11396,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.516Z"
+            "example": "2026-03-07T07:47:28.756Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.516Z"
+            "example": "2026-03-07T07:47:28.756Z"
           }
         }
       },
@@ -10742,12 +11440,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.573Z"
+            "example": "2026-03-07T07:47:28.807Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.573Z"
+            "example": "2026-03-07T07:47:28.807Z"
           }
         },
         "required": [
@@ -10797,12 +11495,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.573Z"
+            "example": "2026-03-07T07:47:28.807Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.573Z"
+            "example": "2026-03-07T07:47:28.807Z"
           }
         }
       },
@@ -10851,6 +11549,12 @@
             "example": "Vietnam",
             "description": "Country name"
           },
+          "shopOfficeId": {
+            "type": "object",
+            "example": 1,
+            "nullable": true,
+            "description": "Shop office ID if address belongs to a shop"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -10873,6 +11577,7 @@
           "province",
           "zipCode",
           "country",
+          "shopOfficeId",
           "createdAt",
           "updatedAt"
         ]
@@ -10984,74 +11689,6 @@
           "NameExtension",
           "RegionID",
           "RegionCPN"
-        ]
-      },
-      "WhiteListClientDto": {
-        "type": "object",
-        "properties": {
-          "From": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "example": []
-          },
-          "To": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "example": []
-          },
-          "Return": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "example": []
-          }
-        },
-        "required": [
-          "From",
-          "To",
-          "Return"
-        ]
-      },
-      "WhiteListWardDto": {
-        "type": "object",
-        "properties": {
-          "From": {
-            "oneOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "example": null
-          },
-          "To": {
-            "oneOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "example": null
-          }
-        },
-        "required": [
-          "From",
-          "To"
         ]
       },
       "GhnDistrictDto": {
@@ -11169,48 +11806,26 @@
             "description": "Reason message if any restrictions"
           },
           "OnDates": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "example": [
-              "2023-01-25T17:00:00Z",
-              "2024-02-13T17:00:00Z"
-            ],
+            "type": "object",
+            "example": null,
             "description": "On-dates information"
           },
           "WhiteListClient": {
+            "type": "object",
             "example": {
-              "From": [],
-              "To": [],
-              "Return": []
+              "From": null,
+              "To": null,
+              "Return": null
             },
-            "description": "White list client configuration",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WhiteListClientDto"
-              }
-            ]
+            "description": "White list client configuration"
           },
           "WhiteListWard": {
+            "type": "object",
             "example": {
               "From": null,
               "To": null
             },
-            "description": "White list ward configuration",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WhiteListWardDto"
-              }
-            ]
+            "description": "White list ward configuration"
           }
         },
         "required": [
@@ -11345,48 +11960,26 @@
             "description": "Reason message if any restrictions"
           },
           "OnDates": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "example": [
-              "2023-01-25T17:00:00Z",
-              "2024-02-13T17:00:00Z"
-            ],
+            "type": "object",
+            "example": null,
             "description": "On-dates information"
           },
           "WhiteListClient": {
+            "type": "object",
             "example": {
-              "From": [],
-              "To": [],
-              "Return": []
+              "From": null,
+              "To": null,
+              "Return": null
             },
-            "description": "White list client configuration",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WhiteListClientDto"
-              }
-            ]
+            "description": "White list client configuration"
           },
           "WhiteListWard": {
+            "type": "object",
             "example": {
               "From": null,
               "To": null
             },
-            "description": "White list ward configuration",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WhiteListWardDto"
-              }
-            ]
+            "description": "White list ward configuration"
           }
         },
         "required": [
@@ -11473,6 +12066,402 @@
           "orderAddressInGHN"
         ]
       },
+      "GhnProvinceEntity": {
+        "type": "object",
+        "properties": {
+          "ProvinceID": {
+            "type": "number",
+            "example": 202
+          },
+          "ProvinceName": {
+            "type": "string",
+            "example": "Bình Dương"
+          },
+          "CountryID": {
+            "type": "number",
+            "example": 1
+          },
+          "Code": {
+            "type": "string",
+            "example": "BD"
+          },
+          "NameExtension": {
+            "example": [
+              "Bình Dương",
+              "Binh Duong"
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "RegionID": {
+            "type": "number",
+            "example": 1
+          },
+          "RegionCPN": {
+            "type": "number",
+            "example": 0
+          },
+          "IsEnable": {
+            "type": "number",
+            "example": 1
+          },
+          "UpdatedBy": {
+            "type": "number",
+            "example": 0
+          },
+          "CreatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "Status": {
+            "type": "number",
+            "example": 1,
+            "description": "1: Unlock, 2: Lock"
+          },
+          "UpdatedIP": {
+            "type": "string",
+            "example": "192.168.1.1"
+          },
+          "UpdatedEmployee": {
+            "type": "number",
+            "example": 0
+          },
+          "UpdatedSource": {
+            "type": "string",
+            "example": "web"
+          },
+          "UpdatedDate": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "ProvinceID",
+          "ProvinceName",
+          "CountryID",
+          "Code",
+          "NameExtension",
+          "RegionID",
+          "RegionCPN",
+          "IsEnable",
+          "UpdatedBy",
+          "CreatedAt",
+          "UpdatedAt",
+          "Status",
+          "UpdatedIP",
+          "UpdatedEmployee",
+          "UpdatedSource",
+          "UpdatedDate"
+        ]
+      },
+      "GhnDistrictEntity": {
+        "type": "object",
+        "properties": {
+          "DistrictID": {
+            "type": "number",
+            "example": 1542
+          },
+          "ProvinceID": {
+            "type": "number",
+            "example": 202
+          },
+          "DistrictName": {
+            "type": "string",
+            "example": "Dĩ An"
+          },
+          "Code": {
+            "type": "string",
+            "example": "DA"
+          },
+          "Type": {
+            "type": "number",
+            "example": 1
+          },
+          "SupportType": {
+            "type": "number",
+            "example": 3
+          },
+          "NameExtension": {
+            "example": [
+              "Dĩ An",
+              "Di An"
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "CanUpdateCOD": {
+            "type": "boolean",
+            "example": true
+          },
+          "PickType": {
+            "type": "number",
+            "example": 0
+          },
+          "DeliverType": {
+            "type": "number",
+            "example": 0
+          },
+          "ReasonCode": {
+            "type": "string",
+            "example": ""
+          },
+          "ReasonMessage": {
+            "type": "string",
+            "example": ""
+          },
+          "OnDates": {
+            "type": "object"
+          },
+          "WhiteListClient": {
+            "type": "object",
+            "example": {
+              "From": null,
+              "To": null,
+              "Return": null
+            }
+          },
+          "WhiteListWard": {
+            "type": "object",
+            "example": {
+              "From": null,
+              "To": null
+            }
+          },
+          "IsEnable": {
+            "type": "number",
+            "example": 1
+          },
+          "UpdatedBy": {
+            "type": "number",
+            "example": 0
+          },
+          "CreatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "Status": {
+            "type": "number",
+            "example": 1,
+            "description": "1: Unlock, 2: Lock"
+          },
+          "UpdatedIP": {
+            "type": "string",
+            "example": "192.168.1.1"
+          },
+          "UpdatedEmployee": {
+            "type": "number",
+            "example": 0
+          },
+          "UpdatedSource": {
+            "type": "string",
+            "example": "web"
+          },
+          "UpdatedDate": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "DistrictID",
+          "ProvinceID",
+          "DistrictName",
+          "Code",
+          "Type",
+          "SupportType",
+          "NameExtension",
+          "CanUpdateCOD",
+          "PickType",
+          "DeliverType",
+          "ReasonCode",
+          "ReasonMessage",
+          "WhiteListClient",
+          "WhiteListWard",
+          "IsEnable",
+          "UpdatedBy",
+          "CreatedAt",
+          "UpdatedAt",
+          "Status",
+          "UpdatedIP",
+          "UpdatedEmployee",
+          "UpdatedSource",
+          "UpdatedDate"
+        ]
+      },
+      "GhnWardEntity": {
+        "type": "object",
+        "properties": {
+          "WardCode": {
+            "type": "string",
+            "example": "21012"
+          },
+          "DistrictID": {
+            "type": "number",
+            "example": 1542
+          },
+          "WardName": {
+            "type": "string",
+            "example": "Đông Hòa"
+          },
+          "NameExtension": {
+            "example": [
+              "Đông Hòa",
+              "Dong Hoa"
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "CanUpdateCOD": {
+            "type": "boolean",
+            "example": true
+          },
+          "SupportType": {
+            "type": "number",
+            "example": 3
+          },
+          "PickType": {
+            "type": "number",
+            "example": 0
+          },
+          "DeliverType": {
+            "type": "number",
+            "example": 0
+          },
+          "ReasonCode": {
+            "type": "string",
+            "example": ""
+          },
+          "ReasonMessage": {
+            "type": "string",
+            "example": ""
+          },
+          "OnDates": {
+            "type": "object"
+          },
+          "WhiteListClient": {
+            "type": "object",
+            "example": {
+              "From": null,
+              "To": null,
+              "Return": null
+            }
+          },
+          "WhiteListWard": {
+            "type": "object",
+            "example": {
+              "From": null,
+              "To": null
+            }
+          },
+          "IsEnable": {
+            "type": "number",
+            "example": 1
+          },
+          "UpdatedBy": {
+            "type": "number",
+            "example": 0
+          },
+          "CreatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "Status": {
+            "type": "number",
+            "example": 1,
+            "description": "1: Unlock, 2: Lock"
+          },
+          "UpdatedIP": {
+            "type": "string",
+            "example": "192.168.1.1"
+          },
+          "UpdatedEmployee": {
+            "type": "number",
+            "example": 0
+          },
+          "UpdatedSource": {
+            "type": "string",
+            "example": "web"
+          },
+          "UpdatedDate": {
+            "type": "string",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "WardCode",
+          "DistrictID",
+          "WardName",
+          "NameExtension",
+          "CanUpdateCOD",
+          "SupportType",
+          "PickType",
+          "DeliverType",
+          "ReasonCode",
+          "ReasonMessage",
+          "WhiteListClient",
+          "WhiteListWard",
+          "IsEnable",
+          "UpdatedBy",
+          "CreatedAt",
+          "UpdatedAt",
+          "Status",
+          "UpdatedIP",
+          "UpdatedEmployee",
+          "UpdatedSource",
+          "UpdatedDate"
+        ]
+      },
+      "GHNShopOfficeAddressInGHNEntity": {
+        "type": "object",
+        "properties": {
+          "fromProvince": {
+            "$ref": "#/components/schemas/GhnProvinceEntity"
+          },
+          "fromDistrict": {
+            "$ref": "#/components/schemas/GhnDistrictEntity"
+          },
+          "fromWard": {
+            "$ref": "#/components/schemas/GhnWardEntity"
+          }
+        },
+        "required": [
+          "fromProvince",
+          "fromDistrict",
+          "fromWard"
+        ]
+      },
+      "GHNShopOfficeAddressEntity": {
+        "type": "object",
+        "properties": {
+          "shopOfficeAddressInDb": {
+            "$ref": "#/components/schemas/AddressEntity"
+          },
+          "shopOfficeAddressInGHN": {
+            "$ref": "#/components/schemas/GHNShopOfficeAddressInGHNEntity"
+          }
+        },
+        "required": [
+          "shopOfficeAddressInDb",
+          "shopOfficeAddressInGHN"
+        ]
+      },
       "CreateSizeProfileDto": {
         "type": "object",
         "properties": {
@@ -11520,12 +12509,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.640Z"
+            "example": "2026-03-07T07:47:28.846Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.640Z"
+            "example": "2026-03-07T07:47:28.846Z"
           }
         },
         "required": [
@@ -11590,12 +12579,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.640Z"
+            "example": "2026-03-07T07:47:28.846Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.640Z"
+            "example": "2026-03-07T07:47:28.846Z"
           }
         }
       },
@@ -11766,7 +12755,7 @@
             "example": "https://i.ytimg.com/vi/yYDE9gMvMbU/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCn1eyWanaA18fPw7QhCCTftHALFA"
           },
           "type": {
-            "type": "string",
+            "type": "object",
             "example": "VIDEO | IMAGE | DOCUMENT"
           },
           "reviewId": {
@@ -11799,12 +12788,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.804Z"
+            "example": "2026-03-07T07:47:28.964Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.804Z"
+            "example": "2026-03-07T07:47:28.964Z"
           }
         },
         "required": [
@@ -11828,7 +12817,7 @@
             "example": "https://i.ytimg.com/vi/yYDE9gMvMbU/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCn1eyWanaA18fPw7QhCCTftHALFA"
           },
           "type": {
-            "type": "string",
+            "type": "object",
             "example": "VIDEO | IMAGE | DOCUMENT"
           },
           "reviewId": {
@@ -11861,12 +12850,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.804Z"
+            "example": "2026-03-07T07:47:28.964Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:50.804Z"
+            "example": "2026-03-07T07:47:28.964Z"
           }
         }
       },
@@ -11879,10 +12868,14 @@
             "example": 851
           },
           "paymentMethod": {
-            "type": "string",
+            "type": "object",
             "examples": [
               "COD",
-              "VNPAY"
+              "VNPAY",
+              "MOMO",
+              "ZALOPAY",
+              "CREDIT_CARD",
+              "BANK_TRANSFER"
             ],
             "example": "COD",
             "description": "Payment method for the order"
@@ -11890,7 +12883,11 @@
           "carrier": {
             "type": "string",
             "examples": [
-              "Giao hàng nhanh"
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
             ],
             "description": "Carrier for the shipment",
             "example": "Giao hàng nhanh"
@@ -11904,6 +12901,13 @@
             "type": "string",
             "example": "0987654321"
           },
+          "packages": {
+            "type": "object",
+            "description": "Packages grouped by GHN shop ID. Each key is a shop ID string and each value is a PackageDetail object.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PackageDetailDto"
+            }
+          },
           "shippingAddress": {
             "description": "Validated shipping address for order creation (database address plus GHN location data).",
             "allOf": [
@@ -11911,13 +12915,6 @@
                 "$ref": "#/components/schemas/CreateAddressForOrderResponseDto"
               }
             ]
-          },
-          "packages": {
-            "type": "object",
-            "description": "Packages grouped by GHN shop ID. Each key is a shop ID string and each value is a PackageDetail object.",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PreviewPackageDetailWithChecksumDto"
-            }
           }
         },
         "required": [
@@ -11925,8 +12922,8 @@
           "paymentMethod",
           "carrier",
           "phone",
-          "shippingAddress",
-          "packages"
+          "packages",
+          "shippingAddress"
         ]
       },
       "UpdateOrderDto": {
@@ -11950,10 +12947,10 @@
           "orderDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.082Z"
+            "example": "2026-03-07T07:47:29.056Z"
           },
           "status": {
-            "type": "string",
+            "type": "object",
             "example": "PENDING"
           },
           "subTotal": {
@@ -11975,12 +12972,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.082Z"
+            "example": "2026-03-07T07:47:29.056Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.082Z"
+            "example": "2026-03-07T07:47:29.056Z"
           }
         }
       },
@@ -12016,12 +13013,9 @@
             "type": "string",
             "enum": [
               "PENDING",
-              "PAYMENT_PROCESSING",
-              "PAYMENT_CONFIRMED",
-              "WAITING_FOR_PICKUP",
+              "PROCESSING",
               "SHIPPED",
               "DELIVERED",
-              "COMPLETED",
               "CANCELLED",
               "RETURNED"
             ],
@@ -12119,7 +13113,11 @@
           "carrier": {
             "type": "string",
             "examples": [
-              "Giao hàng nhanh"
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
             ],
             "example": "Giao hàng nhanh",
             "description": "Carrier for the shipment"
@@ -12131,14 +13129,14 @@
           "status": {
             "type": "string",
             "enum": [
-              "PENDING",
               "WAITING_FOR_PICKUP",
-              "SHIPPED",
+              "IN_TRANSIT",
+              "OUT_FOR_DELIVERY",
               "DELIVERED",
               "DELIVERED_FAILED",
-              "RETURNED"
+              "RETURNED_TO_SENDER"
             ],
-            "example": "PENDING"
+            "example": "WAITING_FOR_PICKUP"
           },
           "createdAt": {
             "format": "date-time",
@@ -12174,404 +13172,6 @@
           "order"
         ]
       },
-      "CreateOrderItemDto": {
-        "type": "object",
-        "properties": {
-          "orderId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 851
-          },
-          "productVariantId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 851
-          },
-          "quantity": {
-            "type": "number",
-            "example": 851
-          },
-          "unitPrice": {
-            "type": "number",
-            "example": 851
-          },
-          "totalPrice": {
-            "type": "number",
-            "example": 851
-          },
-          "discountValue": {
-            "type": "number",
-            "example": 851
-          },
-          "currencyUnit": {
-            "type": "string",
-            "example": "VND"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.142Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.142Z"
-          }
-        },
-        "required": [
-          "orderId",
-          "productVariantId",
-          "quantity",
-          "unitPrice",
-          "totalPrice",
-          "discountValue",
-          "currencyUnit",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateOrderItemDto": {
-        "type": "object",
-        "properties": {
-          "orderId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 851
-          },
-          "productVariantId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 851
-          },
-          "quantity": {
-            "type": "number",
-            "example": 851
-          },
-          "unitPrice": {
-            "type": "number",
-            "example": 851
-          },
-          "totalPrice": {
-            "type": "number",
-            "example": 851
-          },
-          "discountValue": {
-            "type": "number",
-            "example": 851
-          },
-          "currencyUnit": {
-            "type": "string",
-            "example": "VND"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.142Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.142Z"
-          }
-        }
-      },
-      "OrderItemEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "format": "int64",
-            "type": "integer",
-            "example": 1
-          },
-          "orderId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 1
-          },
-          "productVariantId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 1
-          },
-          "quantity": {
-            "type": "number",
-            "example": 2
-          },
-          "unitPrice": {
-            "type": "number",
-            "example": 50
-          },
-          "totalPrice": {
-            "type": "number",
-            "example": 100
-          },
-          "discountValue": {
-            "type": "number",
-            "example": 5
-          },
-          "currencyUnit": {
-            "type": "string",
-            "example": "VND"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "orderId",
-          "productVariantId",
-          "quantity",
-          "unitPrice",
-          "totalPrice",
-          "discountValue",
-          "currencyUnit",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "EnrichedPackageDetailEntity": {
-        "type": "object",
-        "properties": {
-          "packageItems": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            },
-            "description": "Product variants in this package with pricing and discount information (ID, name, size, color, SKU, quantity, unitPrice, discountType, discountValue, totalPrice)"
-          },
-          "packageItemsForGHNCreateNewOrderRequest": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            },
-            "description": "Package items formatted for GHN create order API request (name, code, quantity, price, length, width, height, weight, category)"
-          },
-          "totalWeight": {
-            "type": "number",
-            "example": 1500,
-            "description": "Total weight of all items in this package in grams"
-          },
-          "totalHeight": {
-            "type": "number",
-            "example": 20,
-            "description": "Total height of stacked items in centimeters"
-          },
-          "maxLength": {
-            "type": "number",
-            "example": 30,
-            "description": "Maximum length among all items in centimeters"
-          },
-          "maxWidth": {
-            "type": "number",
-            "example": 25,
-            "description": "Maximum width among all items in centimeters"
-          },
-          "ghnProvinceName": {
-            "type": "string",
-            "example": "TP. Hồ Chí Minh",
-            "description": "Province name for pickup location from GHN API"
-          },
-          "ghnDistrictName": {
-            "type": "string",
-            "example": "Quận 1",
-            "description": "District name for pickup location from GHN API"
-          },
-          "ghnWardName": {
-            "type": "string",
-            "example": "Phường Bến Nghé",
-            "description": "Ward name for pickup location from GHN API"
-          },
-          "shippingService": {
-            "type": "object",
-            "description": "Selected GHN shipping service details (service_id, short_name like \"Express/Standard/Saving\", service_type_id, config_fee_id, extra_cost_id, standard_config_fee_id, standard_extra_cost_id)"
-          },
-          "shippingFee": {
-            "type": "number",
-            "example": 35000,
-            "description": "Calculated shipping fee for this package in VND"
-          },
-          "expectedDeliveryTime": {
-            "type": "object",
-            "description": "Expected delivery time with leadtime (Unix timestamp for delivery) and order_date (Unix timestamp for order creation)",
-            "example": {
-              "leadtime": 1707993600,
-              "order_date": 1707917200
-            }
-          },
-          "from_district_id": {
-            "type": "number",
-            "example": 1,
-            "description": "GHN district ID for pickup location"
-          },
-          "from_ward_code": {
-            "type": "string",
-            "example": "100320",
-            "description": "GHN ward code for pickup location"
-          },
-          "to_district_id": {
-            "type": "number",
-            "example": 3,
-            "description": "GHN district ID for delivery location"
-          },
-          "to_ward_code": {
-            "type": "string",
-            "example": "100010",
-            "description": "GHN ward code for delivery location"
-          }
-        },
-        "required": [
-          "packageItems",
-          "packageItemsForGHNCreateNewOrderRequest",
-          "totalWeight",
-          "totalHeight",
-          "maxLength",
-          "maxWidth",
-          "ghnProvinceName",
-          "ghnDistrictName",
-          "ghnWardName",
-          "shippingService",
-          "shippingFee",
-          "expectedDeliveryTime",
-          "from_district_id",
-          "from_ward_code",
-          "to_district_id",
-          "to_ward_code"
-        ]
-      },
-      "CreateShipmentDto": {
-        "type": "object",
-        "properties": {
-          "orderId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 455
-          },
-          "processByStaffId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 455
-          },
-          "estimatedDelivery": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
-            "description": "at shop, estimate time when leave from shop"
-          },
-          "deliveredAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
-            "description": "at shop, actual time when leave from shop"
-          },
-          "estimatedShipDate": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
-            "description": "at customer, estimate time when arrive to customer"
-          },
-          "shippedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
-            "description": "at customer, actual time when arrive to customer"
-          },
-          "carrier": {
-            "type": "string",
-            "examples": [
-              "Giao hàng nhanh"
-            ],
-            "example": "Giao hàng nhanh",
-            "description": "Carrier for the shipment"
-          },
-          "trackingNumber": {
-            "type": "string",
-            "example": "ABC123XYZ"
-          },
-          "status": {
-            "type": "string",
-            "example": "PENDING"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-03-28T04:08:51.167Z"
-          }
-        },
-        "required": [
-          "orderId",
-          "processByStaffId",
-          "estimatedDelivery",
-          "deliveredAt",
-          "estimatedShipDate",
-          "shippedAt",
-          "carrier",
-          "trackingNumber",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PreviewFeeAndDiscountAndPriceForOrderDto": {
-        "type": "object",
-        "properties": {
-          "orderItems": {
-            "description": "Order items for checkout preview. Each item requires productVariantId and quantity.",
-            "example": [
-              {
-                "productVariantId": 851,
-                "quantity": 8
-              }
-            ],
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "createNewAddressForOrderResponseDto": {
-            "description": "Validated address payload returned by create-address-for-order endpoint. orderAddressInGHN and orderAddressInDb are required and are used to compute GHN service, shipping fee, and expected delivery time.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CreateAddressForOrderResponseDto"
-              }
-            ]
-          }
-        },
-        "required": [
-          "orderItems",
-          "createNewAddressForOrderResponseDto"
-        ]
-      },
-      "SecondCreateOrderItemsDto": {
-        "type": "object",
-        "properties": {
-          "productVariantId": {
-            "format": "int64",
-            "type": "integer",
-            "example": 851
-          },
-          "quantity": {
-            "type": "number",
-            "example": 8
-          }
-        },
-        "required": [
-          "productVariantId",
-          "quantity"
-        ]
-      },
       "PackageItemDetailDto": {
         "type": "object",
         "properties": {
@@ -12604,18 +13204,10 @@
             "type": "number",
             "example": 1200000
           },
-          "appliedVoucher": {
-            "nullable": true,
-            "description": "Applied voucher snapshot at item level. Null means no voucher applied for this item.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/VoucherEntity"
-              }
-            ]
-          },
           "discountDescription": {
-            "type": "string",
-            "example": "No discount applied"
+            "type": "object",
+            "example": "Summer Sale 10%",
+            "nullable": true
           },
           "discountType": {
             "type": "string",
@@ -12623,19 +13215,12 @@
               "PERCENTAGE",
               "FIXED_AMOUNT"
             ],
-            "example": "PERCENTAGE"
+            "example": "PERCENTAGE",
+            "nullable": true
           },
           "discountValue": {
             "type": "number",
             "example": 10
-          },
-          "totalDiscountAmount": {
-            "type": "number",
-            "example": 120000
-          },
-          "subTotalPrice": {
-            "type": "number",
-            "example": 1200000
           },
           "totalPrice": {
             "type": "number",
@@ -12654,12 +13239,8 @@
           "productVariantSKU",
           "quantity",
           "unitPrice",
-          "appliedVoucher",
-          "discountDescription",
           "discountType",
           "discountValue",
-          "totalDiscountAmount",
-          "subTotalPrice",
           "totalPrice",
           "currencyUnit"
         ]
@@ -12933,27 +13514,6 @@
               "$ref": "#/components/schemas/PackageItemDetailForGHNCreateNewOrderRequestDto"
             }
           },
-          "userVoucher": {
-            "nullable": true,
-            "description": "Selected user voucher snapshot for package-level discount. Null means no user voucher applied.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UserSavedVoucherDetailEntity"
-              }
-            ]
-          },
-          "subTotalPriceForPackage": {
-            "type": "number",
-            "example": 5720000
-          },
-          "specialUserDiscountAmountForPackage": {
-            "type": "number",
-            "example": 0
-          },
-          "totalPriceForPackage": {
-            "type": "number",
-            "example": 5804700
-          },
           "totalWeight": {
             "type": "number",
             "example": 1500,
@@ -13004,10 +13564,6 @@
           "expectedDeliveryTime": {
             "$ref": "#/components/schemas/CalculateExpectedDeliveryTimeResponseDto"
           },
-          "from_province_id": {
-            "type": "number",
-            "example": 202
-          },
           "from_district_id": {
             "type": "number",
             "example": 1
@@ -13016,10 +13572,6 @@
             "type": "string",
             "example": "100320"
           },
-          "to_province_id": {
-            "type": "number",
-            "example": 205
-          },
           "to_district_id": {
             "type": "number",
             "example": 3
@@ -13027,20 +13579,11 @@
           "to_ward_code": {
             "type": "string",
             "example": "100010"
-          },
-          "to_user_id": {
-            "type": "string",
-            "example": "1033",
-            "description": "User ID associated with destination address. Runtime type can be bigint and may be serialized as string/number in JSON."
           }
         },
         "required": [
           "packageItems",
           "packageItemsForGHNCreateNewOrderRequest",
-          "userVoucher",
-          "subTotalPriceForPackage",
-          "specialUserDiscountAmountForPackage",
-          "totalPriceForPackage",
           "totalWeight",
           "totalHeight",
           "maxLength",
@@ -13053,54 +13596,498 @@
           "shippingService",
           "shippingFee",
           "expectedDeliveryTime",
-          "from_province_id",
           "from_district_id",
           "from_ward_code",
-          "to_province_id",
           "to_district_id",
-          "to_ward_code",
-          "to_user_id"
+          "to_ward_code"
         ]
       },
-      "ChecksumInformationForOrderPreviewDto": {
+      "SecondCreateOrderItemsDto": {
         "type": "object",
         "properties": {
-          "checksumIdInDB": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "example": "1234567890123456789",
-            "description": "Checksum record ID stored in database. Runtime type is bigint and may be serialized as string in JSON."
+          "productVariantId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 851
           },
-          "checksumData": {
+          "quantity": {
+            "type": "number",
+            "example": 8
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 851
+          },
+          "discountDescription": {
             "type": "string",
-            "example": "e9f4d4b2fba1a5f5585bbf9ef4d84e5f4f8f6cbe9d8e6d5f4c3b2a1908171615",
-            "description": "Checksum data used to validate package integrity before create-order."
+            "example": "free ship",
+            "description": "Description of the discount"
+          },
+          "discountType": {
+            "type": "object",
+            "example": "FIXED_AMOUNT"
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 465
+          },
+          "totalPrice": {
+            "type": "number",
+            "example": 851,
+            "description": "Total price calculated as unitPrice * quantity"
+          },
+          "currencyUnit": {
+            "type": "string",
+            "example": "VND"
           }
         },
         "required": [
-          "checksumIdInDB",
-          "checksumData"
+          "productVariantId",
+          "quantity",
+          "unitPrice",
+          "discountDescription",
+          "discountType",
+          "discountValue",
+          "totalPrice",
+          "currencyUnit"
         ]
       },
-      "PreviewPackageDetailWithChecksumDto": {
+      "CreateOrderItemDto": {
         "type": "object",
         "properties": {
-          "PackageDetail": {
-            "$ref": "#/components/schemas/PackageDetailDto"
+          "orderId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 851
           },
-          "checksumInformation": {
-            "$ref": "#/components/schemas/ChecksumInformationForOrderPreviewDto"
+          "productVariantId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 851
+          },
+          "quantity": {
+            "type": "number",
+            "example": 851
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 851
+          },
+          "totalPrice": {
+            "type": "number",
+            "example": 851
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 851
+          },
+          "currencyUnit": {
+            "type": "string",
+            "example": "VND"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.098Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.098Z"
           }
         },
         "required": [
-          "PackageDetail",
-          "checksumInformation"
+          "orderId",
+          "productVariantId",
+          "quantity",
+          "unitPrice",
+          "totalPrice",
+          "discountValue",
+          "currencyUnit",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 851
+          },
+          "productVariantId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 851
+          },
+          "quantity": {
+            "type": "number",
+            "example": 851
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 851
+          },
+          "totalPrice": {
+            "type": "number",
+            "example": 851
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 851
+          },
+          "currencyUnit": {
+            "type": "string",
+            "example": "VND"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.098Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.098Z"
+          }
+        }
+      },
+      "OrderItemEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1
+          },
+          "orderId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1
+          },
+          "productVariantId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 1
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2
+          },
+          "unitPrice": {
+            "type": "number",
+            "example": 50
+          },
+          "totalPrice": {
+            "type": "number",
+            "example": 100
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 5
+          },
+          "currencyUnit": {
+            "type": "string",
+            "example": "VND"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "productVariantId",
+          "quantity",
+          "unitPrice",
+          "totalPrice",
+          "discountValue",
+          "currencyUnit",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "EnrichedPackageDetailEntity": {
+        "type": "object",
+        "properties": {
+          "packageItems": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Product variants in this package with pricing and discount information (ID, name, size, color, SKU, quantity, unitPrice, discountType, discountValue, totalPrice)"
+          },
+          "packageItemsForGHNCreateNewOrderRequest": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Package items formatted for GHN create order API request (name, code, quantity, price, length, width, height, weight, category)"
+          },
+          "totalWeight": {
+            "type": "number",
+            "example": 1500,
+            "description": "Total weight of all items in this package in grams"
+          },
+          "totalHeight": {
+            "type": "number",
+            "example": 20,
+            "description": "Total height of stacked items in centimeters"
+          },
+          "maxLength": {
+            "type": "number",
+            "example": 30,
+            "description": "Maximum length among all items in centimeters"
+          },
+          "maxWidth": {
+            "type": "number",
+            "example": 25,
+            "description": "Maximum width among all items in centimeters"
+          },
+          "ghnShopId": {
+            "type": "number",
+            "example": 1001,
+            "description": "GHN shop ID for the pickup location (warehouse/shop office)"
+          },
+          "ghnShopDetail": {
+            "type": "object",
+            "description": "Complete GHN shop details from GHN API (_id, name, phone, address, ward_code, district_id, location, version_no, is_created_chat_channel, address_v2, ward_id_v2, province_id_v2, status, updated/created metadata)"
+          },
+          "ghnProvinceName": {
+            "type": "string",
+            "example": "TP. Hồ Chí Minh",
+            "description": "Province name for pickup location from GHN API"
+          },
+          "ghnDistrictName": {
+            "type": "string",
+            "example": "Quận 1",
+            "description": "District name for pickup location from GHN API"
+          },
+          "ghnWardName": {
+            "type": "string",
+            "example": "Phường Bến Nghé",
+            "description": "Ward name for pickup location from GHN API"
+          },
+          "shippingService": {
+            "type": "object",
+            "description": "Selected GHN shipping service details (service_id, short_name like \"Express/Standard/Saving\", service_type_id, config_fee_id, extra_cost_id, standard_config_fee_id, standard_extra_cost_id)"
+          },
+          "shippingFee": {
+            "type": "number",
+            "example": 35000,
+            "description": "Calculated shipping fee for this package in VND"
+          },
+          "expectedDeliveryTime": {
+            "type": "object",
+            "description": "Expected delivery time with leadtime (Unix timestamp for delivery) and order_date (Unix timestamp for order creation)",
+            "example": {
+              "leadtime": 1707993600,
+              "order_date": 1707917200
+            }
+          },
+          "from_district_id": {
+            "type": "number",
+            "example": 1,
+            "description": "GHN district ID for pickup location"
+          },
+          "from_ward_code": {
+            "type": "string",
+            "example": "100320",
+            "description": "GHN ward code for pickup location"
+          },
+          "to_district_id": {
+            "type": "number",
+            "example": 3,
+            "description": "GHN district ID for delivery location"
+          },
+          "to_ward_code": {
+            "type": "string",
+            "example": "100010",
+            "description": "GHN ward code for delivery location"
+          }
+        },
+        "required": [
+          "packageItems",
+          "packageItemsForGHNCreateNewOrderRequest",
+          "totalWeight",
+          "totalHeight",
+          "maxLength",
+          "maxWidth",
+          "ghnShopId",
+          "ghnShopDetail",
+          "ghnProvinceName",
+          "ghnDistrictName",
+          "ghnWardName",
+          "shippingService",
+          "shippingFee",
+          "expectedDeliveryTime",
+          "from_district_id",
+          "from_ward_code",
+          "to_district_id",
+          "to_ward_code"
+        ]
+      },
+      "CreateShipmentDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 455
+          },
+          "processByStaffId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 455
+          },
+          "estimatedDelivery": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z",
+            "description": "at shop, estimate time when leave from shop"
+          },
+          "deliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z",
+            "description": "at shop, actual time when leave from shop"
+          },
+          "estimatedShipDate": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z",
+            "description": "at customer, estimate time when arrive to customer"
+          },
+          "shippedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z",
+            "description": "at customer, actual time when arrive to customer"
+          },
+          "carrier": {
+            "type": "string",
+            "examples": [
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
+            ],
+            "example": "Giao hàng nhanh",
+            "description": "Carrier for the shipment"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "example": "ABC123XYZ"
+          },
+          "status": {
+            "type": "object",
+            "example": "PENDING"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-07T07:47:29.126Z"
+          }
+        },
+        "required": [
+          "orderId",
+          "processByStaffId",
+          "estimatedDelivery",
+          "deliveredAt",
+          "estimatedShipDate",
+          "shippedAt",
+          "carrier",
+          "trackingNumber",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "createNewShipmentForOrderAndAutoCreateGHNShipmentDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "format": "int64",
+            "type": "integer",
+            "example": 455
+          },
+          "carrier": {
+            "type": "string",
+            "examples": [
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
+            ],
+            "example": "Giao hàng nhanh",
+            "description": "Carrier for the shipment"
+          },
+          "packages": {
+            "type": "object",
+            "description": "Packages grouped by GHN shop ID. Each key is a shop ID string and each value is a PackageDetail object.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PackageDetailDto"
+            }
+          },
+          "createNewAddressForOrderResponseDto": {
+            "description": "Validated shipping address for GHN shipment creation (database address plus GHN location data).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateAddressForOrderResponseDto"
+              }
+            ]
+          },
+          "customerPhoneForOrder": {
+            "type": "string",
+            "example": "0987654321",
+            "description": "Customer phone number for GHN order creation"
+          }
+        },
+        "required": [
+          "orderId",
+          "carrier",
+          "packages",
+          "createNewAddressForOrderResponseDto",
+          "customerPhoneForOrder"
+        ]
+      },
+      "PreviewShippingFeeForPackagesDto": {
+        "type": "object",
+        "properties": {
+          "packages": {
+            "type": "object",
+            "description": "Packages grouped by GHN shop ID. Each key is a shop ID string and each value is a PackageDetail object containing product variants, dimensions, and weights.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PackageDetailDto"
+            }
+          },
+          "createNewAddressForOrderResponseDto": {
+            "description": "Validated shipping address for GHN fee calculation (database address plus GHN location data with province, district, and ward IDs).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateAddressForOrderResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "packages",
+          "createNewAddressForOrderResponseDto"
         ]
       },
       "UpdateShipmentDto": {
@@ -13119,31 +14106,35 @@
           "estimatedDelivery": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
+            "example": "2026-03-07T07:47:29.126Z",
             "description": "at shop, estimate time when leave from shop"
           },
           "deliveredAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
+            "example": "2026-03-07T07:47:29.126Z",
             "description": "at shop, actual time when leave from shop"
           },
           "estimatedShipDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
+            "example": "2026-03-07T07:47:29.126Z",
             "description": "at customer, estimate time when arrive to customer"
           },
           "shippedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z",
+            "example": "2026-03-07T07:47:29.126Z",
             "description": "at customer, actual time when arrive to customer"
           },
           "carrier": {
             "type": "string",
             "examples": [
-              "Giao hàng nhanh"
+              "Giao hàng nhanh",
+              "Giao hàng tiết kiệm",
+              "GrabExpress",
+              "VNPost",
+              "J&T Express"
             ],
             "example": "Giao hàng nhanh",
             "description": "Carrier for the shipment"
@@ -13153,18 +14144,18 @@
             "example": "ABC123XYZ"
           },
           "status": {
-            "type": "string",
+            "type": "object",
             "example": "PENDING"
           },
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z"
+            "example": "2026-03-07T07:47:29.126Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.167Z"
+            "example": "2026-03-07T07:47:29.126Z"
           }
         }
       },
@@ -13195,7 +14186,11 @@
           "paymentMethod": {
             "examples": [
               "COD",
-              "VNPAY"
+              "VNPAY",
+              "MOMO",
+              "ZALOPAY",
+              "CREDIT_CARD",
+              "BANK_TRANSFER"
             ],
             "example": "COD",
             "description": "Payment method for the order",
@@ -13208,7 +14203,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.259Z"
+            "example": "2026-03-07T07:47:29.176Z"
           },
           "amount": {
             "type": "number",
@@ -13219,7 +14214,7 @@
             "example": "VND"
           },
           "status": {
-            "type": "string",
+            "type": "object",
             "example": "PENDING"
           }
         },
@@ -13556,6 +14551,47 @@
           "isVerified",
           "isSuccess",
           "message"
+        ]
+      },
+      "VerifyIpnCallOptionsDto": {
+        "type": "object",
+        "properties": {
+          "withHash": {
+            "type": "boolean",
+            "description": "Whether the secure hash is included in data",
+            "example": true
+          },
+          "logger": {
+            "type": "object",
+            "description": "Logger options (can be {type: \"all\"}, {type: \"omit\", fields: [...]}, or {type: \"pick\", fields: [...]})",
+            "example": {
+              "type": "all"
+            }
+          }
+        }
+      },
+      "VerifyVNPayIPNCallDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "IPN query data from VNPAY callback",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReturnQueryFromVNPayDto"
+              }
+            ]
+          },
+          "options": {
+            "description": "Optional IPN verification options",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VerifyIpnCallOptionsDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "VNPayVerifyIpnCallResponseDto": {
@@ -13975,7 +15011,11 @@
           "paymentMethod": {
             "examples": [
               "COD",
-              "VNPAY"
+              "VNPAY",
+              "MOMO",
+              "ZALOPAY",
+              "CREDIT_CARD",
+              "BANK_TRANSFER"
             ],
             "example": "COD",
             "description": "Payment method for the order",
@@ -13988,7 +15028,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.259Z"
+            "example": "2026-03-07T07:47:29.176Z"
           },
           "amount": {
             "type": "number",
@@ -13999,7 +15039,7 @@
             "example": "VND"
           },
           "status": {
-            "type": "string",
+            "type": "object",
             "example": "PENDING"
           }
         }
@@ -14024,12 +15064,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.885Z"
+            "example": "2026-03-07T07:47:28.088Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:49.888Z"
+            "example": "2026-03-07T07:47:28.088Z"
           }
         }
       },
@@ -14087,7 +15127,7 @@
             "example": "free ship"
           },
           "discountType": {
-            "type": "string",
+            "type": "object",
             "example": "FIXED_AMOUNT"
           },
           "discountValue": {
@@ -14097,12 +15137,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "usageLimit": {
             "type": "number",
@@ -14119,12 +15159,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "createdBy": {
             "format": "int64",
@@ -14159,7 +15199,7 @@
             "example": "free ship"
           },
           "discountType": {
-            "type": "string",
+            "type": "object",
             "example": "FIXED_AMOUNT"
           },
           "discountValue": {
@@ -14169,12 +15209,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "usageLimit": {
             "type": "number",
@@ -14191,12 +15231,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.391Z"
+            "example": "2026-03-07T07:47:29.265Z"
           },
           "createdBy": {
             "format": "int64",
@@ -14494,15 +15534,15 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.442Z"
+            "example": "2026-03-07T07:47:29.300Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.442Z"
+            "example": "2026-03-07T07:47:29.300Z"
           },
           "voucherStatus": {
-            "type": "string",
+            "type": "object",
             "example": "AVAILABLE"
           }
         },
@@ -14530,15 +15570,15 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.442Z"
+            "example": "2026-03-07T07:47:29.300Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.442Z"
+            "example": "2026-03-07T07:47:29.300Z"
           },
           "voucherStatus": {
-            "type": "string",
+            "type": "object",
             "example": "AVAILABLE"
           }
         }
@@ -14674,12 +15714,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.538Z"
+            "example": "2026-03-07T07:47:29.356Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.538Z"
+            "example": "2026-03-07T07:47:29.356Z"
           }
         },
         "required": [
@@ -14740,14 +15780,269 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.538Z"
+            "example": "2026-03-07T07:47:29.356Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.538Z"
+            "example": "2026-03-07T07:47:29.356Z"
           }
         }
+      },
+      "CreateShopOfficeDto": {
+        "type": "object",
+        "properties": {
+          "shopName": {
+            "type": "string",
+            "example": "Văn phòng Hà Nội"
+          },
+          "address": {
+            "type": "string",
+            "example": "Đường Hồ Xuân Hương, Đông Hòa, Dĩ An, Bình Dương, Việt Nam",
+            "description": "please provide shipping address details. This is full address of shop office"
+          },
+          "street": {
+            "type": "string",
+            "example": "Ho Xuan Huong Street"
+          },
+          "ward": {
+            "type": "string",
+            "example": "Đông Hòa",
+            "description": "please provide shipping address details."
+          },
+          "district": {
+            "type": "string",
+            "example": "Dĩ An",
+            "description": "please provide shipping address details."
+          },
+          "province": {
+            "type": "string",
+            "example": "Bình Dương",
+            "description": "please provide shipping address details."
+          },
+          "zipCode": {
+            "type": "string",
+            "example": "ADSAFD797654FDAFD"
+          },
+          "country": {
+            "type": "string",
+            "example": "Bình Dương"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0987654321"
+          }
+        },
+        "required": [
+          "shopName",
+          "address",
+          "street",
+          "ward",
+          "district",
+          "province",
+          "zipCode",
+          "country",
+          "phone"
+        ]
+      },
+      "UpdateShopOfficeDto": {
+        "type": "object",
+        "properties": {
+          "shopName": {
+            "type": "string",
+            "example": "Văn phòng Hà Nội"
+          },
+          "address": {
+            "type": "string",
+            "example": "Đường Hồ Xuân Hương, Đông Hòa, Dĩ An, Bình Dương, Việt Nam",
+            "description": "please provide shipping address details. This is full address of shop office"
+          },
+          "street": {
+            "type": "string",
+            "example": "Ho Xuan Huong Street"
+          },
+          "ward": {
+            "type": "string",
+            "example": "Đông Hòa",
+            "description": "please provide shipping address details."
+          },
+          "district": {
+            "type": "string",
+            "example": "Dĩ An",
+            "description": "please provide shipping address details."
+          },
+          "province": {
+            "type": "string",
+            "example": "Bình Dương",
+            "description": "please provide shipping address details."
+          },
+          "zipCode": {
+            "type": "string",
+            "example": "ADSAFD797654FDAFD"
+          },
+          "country": {
+            "type": "string",
+            "example": "Bình Dương"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0987654321"
+          }
+        }
+      },
+      "ShopOfficeWithProductsEntity": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "description": "List of products in the shop office",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductEntity"
+            }
+          }
+        },
+        "required": [
+          "products"
+        ]
+      },
+      "GHNShopDetailEntity": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "number",
+            "example": 123456
+          },
+          "name": {
+            "type": "string",
+            "example": "Main Store"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0123456789"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Main Street"
+          },
+          "ward_code": {
+            "type": "string",
+            "example": "21012"
+          },
+          "district_id": {
+            "type": "number",
+            "example": 1542
+          },
+          "client_id": {
+            "type": "number",
+            "example": 100
+          },
+          "bank_account_id": {
+            "type": "number",
+            "example": 0
+          },
+          "status": {
+            "type": "number",
+            "example": 1,
+            "description": "Shop status in GHN system"
+          },
+          "location": {
+            "type": "object",
+            "example": {},
+            "description": "Geographic location coordinates"
+          },
+          "version_no": {
+            "type": "string",
+            "example": "1.0"
+          },
+          "is_created_chat_channel": {
+            "type": "boolean",
+            "example": false
+          },
+          "address_v2": {
+            "type": "string",
+            "example": "123 Main Street, Ward, District, City"
+          },
+          "ward_id_v2": {
+            "type": "number",
+            "example": 20101
+          },
+          "province_id_v2": {
+            "type": "number",
+            "example": 202
+          },
+          "is_new_address": {
+            "type": "boolean",
+            "example": true
+          },
+          "updated_ip": {
+            "type": "string",
+            "example": "192.168.1.1"
+          },
+          "updated_employee": {
+            "type": "number",
+            "example": 0
+          },
+          "updated_client": {
+            "type": "number",
+            "example": 100
+          },
+          "updated_source": {
+            "type": "string",
+            "example": "web"
+          },
+          "updated_date": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "created_ip": {
+            "type": "string",
+            "example": "192.168.1.1"
+          },
+          "created_employee": {
+            "type": "number",
+            "example": 0
+          },
+          "created_client": {
+            "type": "number",
+            "example": 100
+          },
+          "created_source": {
+            "type": "string",
+            "example": "web"
+          },
+          "created_date": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "_id",
+          "name",
+          "phone",
+          "address",
+          "ward_code",
+          "district_id",
+          "client_id",
+          "bank_account_id",
+          "status",
+          "location",
+          "version_no",
+          "is_created_chat_channel",
+          "address_v2",
+          "ward_id_v2",
+          "province_id_v2",
+          "is_new_address",
+          "updated_ip",
+          "updated_employee",
+          "updated_client",
+          "updated_source",
+          "updated_date",
+          "created_ip",
+          "created_employee",
+          "created_client",
+          "created_source",
+          "created_date"
+        ]
       },
       "CreateColorDto": {
         "type": "object",
@@ -14763,12 +16058,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.598Z"
+            "example": "2026-03-07T07:47:29.438Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.598Z"
+            "example": "2026-03-07T07:47:29.438Z"
           }
         },
         "required": [
@@ -14827,12 +16122,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.598Z"
+            "example": "2026-03-07T07:47:29.438Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-03-28T04:08:51.598Z"
+            "example": "2026-03-07T07:47:29.438Z"
           }
         }
       }

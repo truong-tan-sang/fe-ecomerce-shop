@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "bk-ecommerce-shop.s3.ap-southeast-1.amazonaws.com",
+      },
     ],
   },
 };
