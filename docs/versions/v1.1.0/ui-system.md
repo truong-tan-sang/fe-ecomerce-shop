@@ -151,3 +151,64 @@ Standardizing on shadcn/ui eliminates all four problems while keeping full contr
 
 ### Files Changed
 - src/components/header/navbar.tsx — replaced custom dropdown with DropdownMenu/Trigger/Content/Item/Separator; removed showAccountMenu state, accountMenuRef, click-outside useEffect
+
+## Customer page buttons and inputs (t2-ui-system-03)
+
+### Summary
+- Installed shadcn Checkbox and RadioGroup components
+- Migrated ~80+ raw HTML elements across 10 customer-facing files to shadcn equivalents
+- Cart: checkboxes, quantity stepper (Button+Input), remove/buy buttons
+- Checkout: address Select, phone Input, order notes Textarea, payment RadioGroup, place order Button
+- Product pages: size/color selector Buttons, quantity stepper, add-to-cart, star rating, review form Textarea
+- Profile: sub-tab Buttons, form Inputs, gender RadioGroup, address action Buttons, search bars
+
+### Implementation
+- Phase A: Install Checkbox + RadioGroup, clean dark: classes — 4 tasks
+- Phase B: Product pages (ProductInfo, ReviewForm, ProductGallery) — 12 tasks
+- Phase C: Cart and checkout pages — 12 tasks
+- Phase D: Profile pages (ProfileContent, AddressModal, OrdersContent, VouchersContent, NotificationsContent) — 17 tasks
+
+### Files Changed
+- src/components/ui/checkbox.tsx — new, rounded-none, cursor-pointer, dark: removed
+- src/components/ui/radio-group.tsx — new, cursor-pointer, dark: removed
+- src/components/product/ProductInfo.tsx — all buttons → shadcn Button, qty input → shadcn Input
+- src/components/product/ReviewForm.tsx — star buttons, variant buttons → Button; textarea → Textarea; submit/cancel → Button
+- src/components/product/ProductGallery.tsx — thumbnail button → shadcn Button
+- src/app/(user)/cart/page.tsx — checkboxes → Checkbox, qty stepper → Button+Input, remove/buy → Button
+- src/app/(user)/checkout/page.tsx — select → Select, input → Input, textarea → Textarea, radio → RadioGroup, buttons → Button; refactored handleAddressChange to accept string
+- src/components/profile/ProfileContent.tsx — sub-tabs, form inputs, gender radios, save/edit, address actions → shadcn
+- src/components/profile/AddressModal.tsx — all inputs → Input, close/cancel/submit → Button
+- src/components/profile/OrdersContent.tsx — search input/button, order action buttons → shadcn
+- src/components/profile/VouchersContent.tsx — search, tab buttons, action buttons → shadcn
+- src/components/profile/NotificationsContent.tsx — button → Button (link variant)
+
+### Bug fix (unrelated to UI migration)
+- src/components/product/ProductInfo.tsx — fixed add-to-cart for new users: getCartById throws 400 (backend wraps 404→400), now caught to trigger cart creation
+
+## Product cards show rich data and correct images (t2-ui-system-06)
+
+### Summary
+- Product cards now show real variant images per color, not placeholder/wrong images
+- Color swatches on cards — click swaps the card image to that color's variant
+- Price range with discount badge (lowest vs highest variant price)
+- Out-of-stock styling: dimmed card, grayscale image, bold black badge
+- Product detail page uses dynamic sizes/colors from API instead of hardcoded STANDARD_SIZES/STANDARD_COLORS
+- Gallery syncs with color selection via new ProductDetailClient wrapper
+- Colors fetched from GET /color API in SSR (homepage + detail page)
+- getProductById service updated to return ProductDto (with productVariants+media)
+
+### Implementation
+- Phase A: Fetch colors and wire data pipeline — 4 tasks
+- Phase B: Product cards — images, swatches, price/discount — 7 tasks
+- Phase C: Product detail page — dynamic sizes/colors and gallery — 8 tasks
+- Phase D: Visual polish — 4 tasks
+
+### Files Changed
+- src/components/product/ProductCard.tsx — full rewrite: accepts variants+colors, extracts images per color, swatch swap, price range, discount badge, out-of-stock styling
+- src/components/product/ProductGrid.tsx — passes variants+colors to ProductCard, removed PLACEHOLDER_IMAGE
+- src/components/product/ProductDetailClient.tsx — new client wrapper coordinating gallery+info via onColorChange callback
+- src/components/product/ProductInfo.tsx — removed STANDARD_SIZES/STANDARD_COLORS, uses dynamic sizes from variants + ColorEntity via colorId, added onColorChange prop
+- src/components/product/ProductGallery.tsx — resets selectedIndex on images change (useEffect)
+- src/app/(user)/homepage/page.tsx — fetches colorService.getAllColors() in SSR, passes to ProductGrid
+- src/app/(user)/product/[id]/page.tsx — fetches colors, uses ProductDto (with media), delegates to ProductDetailClient
+- src/services/product.ts — getProductById returns ProductDto instead of ProductDetailDto (backend includes variants+media)
