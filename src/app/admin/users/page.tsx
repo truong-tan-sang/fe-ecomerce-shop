@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default async function AdminUsersPage() {
   const session = await auth();
-  const accessToken = session?.access_token || session?.user?.access_token;
+  const accessToken = session?.user?.access_token;
   let users: Awaited<ReturnType<typeof userService.getAll>> | null = null;
   try {
     users = await userService.getAll(accessToken);

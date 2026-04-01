@@ -1,0 +1,632 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { productService } from "@/services/product";
+import { productVariantService } from "@/services/product-variant";
+import { categoryService } from "@/services/category";
+import { colorService } from "@/services/color";
+import type { CreateProductDto, UpdateProductDto } from "@/dto/product";
+import type { CreateProductVariantDto } from "@/dto/product-variant";
+import type { CategoryDto } from "@/dto/category";
+import type { ColorEntity } from "@/dto/color";
+import type { ProductFormState, ColorEntry, VariantMatrix } from "../_types";
+import { Button } from "@/components/ui/button";
+import ProductBasicInfoCard from "./ProductBasicInfoCard";
+import ProductImageCard from "./ProductImageCard";
+import VariantMatrixSection from "./VariantMatrixSection";
+import ColorImageUploadSection from "./ColorImageUploadSection";
+import ProductFormActions from "./ProductFormActions";
+
+const initialFormState: ProductFormState = {
+  name: "",
+  description: "",
+  price: 0,
+  stock: 0,
+  stockKeepingUnit: "",
+  currencyUnit: "VND",
+  categoryId: null,
+  voucherId: null,
+  isUnlimitedStock: false,
+  status: "ACTIVE",
+  selectedSizes: [],
+  selectedColors: [],
+  variantMatrix: {},
+  colorImages: [],
+};
+
+interface ProductFormProps {
+  productId?: number;
+}
+
+export default function ProductForm({ productId }: ProductFormProps) {
+  const isEditMode = productId !== undefined;
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [apiColors, setApiColors] = useState<ColorEntity[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(isEditMode);
+  const [formState, setFormState] = useState<ProductFormState>(initialFormState);
+  const [variantIdMap, setVariantIdMap] = useState<Record<string, number>>({});
+  const [originalVariantKeys, setOriginalVariantKeys] = useState<Set<string>>(new Set());
+
+  // Product image state
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  // Track existing media ID for deletion on replace (edit mode)
+  const [existingMediaId, setExistingMediaId] = useState<string | null>(null);
+  // Whether the user removed the existing image
+  const [imageRemoved, setImageRemoved] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user?.access_token) return;
+    const token = session.user.access_token;
+
+    const fetchData = async () => {
+      try {
+        const [catRes, colorRes] = await Promise.all([
+          categoryService.getAllCategories(token),
+          colorService.getAllColors(token),
+        ]);
+        if (catRes.data) setCategories(catRes.data);
+        const fetchedColors = colorRes.data ?? [];
+        setApiColors(fetchedColors);
+
+        if (isEditMode && productId) {
+          const productRes = await productService.getProductById(String(productId), token);
+          if (productRes.data) {
+            const product = productRes.data;
+            console.log("[ProductForm] Loaded product:", product);
+
+            // Load product image from media array
+            const productWithMedia = product as unknown as { media?: Array<{ id: number; url: string }> };
+            if (productWithMedia.media && productWithMedia.media.length > 0) {
+              setProductImagePreview(productWithMedia.media[0].url);
+              setExistingMediaId(String(productWithMedia.media[0].id));
+            }
+
+            const sizesSet = new Set<string>();
+            const colorsMap = new Map<string, ColorEntry>();
+            const matrix: VariantMatrix = {};
+            const idMap: Record<string, number> = {};
+            const colorImagesMap = new Map<string, string | null>();
+
+            const variants = "productVariants" in product
+              ? (product as unknown as { productVariants: Array<{
+                  id: number; variantSize: string; variantColor: string;
+                  colorId?: number;
+                  stock: number; price: number; media?: Array<{ url: string }>;
+                }> }).productVariants
+              : [];
+
+            for (const v of variants) {
+              sizesSet.add(v.variantSize);
+
+              // Primary lookup: colorId (source of truth)
+              // Fallback: match by variantColor text (legacy data)
+              const apiColor = fetchedColors.find((c) => c.id === v.colorId)
+                ?? fetchedColors.find((c) => c.name === v.variantColor);
+              const colorName = apiColor?.name ?? v.variantColor;
+              const colorLabel = apiColor?.name ?? v.variantColor;
+              const colorHex = apiColor?.hexCode ?? "#888888";
+              const colorId = apiColor?.id;
+
+              if (!colorsMap.has(colorName)) {
+                colorsMap.set(colorName, { id: colorId, name: colorName, label: colorLabel, hex: colorHex });
+              }
+
+              const key = `${v.variantSize}__${colorName}`;
+              matrix[key] = { stock: v.stock, price: v.price };
+              idMap[key] = v.id;
+
+              if (!colorImagesMap.has(colorName) && v.media && v.media.length > 0) {
+                colorImagesMap.set(colorName, v.media[0].url);
+              }
+            }
+
+            const selectedColors = Array.from(colorsMap.values());
+            const selectedSizes = Array.from(sizesSet);
+
+            // Fill missing size×color cells so the full matrix is initialized
+            for (const size of selectedSizes) {
+              for (const color of selectedColors) {
+                const key = `${size}__${color.name}`;
+                if (!matrix[key]) {
+                  matrix[key] = { stock: 0, price: 0 };
+                }
+              }
+            }
+            const colorImages = selectedColors.map((c) => ({
+              color: c.name,
+              file: null as File | null,
+              previewUrl: colorImagesMap.get(c.name) ?? null,
+            }));
+
+            setFormState({
+              name: product.name,
+              description: product.description ?? "",
+              price: product.price,
+              stock: product.stock,
+              stockKeepingUnit: product.stockKeepingUnit,
+              currencyUnit: "VND",
+              categoryId: product.categoryId ?? null,
+              voucherId: product.voucherId ?? null,
+              isUnlimitedStock: product.stock >= 999999,
+              status: "ACTIVE",
+              selectedSizes,
+              selectedColors,
+              variantMatrix: matrix,
+              colorImages,
+            });
+
+            setVariantIdMap(idMap);
+            setOriginalVariantKeys(new Set(Object.keys(idMap)));
+          }
+        }
+      } catch (err) {
+        console.error("[ProductForm] Error loading data:", err);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session, productId, isEditMode]);
+
+  const handleFieldChange = useCallback(
+    <K extends keyof ProductFormState>(key: K, value: ProductFormState[K]) => {
+      setFormState((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  const handleMatrixCellChange = useCallback(
+    (key: string, field: "stock" | "price", value: number) => {
+      setFormState((prev) => ({
+        ...prev,
+        variantMatrix: {
+          ...prev.variantMatrix,
+          [key]: {
+            stock: prev.variantMatrix[key]?.stock ?? 0,
+            price: prev.variantMatrix[key]?.price ?? 0,
+            [field]: value,
+          },
+        },
+      }));
+    },
+    []
+  );
+
+  const handleAddColor = useCallback((color: ColorEntry) => {
+    setFormState((prev) => {
+      if (prev.selectedColors.find((c) => c.name === color.name)) return prev;
+      const newColors = [...prev.selectedColors, color];
+      const newMatrix: VariantMatrix = { ...prev.variantMatrix };
+      prev.selectedSizes.forEach((size) => {
+        const key = `${size}__${color.name}`;
+        if (!newMatrix[key]) {
+          newMatrix[key] = { stock: 0, price: prev.price };
+        }
+      });
+      const newColorImages = prev.colorImages.find((ci) => ci.color === color.name)
+        ? prev.colorImages
+        : [...prev.colorImages, { color: color.name, file: null, previewUrl: null }];
+      return {
+        ...prev,
+        selectedColors: newColors,
+        variantMatrix: newMatrix,
+        colorImages: newColorImages,
+      };
+    });
+  }, []);
+
+  const handleColorImageChange = useCallback(
+    (colorName: string, file: File | null) => {
+      setFormState((prev) => ({
+        ...prev,
+        colorImages: prev.colorImages.map((ci) =>
+          ci.color === colorName
+            ? { ...ci, file, previewUrl: file ? URL.createObjectURL(file) : ci.previewUrl }
+            : ci
+        ),
+      }));
+    },
+    []
+  );
+
+  const handleColorImageRemove = useCallback((colorName: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      colorImages: prev.colorImages.map((ci) =>
+        ci.color === colorName ? { ...ci, file: null, previewUrl: null } : ci
+      ),
+    }));
+  }, []);
+
+  const refreshColors = useCallback(async () => {
+    if (!session?.user?.access_token) return;
+    const res = await colorService.getAllColors(session.user.access_token);
+    if (res.data) setApiColors(res.data);
+  }, [session]);
+
+  const handleCreateColor = useCallback(
+    async (name: string, hexCode: string) => {
+      if (!session?.user?.access_token) return;
+      const now = new Date().toISOString();
+      const res = await colorService.createColor(
+        { name, hexCode, createdAt: now, updatedAt: now },
+        session.user.access_token
+      );
+      console.log("[ProductForm] Created color:", res.data);
+      await refreshColors();
+    },
+    [session, refreshColors]
+  );
+
+  const handleUpdateColor = useCallback(
+    async (id: number, name: string, hexCode: string) => {
+      if (!session?.user?.access_token) return;
+      const now = new Date().toISOString();
+      await colorService.updateColor(
+        id,
+        { name, hexCode, updatedAt: now },
+        session.user.access_token
+      );
+      console.log("[ProductForm] Updated color:", id);
+      await refreshColors();
+      // Update selectedColors if the edited color is in use
+      setFormState((prev) => ({
+        ...prev,
+        selectedColors: prev.selectedColors.map((c) =>
+          c.id === id ? { ...c, name, label: name, hex: hexCode } : c
+        ),
+      }));
+    },
+    [session, refreshColors]
+  );
+
+  const handleDeleteColor = useCallback(
+    async (id: number) => {
+      if (!session?.user?.access_token) return;
+      await colorService.deleteColor(id, session.user.access_token);
+      console.log("[ProductForm] Deleted color:", id);
+      await refreshColors();
+    },
+    [session, refreshColors]
+  );
+
+  const handleProductImageChange = useCallback((file: File | null) => {
+    setProductImageFile(file);
+    setProductImagePreview(file ? URL.createObjectURL(file) : null);
+    setImageRemoved(false);
+  }, []);
+
+  const handleProductImageRemove = useCallback(() => {
+    setProductImageFile(null);
+    setProductImagePreview(null);
+    setImageRemoved(true);
+  }, []);
+
+  const handleSave = async () => {
+    if (!session?.user?.access_token || !session?.user?.id) {
+      alert("Bạn cần đăng nhập");
+      return;
+    }
+
+    const { name, description, stockKeepingUnit, categoryId } = formState;
+    if (!name || !description || !stockKeepingUnit || !categoryId) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
+
+    // --- IMAGE VALIDATION ---
+    // Every color in the matrix must have an image (either a new file or an existing previewUrl)
+    const { selectedSizes, selectedColors, variantMatrix, colorImages } = formState;
+    if (selectedColors.length > 0) {
+      const colorsWithoutImage = selectedColors.filter((color) => {
+        const ci = colorImages.find((c) => c.color === color.name);
+        return !ci?.file && !ci?.previewUrl;
+      });
+      if (colorsWithoutImage.length > 0) {
+        const missing = colorsWithoutImage.map((c) => c.label).join(", ");
+        alert(`Vui lòng upload ảnh cho tất cả màu sắc trước khi lưu.\nCòn thiếu: ${missing}`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    const token = session.user.access_token;
+    const userId = parseInt(session.user.id);
+
+    try {
+      let resolvedProductId = productId;
+      const productFiles: File[] = productImageFile ? [productImageFile] : [];
+
+      if (isEditMode && resolvedProductId) {
+        // --- UPDATE PRODUCT ---
+        const updateData: UpdateProductDto = {
+          name,
+          description,
+          price: formState.price,
+          stock: formState.isUnlimitedStock ? 999999 : formState.stock,
+          stockKeepingUnit,
+          currencyUnit: formState.currencyUnit,
+          categoryId: categoryId ?? undefined,
+          voucherId: formState.voucherId ?? undefined,
+        };
+
+        // If user removed or replaced the image, delete the old media
+        if ((imageRemoved || productImageFile) && existingMediaId) {
+          updateData.mediaIdsToDelete = [existingMediaId];
+        }
+
+        console.log("[ProductForm] Updating product:", updateData, "files:", productFiles.length);
+        await productService.updateProduct(resolvedProductId, updateData, productFiles, token);
+      } else {
+        // --- CREATE PRODUCT ---
+        const now = new Date().toISOString();
+        const createData: CreateProductDto = {
+          name,
+          description,
+          price: formState.price,
+          currencyUnit: formState.currencyUnit,
+          stockKeepingUnit,
+          stock: formState.isUnlimitedStock ? 999999 : formState.stock,
+          createByUserId: userId,
+          categoryId,
+          voucherId: formState.voucherId ?? undefined,
+          createdAt: now,
+          updatedAt: now,
+        };
+        console.log("[ProductForm] Creating product:", createData, "files:", productFiles.length);
+        const productRes = await productService.createProduct(createData, productFiles, token);
+        if (!productRes.data) {
+          alert("Tạo sản phẩm thất bại");
+          setLoading(false);
+          return;
+        }
+        resolvedProductId = productRes.data.id;
+        console.log("[ProductForm] Product created with ID:", resolvedProductId);
+      }
+
+      // --- GENERATE UNIQUE SKU SUFFIXES ---
+      // Skip suffixes already used by existing variants to avoid collisions
+      const existingVariantCount = Object.keys(variantIdMap).length;
+      let nextSuffix = 100 + existingVariantCount;
+      const usedSuffixes = new Set<number>();
+      const getNextSku = (): string => {
+        while (usedSuffixes.has(nextSuffix)) nextSuffix++;
+        usedSuffixes.add(nextSuffix);
+        return `PV-${resolvedProductId}-V${nextSuffix}`;
+      };
+
+      // --- HANDLE VARIANTS ---
+      const deletePromises: Promise<unknown>[] = [];
+      const updatePromises: Promise<unknown>[] = [];
+      // Track create calls separately so we can capture returned IDs
+      const createEntries: Array<{ key: string; promise: Promise<IBackendRes<unknown>> }> = [];
+
+      const currentKeys = new Set(
+        selectedSizes.flatMap((size) =>
+          selectedColors.map((color) => `${size}__${color.name}`)
+        )
+      );
+
+      // DELETE removed variants
+      if (isEditMode) {
+        for (const key of originalVariantKeys) {
+          if (!currentKeys.has(key) && variantIdMap[key]) {
+            console.log("[ProductForm] Deleting variant:", key);
+            deletePromises.push(
+              productVariantService.deleteProductVariant(variantIdMap[key], token)
+            );
+          }
+        }
+      }
+
+      // UPDATE existing / CREATE new variants
+      for (const size of selectedSizes) {
+        for (const color of selectedColors) {
+          const key = `${size}__${color.name}`;
+          const cell = variantMatrix[key];
+          if (!cell) continue;
+
+          const colorImage = colorImages.find((ci) => ci.color === color.name);
+          const files: File[] = colorImage?.file ? [colorImage.file] : [];
+
+          if (isEditMode && originalVariantKeys.has(key) && variantIdMap[key]) {
+            // --- UPDATE existing variant ---
+            console.log("[ProductForm] Updating variant:", key);
+            updatePromises.push(
+              productVariantService.updateProductVariant(
+                variantIdMap[key],
+                {
+                  price: cell.price,
+                  stock: cell.stock,
+                  variantSize: size,
+                  variantColor: color.label,
+                  colorId: color.id ?? undefined,
+                },
+                files,
+                token
+              )
+            );
+          } else {
+            // --- CREATE new variant ---
+            // API requires files — use colorImage file if available;
+            // if the color only has a previewUrl (existing image from prior save),
+            // we need to fetch it as a File so the API accepts the create
+            let variantFiles = files;
+            if (variantFiles.length === 0 && colorImage?.previewUrl) {
+              try {
+                const resp = await fetch(colorImage.previewUrl);
+                const blob = await resp.blob();
+                variantFiles = [new File([blob], `${color.name}.jpg`, { type: blob.type })];
+              } catch (err) {
+                console.error("[ProductForm] Failed to fetch existing image for new variant:", err);
+              }
+            }
+            const now = new Date().toISOString();
+            console.log("[ProductForm] Creating variant:", key, "colorId:", color.id, "productId:", resolvedProductId, "files:", variantFiles.length);
+            const variantData: CreateProductVariantDto = {
+              productId: resolvedProductId!,
+              createByUserId: userId,
+              variantName: `Variant for Product ${resolvedProductId} - Option ${size} - ${color.label}`,
+              variantColor: color.label,
+              variantSize: size,
+              variantWeight: 0,
+              variantHeight: 0,
+              variantLength: 0,
+              variantWidth: 0,
+              colorId: color.id ?? 0,
+              price: cell.price,
+              stock: cell.stock,
+              stockKeepingUnit: getNextSku(),
+              createdAt: now,
+            };
+            const createPromise = productVariantService.createProductVariant(variantData, variantFiles, token);
+            createEntries.push({ key, promise: createPromise as Promise<IBackendRes<unknown>> });
+          }
+        }
+      }
+
+      // Execute all operations
+      await Promise.all(deletePromises);
+      await Promise.all(updatePromises);
+      const createSettled = await Promise.allSettled(createEntries.map((e) => e.promise));
+
+      // Update variantIdMap and originalVariantKeys with newly created variant IDs
+      // so subsequent saves use PATCH instead of POST
+      const newIdMap = { ...variantIdMap };
+      const newOriginalKeys = new Set(originalVariantKeys);
+      const failedCreates: string[] = [];
+      createSettled.forEach((result, i) => {
+        const entry = createEntries[i];
+        if (result.status === "rejected") {
+          console.error("[ProductForm] Failed to create variant", entry.key, ":", result.reason);
+          failedCreates.push(entry.key);
+          return;
+        }
+        const data = result.value?.data as { id?: number } | undefined;
+        if (data?.id) {
+          newIdMap[entry.key] = data.id;
+          newOriginalKeys.add(entry.key);
+          console.log("[ProductForm] Created variant", entry.key, "with ID:", data.id);
+        }
+      });
+      setVariantIdMap(newIdMap);
+      setOriginalVariantKeys(newOriginalKeys);
+
+      console.log("[ProductForm] All operations complete");
+      if (failedCreates.length > 0) {
+        alert(`Một số sản phẩm con tạo thất bại: ${failedCreates.join(", ")}\nKiểm tra console để biết chi tiết.`);
+      } else if (isEditMode) {
+        alert("Lưu thành công");
+      } else {
+        router.push(`/admin/products/edit/${resolvedProductId}`);
+      }
+    } catch (error) {
+      console.error("[ProductForm] Error:", error);
+      alert(isEditMode ? "Có lỗi xảy ra khi cập nhật sản phẩm" : "Có lỗi xảy ra khi tạo sản phẩm");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!session?.user?.access_token || !productId) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
+
+    setLoading(true);
+    try {
+      await productService.deleteProduct(productId, session.user.access_token);
+      console.log("[ProductForm] Product deleted");
+      router.push("/admin/products/list");
+    } catch (error) {
+      console.error("[ProductForm] Error deleting:", error);
+      alert("Có lỗi xảy ra khi xóa sản phẩm");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Đang tải...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-[#023337]">
+          {isEditMode ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
+        </h1>
+        <Button
+          onClick={handleSave}
+          disabled={loading}
+          className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white px-6 cursor-pointer"
+        >
+          {loading
+            ? "Đang lưu..."
+            : isEditMode
+              ? "Lưu thay đổi"
+              : "Đăng tải sản phẩm"}
+        </Button>
+      </div>
+
+      {/* Two-column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <ProductBasicInfoCard
+          formState={formState}
+          onFieldChange={handleFieldChange}
+        />
+        <ProductImageCard
+          formState={formState}
+          categories={categories}
+          onFieldChange={handleFieldChange}
+          productImageFile={productImageFile}
+          productImagePreview={productImagePreview}
+          onProductImageChange={handleProductImageChange}
+          onProductImageRemove={handleProductImageRemove}
+        />
+      </div>
+
+      {/* Variant matrix */}
+      <div className="mb-6">
+        <VariantMatrixSection
+          formState={formState}
+          apiColors={apiColors}
+          onFieldChange={handleFieldChange}
+          onAddColor={handleAddColor}
+          onMatrixCellChange={handleMatrixCellChange}
+          onCreateColor={handleCreateColor}
+          onUpdateColor={handleUpdateColor}
+          onDeleteColor={handleDeleteColor}
+        />
+      </div>
+
+      {/* Color image upload */}
+      <div className="mb-6">
+        <ColorImageUploadSection
+          formState={formState}
+          onColorImageChange={handleColorImageChange}
+          onColorImageRemove={handleColorImageRemove}
+        />
+      </div>
+
+      {/* Save / Delete actions */}
+      <ProductFormActions
+        mode={isEditMode ? "edit" : "add"}
+        loading={loading}
+        onSave={handleSave}
+        onDelete={isEditMode ? handleDelete : undefined}
+      />
+    </div>
+  );
+}
