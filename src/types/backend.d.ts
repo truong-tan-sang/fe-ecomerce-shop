@@ -5,11 +5,11 @@ declare global {
   interface IRequest {
     url: string;
     method: string;
-    body?: { [key: string]: any };
-    queryParams?: any;
+    body?: object | FormData;
+    queryParams?: Record<string, string | number | boolean>;
     useCredentials?: boolean;
-    headers?: any;
-    nextOption?: any;
+    headers?: Record<string, string>;
+    nextOption?: { revalidate?: number | false; tags?: string[] };
   }
 
   interface IBackendRes<T> {

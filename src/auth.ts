@@ -56,14 +56,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       authorize: async (credentials) => {
         console.log("Authorize called with credentials:", credentials);
-        const res = await authService.login({
-          username: credentials.username as string,
-          password: credentials.password as string,
-        });
-        console.log("Response from backend:", res);
+        try {
+          const res = await authService.login({
+            username: credentials.username as string,
+            password: credentials.password as string,
+          });
+          console.log("Response from backend:", res);
 
-        if (res.statusCode === 201) {
-          // return user object with their profile data
           return {
             id: String(res.data?.user?.id),
             name: res.data?.user?.name,
@@ -71,12 +70,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             access_token: res.data?.access_token,
             role: res.data?.user?.role,
             isAdmin: res.data?.user?.isAdmin,
-          } as any;
-        } else if (+res.statusCode === 401) {
-          throw new InvalidEmailPasswordError();
-        } else if (+res.statusCode === 400) {
-          throw new InactiveAccountError();
-        } else {
+          };
+        } catch (error) {
+          const { ApiError } = await import("@/utils/api-error");
+          if (error instanceof ApiError) {
+            console.log("[Auth] Login failed:", error.statusCode, error.message);
+            if (error.statusCode === 401) {
+              throw new InvalidEmailPasswordError();
+            } else if (error.statusCode === 400) {
+              throw new InactiveAccountError();
+            }
+          }
           throw new Error("Internal server error");
         }
       },
@@ -100,8 +104,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           // Call backend to create/get user
           const createUserPayload = {
-            firstName: (user as any).firstName || profile?.given_name || "",
-            lastName: (user as any).lastName || profile?.family_name || "",
+            firstName: user.firstName || profile?.given_name || "",
+            lastName: user.lastName || profile?.family_name || "",
             gender: "OTHER",
             email: user.email || "",
             phone: "",
@@ -183,16 +187,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             tokenType: typeof accessToken,
           });
 
-          (user as any).access_token = accessToken;
-          (user as any).role = role;
-          (user as any).isAdmin = isAdmin;
+          user.access_token = accessToken;
+          user.role = role;
+          user.isAdmin = isAdmin;
           user.id = String(userId);
 
           console.log("✅ User data attached to session:", {
             id: user.id,
             email: user.email,
-            role: (user as any).role,
-            isAdmin: (user as any).isAdmin,
+            role: user.role,
+            isAdmin: user.isAdmin,
           });
 
           return true;
@@ -217,11 +221,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id || "",
           name: user.name || "",
           email: user.email || "",
-          access_token: (user as any).access_token || "",
-          role: (user as any).role,
-          isAdmin: (user as any).isAdmin,
-          firstName: (user as any).firstName,
-          lastName: (user as any).lastName,
+          access_token: user.access_token || "",
+          role: user.role,
+          isAdmin: user.isAdmin,
+          firstName: user.firstName,
+          lastName: user.lastName,
           image: (user.image || undefined) as string | undefined,
         };
       }

@@ -1,50 +1,67 @@
 // Product DTOs aligned with backend OpenAPI schema
 
 /**
- * Media item for product variants
- * Represents images or videos associated with a product variant
+ * Media entity from API
  */
-export interface ProductMediaDto {
+export interface MediaEntity {
   id: number;
-  productVariantId: number;
-  mediaType: "IMAGE" | "VIDEO";
-  mediaPath: string;
-  createdAt: string; // ISO date-time
-  updatedAt: string; // ISO date-time
+  url: string;
+  type: "IMAGE" | "VIDEO" | "DOCUMENT";
+  reviewId: number | null;
+  userId: number | null;
+  productVariantId: number | null;
+  isShopLogo: boolean;
+  isShopBanner: boolean;
+  isCategoryFile: boolean;
+  isAvatarFile: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
- * Product variant with media
- * Represents a specific variant (color, size, etc.) of a product
+ * Product variant with media (from ProductWithVariantsAndMediaEntity)
  */
-export interface ProductVariantWithMediaDto {
+export interface ProductVariantWithMediaEntity {
   id: number;
   productId: number;
+  createByUserId: number;
   variantName: string;
+  variantColor: string;
+  variantSize: string;
+  variantWeight: number;
+  variantHeight: number;
+  variantWidth: number;
+  variantLength: number;
+  colorId: number;
   price: number;
+  currencyUnit: string;
   stock: number;
-  createdAt: string; // ISO date-time
-  updatedAt: string; // ISO date-time
-  media: ProductMediaDto[];
+  stockKeepingUnit: string;
+  voucherId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  media: MediaEntity[];
 }
 
 /**
  * Product DTO with full details from GET /products endpoint
- * Includes product variants and their media
+ * Matches ProductWithVariantsAndMediaEntity schema
  */
 export interface ProductDto {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
+  currencyUnit: string;
   stockKeepingUnit: string;
   stock: number;
-  createByUserId: number;
   categoryId: number | null;
+  createByUserId: number;
   voucherId: number | null;
-  createdAt: string; // ISO date-time
-  updatedAt: string; // ISO date-time
-  productVariants: ProductVariantWithMediaDto[];
+  createdAt: string;
+  updatedAt: string;
+  media: MediaEntity[];
+  productVariants: ProductVariantWithMediaEntity[];
 }
 
 /**
@@ -61,7 +78,6 @@ export interface PaginationMeta {
 
 /**
  * Paginated products response
- * For future use if backend implements pagination metadata in response
  */
 export interface PaginatedProductsResponse {
   data: ProductDto[];
@@ -77,17 +93,20 @@ export interface GetProductsParams {
 }
 
 /**
- * DTO for creating a new product
+ * DTO for creating a new product (multipart/form-data)
  */
 export interface CreateProductDto {
   name: string;
   description: string;
   price: number;
+  currencyUnit: string;
   stockKeepingUnit: string;
   stock: number;
   createByUserId: number;
   categoryId: number;
   voucherId?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -97,26 +116,11 @@ export interface UpdateProductDto {
   name?: string;
   description?: string;
   price?: number;
+  currencyUnit?: string;
   stockKeepingUnit?: string;
   stock?: number;
   createByUserId?: number;
+  categoryId?: number;
+  voucherId?: number;
+  mediaIdsToDelete?: string[];
 }
-
-/**
- * Legacy ProductDto for backward compatibility
- * Use ProductDto for new code
- */
-export interface ProductLegacyDto {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stockKeepingUnit: string;
-  stock: number;
-  createByUserId?: number;
-  imageUrl?: string;
-  image?: string;
-  colors?: Array<{ color: string; selected?: boolean }>;
-  [key: string]: unknown;
-}
-

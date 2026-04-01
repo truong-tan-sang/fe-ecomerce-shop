@@ -6,6 +6,7 @@ import type {
   CartItemDto,
   CreateCartItemDto,
   UpdateCartItemDto,
+  CartDetailEntity,
 } from "@/dto/cart-api";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -43,10 +44,10 @@ export const cartService = {
 
 
 
-  async getCartDetails(userId: number, accessToken: string): Promise<IBackendRes<any>> {
+  async getCartDetails(userId: number, accessToken: string): Promise<IBackendRes<CartDetailEntity>> {
     const url = `${BACKEND_URL}/user/${userId}/cart/cart-details`;
     console.log("[CartService] Fetching cart details for user:", userId);
-    const response = await sendRequest<IBackendRes<any>>({
+    const response = await sendRequest<IBackendRes<CartDetailEntity>>({
       url,
       method: "GET",
       headers: {

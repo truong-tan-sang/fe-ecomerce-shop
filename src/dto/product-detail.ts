@@ -1,5 +1,7 @@
 // Product Detail DTOs - mirrors backend OpenAPI schema
 
+import type { MediaEntity } from "@/dto/product";
+
 export interface ProductDetailDto {
   id: number;
   name: string;
@@ -12,33 +14,6 @@ export interface ProductDetailDto {
   createdAt: string;
   updatedAt: string;
   voucherId: number | null;
-  shopOfficeId: number;
-}
-
-export interface ProductVariantDto {
-  id: number;
-  productId: number;
-  createByUserId: number;
-  variantName: string;
-  variantColor: string | null;
-  variantSize: string | null;
-  price: number;
-  stock: number;
-  stockKeepingUnit: string;
-  createdAt: string;
-  updatedAt: string;
-  voucherId: number | null;
-}
-
-export interface MediaDto {
-  id: number;
-  url: string;
-  altText: string | null;
-  type: string;
-  productVariantId: number | null;
-  reviewId: number | null;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ReviewDto {
@@ -53,7 +28,7 @@ export interface ReviewDto {
 }
 
 export interface ReviewWithMedia extends ReviewDto {
-  medias?: MediaDto[];
+  medias?: MediaEntity[];
 }
 
 export interface CreateReviewDto {
@@ -74,18 +49,4 @@ export interface UpdateReviewDto {
   comment?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
-// Aggregated product data for display
-export interface AggregatedProductData {
-  product: ProductDetailDto;
-  variants: ProductVariantDto[];
-  reviews: ReviewDto[];
-  averageRating: number;
-  reviewCount: number;
-  availableSizes: string[];
-  availableColors: Array<{ color: string; name: string }>;
-  images: string[];
-  minPrice: number;
-  maxPrice: number;
 }

@@ -1,7 +1,7 @@
 import queryString from "query-string";
+import { ApiError } from "./api-error";
 
-export const sendRequest = async <T>(props: IRequest) => {
-  //type
+export const sendRequest = async <T>(props: IRequest): Promise<T> => {
   let {
     url,
     method,
@@ -12,9 +12,8 @@ export const sendRequest = async <T>(props: IRequest) => {
     nextOption = {},
   } = props;
 
-  const options: any = {
+  const options: RequestInit = {
     method: method,
-    // by default setting the content-type to be json type
     headers: new Headers({ "content-type": "application/json", ...headers }),
     body: body ? JSON.stringify(body) : null,
     ...nextOption,
@@ -27,24 +26,21 @@ export const sendRequest = async <T>(props: IRequest) => {
 
   console.log("Fetching URL:", url);
 
-  return fetch(url, options).then((res) => {
-    if (res.ok) {
-      return res.json() as T; //generic
-    } else {
-      return res.json().then(function (json) {
-        // to be able to access error status when you catch the error
-        return {
-          statusCode: res.status,
-          message: json?.message ?? "",
-          error: json?.error ?? "",
-        } as T;
-      });
-    }
-  });
+  const res = await fetch(url, options);
+
+  if (res.ok) {
+    return res.json() as T;
+  }
+
+  const json = await res.json().catch(() => ({ message: res.statusText, error: "" }));
+  throw new ApiError(
+    res.status,
+    json?.message ?? "",
+    json?.error ?? "",
+  );
 };
 
-export const sendRequestFile = async <T>(props: IRequest) => {
-  //type
+export const sendRequestFile = async <T>(props: IRequest): Promise<T> => {
   let {
     url,
     method,
@@ -55,11 +51,10 @@ export const sendRequestFile = async <T>(props: IRequest) => {
     nextOption = {},
   } = props;
 
-  const options: any = {
+  const options: RequestInit = {
     method: method,
-    // by default setting the content-type to be json type
     headers: new Headers({ ...headers }),
-    body: body ? body : null,
+    body: body ? body as BodyInit : null,
     ...nextOption,
   };
   if (useCredentials) options.credentials = "include";
@@ -68,18 +63,16 @@ export const sendRequestFile = async <T>(props: IRequest) => {
     url = `${url}?${queryString.stringify(queryParams)}`;
   }
 
-  return fetch(url, options).then((res) => {
-    if (res.ok) {
-      return res.json() as T; //generic
-    } else {
-      return res.json().then(function (json) {
-        // to be able to access error status when you catch the error
-        return {
-          statusCode: res.status,
-          message: json?.message ?? "",
-          error: json?.error ?? "",
-        } as T;
-      });
-    }
-  });
+  const res = await fetch(url, options);
+
+  if (res.ok) {
+    return res.json() as T;
+  }
+
+  const json = await res.json().catch(() => ({ message: res.statusText, error: "" }));
+  throw new ApiError(
+    res.status,
+    json?.message ?? "",
+    json?.error ?? "",
+  );
 };

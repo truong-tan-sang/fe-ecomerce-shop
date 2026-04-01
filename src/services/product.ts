@@ -1,17 +1,28 @@
-import { sendRequest } from "@/utils/api";
-import type { ProductDto, PaginatedProductsResponse, GetProductsParams, CreateProductDto } from "@/dto/product";
-import type { ProductDetailDto, ProductVariantDto, ReviewDto, CreateReviewDto, UpdateReviewDto } from "@/dto/product-detail";
+import { sendRequest, sendRequestFile } from "@/utils/api";
+import type { ProductDto, PaginatedProductsResponse, GetProductsParams, CreateProductDto, UpdateProductDto } from "@/dto/product";
+import type { ProductDetailDto, ReviewDto, CreateReviewDto, UpdateReviewDto } from "@/dto/product-detail";
+import type { ProductVariantEntity } from "@/dto/product-variant";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 export const productService = {
-  async createProduct(data: CreateProductDto, accessToken: string): Promise<IBackendRes<ProductDto>> {
+  async createProduct(data: CreateProductDto, files: File[], accessToken: string): Promise<IBackendRes<ProductDto>> {
     const url = `${BACKEND_URL}/products`;
     console.log("[ProductService] Creating product:", data);
-    const response = await sendRequest<IBackendRes<ProductDto>>({
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+
+    const entries = Object.entries(data) as [keyof CreateProductDto, unknown][];
+    for (const [key, value] of entries) {
+      if (value === undefined || value === null) continue;
+      formData.append(key, String(value));
+    }
+
+    const response = await sendRequestFile<IBackendRes<ProductDto>>({
       url,
       method: "POST",
-      body: data,
+      body: formData,
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -38,10 +49,10 @@ export const productService = {
     return response;
   },
 
-  async getProductById(id: string, accessToken?: string): Promise<IBackendRes<ProductDetailDto>> {
+  async getProductById(id: string, accessToken?: string): Promise<IBackendRes<ProductDto>> {
     const url = `${BACKEND_URL}/products/${id}`;
     console.log("[ProductService] Fetching product by id:", id);
-    const response = await sendRequest<IBackendRes<ProductDetailDto>>({
+    const response = await sendRequest<IBackendRes<ProductDto>>({
       url,
       method: "GET",
       headers: accessToken ? {
@@ -52,10 +63,10 @@ export const productService = {
     return response;
   },
 
-  async getProductVariants(productId: string, accessToken?: string): Promise<IBackendRes<ProductVariantDto[]>> {
+  async getProductVariants(productId: string, accessToken?: string): Promise<IBackendRes<ProductVariantEntity[]>> {
     const url = `${BACKEND_URL}/products/${productId}/product-variants`;
     console.log("[ProductService] Fetching variants for product:", productId);
-    const response = await sendRequest<IBackendRes<ProductVariantDto[]>>({
+    const response = await sendRequest<IBackendRes<ProductVariantEntity[]>>({
       url,
       method: "GET",
       headers: accessToken ? {
@@ -121,6 +132,49 @@ export const productService = {
       },
     });
     console.log("[ProductService] Delete review response:", response);
+    return response;
+  },
+
+  async updateProduct(id: number, data: UpdateProductDto, files: File[], accessToken: string): Promise<IBackendRes<ProductDto>> {
+    const url = `${BACKEND_URL}/products/${id}`;
+    console.log("[ProductService] Updating product:", { id, data });
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+
+    const entries = Object.entries(data) as [keyof UpdateProductDto, unknown][];
+    for (const [key, value] of entries) {
+      if (value === undefined || value === null) continue;
+      if (key === "mediaIdsToDelete" && Array.isArray(value)) {
+        (value as string[]).forEach((mediaId) => formData.append("mediaIdsToDelete", mediaId));
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+
+    const response = await sendRequestFile<IBackendRes<ProductDto>>({
+      url,
+      method: "PATCH",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log("[ProductService] Update product response:", response);
+    return response;
+  },
+
+  async deleteProduct(id: number, accessToken: string): Promise<IBackendRes<void>> {
+    const url = `${BACKEND_URL}/products/${id}`;
+    console.log("[ProductService] Deleting product:", id);
+    const response = await sendRequest<IBackendRes<void>>({
+      url,
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log("[ProductService] Delete product response:", response);
     return response;
   },
 };

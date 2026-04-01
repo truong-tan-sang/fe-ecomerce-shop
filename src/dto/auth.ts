@@ -72,10 +72,37 @@ export interface ChangePasswordRequest {
   email: string;
 }
 
-export interface ProfileResponse {
-  id: string;
-  name?: string;
+export type UserRole = 'USER' | 'ADMIN' | 'OPERATOR';
+
+export interface AuthResponseEntity {
+  message: string;
+  data?: { _id?: string; id?: number };
+}
+
+export interface ProfileResponseEntity {
+  userId: number;
+  username: string;
+  role: UserRole;
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+}
+
+export interface UserEntity {
+  id: number;
+  firstName: string;
+  lastName: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
   email: string;
+  phone: string;
+  username: string;
+  role: UserRole;
+  isActive: boolean;
+  codeActive: string;
+  codeActiveExpire: string;
+  points: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GoogleAuthRequest {

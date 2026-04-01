@@ -3,6 +3,7 @@ import type {
   CreateAddressDto,
   UpdateAddressDto,
   AddressDto,
+  CreateAddressForOrderResponseDto,
 } from "@/dto/address";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -10,9 +11,6 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 export const addressService = {
   /**
    * Create a new address
-   * @param data Address data following CreateAddressDto schema
-   * @param accessToken Bearer authentication token
-   * @returns Backend response with created AddressDto
    */
   async createAddress(data: CreateAddressDto, accessToken: string): Promise<IBackendRes<AddressDto>> {
     const url = `${BACKEND_URL}/address`;
@@ -21,11 +19,29 @@ export const addressService = {
       url,
       method: "POST",
       body: data,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[AddressService] Create address response:", response);
+    return response;
+  },
+
+  /**
+   * Create order address — validates with GHN and returns DB address + GHN location data
+   * POST /address/order-address
+   */
+  async createOrderAddress(
+    data: CreateAddressDto,
+    accessToken: string
+  ): Promise<IBackendRes<CreateAddressForOrderResponseDto>> {
+    const url = `${BACKEND_URL}/address/order-address`;
+    console.log("[AddressService] Creating order address:", data);
+    const response = await sendRequest<IBackendRes<CreateAddressForOrderResponseDto>>({
+      url,
+      method: "POST",
+      body: data,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[AddressService] Create order address response:", response);
     return response;
   },
 

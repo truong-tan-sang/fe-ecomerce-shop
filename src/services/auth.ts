@@ -1,14 +1,17 @@
 import { sendRequest } from "@/utils/api";
 import {
+  AuthResponseEntity,
   ChangePasswordRequest,
   CheckCodeRequest,
   CreateUserByGoogleAccountDto,
   LoginRequest,
   LoginResponse,
+  ProfileResponseEntity,
   RetryActiveRequest,
   RetryPasswordRequest,
   SignupRequest,
   SignupResponse,
+  UserEntity,
 } from "@/dto/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -48,35 +51,35 @@ export const authService = {
     }),
 
   checkCode: (body: CheckCodeRequest) =>
-    sendRequest<IBackendRes<any>>({
+    sendRequest<IBackendRes<UserEntity>>({
       url: `${BASE_URL}/auth/check-code`,
       method: "POST",
       body,
     }),
 
   retryActive: (body: RetryActiveRequest) =>
-    sendRequest<IBackendRes<any>>({
+    sendRequest<IBackendRes<AuthResponseEntity>>({
       url: `${BASE_URL}/auth/retry-active`,
       method: "POST",
       body,
     }),
 
   retryPassword: (body: RetryPasswordRequest) =>
-    sendRequest<IBackendRes<any>>({
+    sendRequest<IBackendRes<AuthResponseEntity>>({
       url: `${BASE_URL}/auth/retry-password`,
       method: "POST",
       body,
     }),
 
   changePassword: (body: ChangePasswordRequest) =>
-    sendRequest<IBackendRes<any>>({
+    sendRequest<IBackendRes<AuthResponseEntity>>({
       url: `${BASE_URL}/auth/change-password`,
       method: "POST",
       body,
     }),
 
   profile: (accessToken: string) =>
-    sendRequest<IBackendRes<any>>({
+    sendRequest<IBackendRes<ProfileResponseEntity>>({
       url: `${BASE_URL}/auth/profile`,
       method: "GET",
       headers: {

@@ -4,38 +4,34 @@ import type { ProductVariantEntity, CreateProductVariantDto, UpdateProductVarian
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 export const productVariantService = {
-  async createProductVariant(data: CreateProductVariantDto, file: File, accessToken: string): Promise<IBackendRes<ProductVariantEntity>> {
+  async createProductVariant(data: CreateProductVariantDto, files: File[], accessToken: string): Promise<IBackendRes<ProductVariantEntity>> {
     const url = `${BACKEND_URL}/product-variants`;
     console.log("[ProductVariantService] Creating product variant:", data);
-    
-    // Create FormData for multipart/form-data request
+
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('productId', data.productId.toString());
-    formData.append('createByUserId', data.createByUserId.toString());
-    formData.append('variantName', data.variantName);
-    formData.append('variantColor', data.variantColor);
-    formData.append('variantSize', data.variantSize);
-    formData.append('price', data.price.toString());
-    formData.append('stock', data.stock.toString());
-    formData.append('stockKeepingUnit', data.stockKeepingUnit);
-    if (data.voucherId) {
-      formData.append('voucherId', data.voucherId.toString());
-    }
-    
-    console.log("[ProductVariantService] FormData fields:", {
-      file: file.name,
-      productId: data.productId,
-      createByUserId: data.createByUserId,
-      variantName: data.variantName,
-      variantColor: data.variantColor,
-      variantSize: data.variantSize,
-      price: data.price,
-      stock: data.stock,
-      stockKeepingUnit: data.stockKeepingUnit,
-      voucherId: data.voucherId,
+    files.forEach((file) => {
+      formData.append("files", file);
     });
-    
+    formData.append("productId", data.productId.toString());
+    formData.append("createByUserId", data.createByUserId.toString());
+    formData.append("variantName", data.variantName);
+    formData.append("variantColor", data.variantColor);
+    formData.append("variantSize", data.variantSize);
+    formData.append("variantWeight", data.variantWeight.toString());
+    formData.append("variantHeight", data.variantHeight.toString());
+    formData.append("variantLength", data.variantLength.toString());
+    formData.append("variantWidth", data.variantWidth.toString());
+    formData.append("colorId", data.colorId.toString());
+    formData.append("price", data.price.toString());
+    formData.append("stock", data.stock.toString());
+    formData.append("stockKeepingUnit", data.stockKeepingUnit);
+    formData.append("createdAt", data.createdAt);
+    if (data.voucherId) {
+      formData.append("voucherId", data.voucherId.toString());
+    }
+
+    console.log("[ProductVariantService] FormData files count:", files.length);
+
     const response = await sendRequestFile<IBackendRes<ProductVariantEntity>>({
       url,
       method: "POST",
@@ -48,6 +44,58 @@ export const productVariantService = {
     return response;
   },
 
+  async updateProductVariant(
+    id: number,
+    data: UpdateProductVariantDto,
+    files: File[],
+    accessToken: string
+  ): Promise<IBackendRes<ProductVariantEntity>> {
+    const url = `${BACKEND_URL}/product-variants/${id}`;
+    console.log("[ProductVariantService] Updating product variant:", { id, data });
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const entries = Object.entries(data) as [keyof UpdateProductVariantDto, unknown][];
+    for (const [key, value] of entries) {
+      if (value === undefined) continue;
+      if (key === "mediaIdsToDelete" && Array.isArray(value)) {
+        (value as string[]).forEach((mediaId) => {
+          formData.append("mediaIdsToDelete", mediaId);
+        });
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+
+    const response = await sendRequestFile<IBackendRes<ProductVariantEntity>>({
+      url,
+      method: "PATCH",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log("[ProductVariantService] Update product variant response:", response);
+    return response;
+  },
+
+  async deleteProductVariant(id: number, accessToken: string): Promise<IBackendRes<void>> {
+    const url = `${BACKEND_URL}/product-variants/${id}`;
+    console.log("[ProductVariantService] Deleting product variant:", id);
+    const response = await sendRequest<IBackendRes<void>>({
+      url,
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log("[ProductVariantService] Delete product variant response:", response);
+    return response;
+  },
+
   async getAllProductVariants(accessToken?: string): Promise<IBackendRes<ProductVariantEntity[]>> {
     const url = `${BACKEND_URL}/product-variants`;
     console.log("[ProductVariantService] Fetching all product variants");
@@ -55,9 +103,7 @@ export const productVariantService = {
       url,
       method: "GET",
       headers: accessToken
-        ? {
-            Authorization: `Bearer ${accessToken}`,
-          }
+        ? { Authorization: `Bearer ${accessToken}` }
         : undefined,
     });
     console.log("[ProductVariantService] Product variants response:", response);
@@ -71,9 +117,7 @@ export const productVariantService = {
       url,
       method: "GET",
       headers: accessToken
-        ? {
-            Authorization: `Bearer ${accessToken}`,
-          }
+        ? { Authorization: `Bearer ${accessToken}` }
         : undefined,
     });
     console.log("[ProductVariantService] Product variant response:", response);

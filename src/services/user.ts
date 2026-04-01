@@ -2,9 +2,14 @@ import { sendRequest } from "@/utils/api";
 
 export interface UserDto {
   id: number;
-  name: string;
+  name?: string;
   email: string;
   phone?: string;
+  username?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  gender?: "MALE" | "FEMALE" | "OTHER" | null;
+  image?: string;
   status?: "ACTIVE" | "INACTIVE" | "VIP";
 }
 
