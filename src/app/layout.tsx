@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NextAuthWrapper from "@/library/next.auth.wrapper";
-import ThemeProvider from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <link
           rel="stylesheet"
@@ -36,11 +36,10 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-black dark:text-white transition-colors duration-300`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}
       >
-        <ThemeProvider>
-          <NextAuthWrapper>{children}</NextAuthWrapper>
-        </ThemeProvider>
+        <NextAuthWrapper>{children}</NextAuthWrapper>
+        <Toaster />
       </body>
     </html>
   );
