@@ -1,159 +1,188 @@
 "use client";
 
 import { useHasMounted } from "@/utils/customHook";
-import { Button, Form, Input, Modal, notification, Steps } from "antd";
-import {
-  SmileOutlined,
-  SolutionOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { authService } from "@/services/auth";
+import { toast } from "sonner";
+import { User, ShieldCheck, Smile } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
-const ModalReactive = (props: any) => {
+interface ModalReactiveProps {
+  isModalOpen: boolean;
+  setIsModalOpen: (v: boolean) => void;
+  userEmail: string;
+}
+
+function StepIndicator({ current }: { current: number }) {
+  const steps = [
+    { label: "Login", icon: User },
+    { label: "Verification", icon: ShieldCheck },
+    { label: "Done", icon: Smile },
+  ];
+
+  return (
+    <div className="flex items-center justify-between mb-6">
+      {steps.map((step, index) => {
+        const Icon = step.icon;
+        const isActive = index === current;
+        const isDone = index < current;
+        return (
+          <div key={step.label} className="flex flex-1 items-center">
+            <div className="flex flex-col items-center flex-1">
+              <div
+                className={`flex size-8 items-center justify-center border ${
+                  isActive || isDone
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted-foreground/30 text-muted-foreground"
+                }`}
+              >
+                <Icon className="size-4" />
+              </div>
+              <span
+                className={`mt-1 text-xs ${
+                  isActive || isDone ? "font-medium text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+            {index < steps.length - 1 && (
+              <div
+                className={`h-px flex-1 mx-2 ${
+                  isDone ? "bg-primary" : "bg-muted-foreground/30"
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const ModalReactive = (props: ModalReactiveProps) => {
   const { isModalOpen, setIsModalOpen, userEmail } = props;
   const [current, setCurrent] = useState(0);
-  const [form] = Form.useForm();
+  const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState("");
 
   const hasMounted = useHasMounted();
 
   useEffect(() => {
     if (userEmail) {
-      form.setFieldValue("email", userEmail);
+      setEmail(userEmail);
     }
   }, [userEmail]);
 
   if (!hasMounted) return <></>;
 
-  const onFinishStep0 = async (values: any) => {
-    const { email } = values;
-    const res = await authService.retryActive({ email });
-
-    if (res?.data) {
-      setUserId(res?.data?._id);
+  const onFinishStep0 = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const res = await authService.retryActive({ email });
+      setUserId(res?.data?.data?._id || "");
       setCurrent(1);
-    } else {
-      notification.error({
-        message: "Call APIs error",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Request failed";
+      toast.error(msg);
     }
   };
 
-  const onFinishStep1 = async (values: any) => {
-    const { code } = values;
-    const res = await authService.checkCode({
-      codeActive: code,
-      id: userId,
-    });
-
-    if (res?.data) {
+  const onFinishStep1 = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!code.trim()) {
+      setCodeError("Please input your activation code!");
+      return;
+    }
+    try {
+      await authService.checkCode({
+        codeActive: code,
+        id: userId,
+      });
       setCurrent(2);
-    } else {
-      notification.error({
-        message: "Call APIs error",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Verification failed";
+      toast.error(msg);
     }
   };
-  return (
-    <>
-      <Modal
-        title="Active Your Account"
-        open={isModalOpen}
-        onOk={() => setIsModalOpen(false)}
-        onCancel={() => setIsModalOpen(false)}
-        maskClosable={false}
-        footer={null}
-      >
-        <Steps
-          current={current}
-          items={[
-            {
-              title: "Login",
-              // status: 'finish',
-              icon: <UserOutlined />,
-            },
-            {
-              title: "Verification",
-              // status: 'finish',
-              icon: <SolutionOutlined />,
-            },
 
-            {
-              title: "Done",
-              // status: 'wait',
-              icon: <SmileOutlined />,
-            },
-          ]}
-        />
+  return (
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Active Your Account</DialogTitle>
+        </DialogHeader>
+
+        <StepIndicator current={current} />
+
         {current === 0 && (
           <>
-            <div style={{ margin: "20px 0" }}>
-              <p>Your account has not been activated</p>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">Your account has not been activated</p>
             </div>
-            <Form
-              name="verify"
-              onFinish={onFinishStep0}
-              autoComplete="off"
-              layout="vertical"
-              form={form}
-            >
-              <Form.Item label="Email Address" name="email">
-                <Input disabled value={userEmail} />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit">
-                  Resend
-                </Button>
-              </Form.Item>
-            </Form>
+            <form onSubmit={onFinishStep0} autoComplete="off" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reactive-email">Email Address</Label>
+                <Input
+                  id="reactive-email"
+                  value={email}
+                  disabled
+                />
+              </div>
+              <Button type="submit" className="cursor-pointer">
+                Resend
+              </Button>
+            </form>
           </>
         )}
 
         {current === 1 && (
           <>
-            <div style={{ margin: "20px 0" }}>
-              <p>Type code confirm, please!</p>
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground">Type code confirm, please!</p>
             </div>
-
-            <Form
-              name="verify2"
-              onFinish={onFinishStep1}
-              autoComplete="off"
-              layout="vertical"
-            >
-              <Form.Item
-                label="Activation Code"
-                name="code"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your activation code!",
-                  },
-                ]}
-              >
-                <Input placeholder="Enter 6-digit activation code" />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit">
-                  Active
-                </Button>
-              </Form.Item>
-            </Form>
+            <form onSubmit={onFinishStep1} autoComplete="off" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reactive-code">Activation Code</Label>
+                <Input
+                  id="reactive-code"
+                  placeholder="Enter 6-digit activation code"
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value);
+                    setCodeError("");
+                  }}
+                />
+                {codeError && <p className="text-sm text-destructive">{codeError}</p>}
+              </div>
+              <Button type="submit" className="cursor-pointer">
+                Active
+              </Button>
+            </form>
           </>
         )}
 
         {current === 2 && (
-          <div style={{ margin: "20px 0" }}>
-            <p>
+          <div className="my-4">
+            <p className="text-sm">
               Your account has been successfully activated. Please log in again.
             </p>
           </div>
         )}
-      </Modal>
-    </>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -1,14 +1,13 @@
 "use client";
-import Button from "@/components/button";
-import Input from "@/components/input";
-import { Lock, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoaderCircle } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { authenticate } from "@/utils/actions";
-import "@ant-design/v5-patch-for-react-19";
-import notification from "antd/es/notification";
+import { toast } from "sonner";
 import ModalReactive from "@/components/auth/modal.reactive";
 import Image from "next/image";
 
@@ -87,6 +86,7 @@ function Login() {
       if (res?.code === 2) {
         setIsModalOpen(true);
         setUserEmail(user.email);
+        setShowLoader(false);
         return;
       }
 
@@ -132,7 +132,7 @@ function Login() {
               {/* Google Sign In Button */}
               <button
                 onClick={() => signIn("google")}
-                className="mb-4 flex w-full items-center justify-center gap-3 rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="mb-4 flex w-full items-center justify-center gap-3 rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 cursor-pointer"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -169,41 +169,49 @@ function Login() {
 
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="w-full space-y-4">
-                <Input
-                  type="email"
-                  // label="Email"
-                  name="email"
-                  placeholder="Nhập email"
-                  value={user.email}
-                  onChange={handleChange}
-                  error={errors.email}
-                // icon={<Mail size={20} />}
-                />
+                <div className="space-y-1">
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder="Nhập email"
+                    value={user.email}
+                    onChange={handleChange}
+                    className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                  />
+                  {errors.email && <p className="ml-3 text-sm text-red-600">{errors.email}</p>}
+                </div>
 
-                <Input
-                  type="password"
-                  // label="Mật khẩu"
-                  name="password"
-                  placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
-                  value={user.password}
-                  onChange={handleChange}
-                  error={errors.password}
-                // icon={<Lock size={20} />}
-                />
+                <div className="space-y-1">
+                  <Input
+                    type="password"
+                    name="password"
+                    placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
+                    value={user.password}
+                    onChange={handleChange}
+                    className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                  />
+                  {errors.password && <p className="ml-3 text-sm text-red-600">{errors.password}</p>}
+                </div>
 
                 {/* Login Button */}
                 <Button
-                  text="Đăng nhập"
-                  loading={showLoader}
+                  type="submit"
                   disabled={showLoader}
-                />
+                  className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+                >
+                  {showLoader ? (
+                    <LoaderCircle className="animate-spin" />
+                  ) : (
+                    "Đăng nhập"
+                  )}
+                </Button>
               </form>
 
               {/* Sign up Link */}
               <div className="mt-4 w-full text-center">
                 <button
                   onClick={() => router.push("/auth/signup")}
-                  className="w-full rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="w-full rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 cursor-pointer"
                 >
                   Đăng ký
                 </button>
@@ -216,7 +224,7 @@ function Login() {
               <div className="mt-4 text-center">
                 <button
                   onClick={() => router.push("/auth/change-password")}
-                  className="text-sm font-medium text-gray-900 hover:underline"
+                  className="text-sm font-medium text-gray-900 hover:underline cursor-pointer"
                 >
                   QUÊN MẬT KHẨU?
                 </button>

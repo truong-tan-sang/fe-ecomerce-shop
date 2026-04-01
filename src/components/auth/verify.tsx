@@ -1,92 +1,79 @@
 "use client";
-import React from "react";
-import {
-  Button,
-  Col,
-  Divider,
-  Form,
-  Input,
-  message,
-  notification,
-  Row,
-} from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import React, { FormEvent, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/services/auth";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
-const Verify = (props: any) => {
+const Verify = (props: { id: string }) => {
   const { id } = props;
-
   const router = useRouter();
+  const [codeActive, setCodeActive] = useState("");
+  const [error, setError] = useState("");
 
-  const onFinish = async (values: any) => {
-    const { id, codeActive } = values;
-    const res = await authService.checkCode({ id, codeActive });
-    if (res?.data) {
-      message.success("Your account is activated.");
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!codeActive.trim()) {
+      setError("Please input your activation code!");
+      return;
+    }
+
+    try {
+      await authService.checkCode({ id, codeActive });
+      toast.success("Your account is activated.");
       router.push(`/auth/login`);
-    } else {
-      notification.error({
-        message: "Verify error",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Verification failed";
+      toast.error(msg);
     }
   };
 
   return (
-    <Row justify={"center"} style={{ marginTop: "30px" }}>
-      <Col xs={24} md={16} lg={8}>
-        <fieldset
-          style={{
-            padding: "15px",
-            margin: "5px",
-            border: "1px solid #ccc",
-            borderRadius: "5px",
-          }}
-        >
-          <legend>Active your account</legend>
-          <Form
-            name="basic"
-            onFinish={onFinish}
-            autoComplete="off"
-            layout="vertical"
-          >
-            <Form.Item label="User ID" name="id" initialValue={id} hidden>
-              <Input disabled />
-            </Form.Item>
+    <div className="flex justify-center mt-8">
+      <div className="w-full max-w-md">
+        <fieldset className="p-4 m-1 border border-gray-300">
+          <legend className="text-sm font-medium px-1">Active your account</legend>
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
             <div>Code active sent to your email. Please check your email.</div>
-            <Divider />
+            <Separator />
 
-            <Form.Item
-              label="Activation Code"
-              name="codeActive"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your activation code!",
-                },
-              ]}
-            >
-              <Input placeholder="Enter 6-digit activation code" />
-            </Form.Item>
+            <div className="space-y-2">
+              <Label htmlFor="codeActive">Activation Code</Label>
+              <Input
+                id="codeActive"
+                placeholder="Enter 6-digit activation code"
+                value={codeActive}
+                onChange={(e) => {
+                  setCodeActive(e.target.value);
+                  setError("");
+                }}
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
 
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </Form.Item>
-          </Form>
-          <Link href={"/"}>
-            <ArrowLeftOutlined /> Go to homepage
-          </Link>
-          <Divider />
-          <div style={{ textAlign: "center" }}>
-            Already have an account? <Link href={"/auth/login"}>Log in</Link>
+            <Button type="submit" className="cursor-pointer">
+              Submit
+            </Button>
+          </form>
+          <div className="mt-4">
+            <Link href="/" className="inline-flex items-center gap-1 text-sm hover:underline cursor-pointer">
+              <ArrowLeft className="size-4" /> Go to homepage
+            </Link>
+          </div>
+          <Separator className="my-4" />
+          <div className="text-center text-sm">
+            Already have an account? <Link href="/auth/login" className="hover:underline cursor-pointer">Log in</Link>
           </div>
         </fieldset>
-      </Col>
-    </Row>
+      </div>
+    </div>
   );
 };
 

@@ -1,10 +1,9 @@
 "use client";
-import Button from "@/components/button";
-import Input from "@/components/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { authService } from "@/services/auth";
-import "@ant-design/v5-patch-for-react-19";
-import notification from "antd/es/notification";
-import { Lock, Mail, UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
@@ -89,17 +88,16 @@ function Signup() {
 
     console.log(">>> check data: ", data);
 
-    const res = await authService.signup(data);
-
-    console.log(">>> check res: ", res);
-
-    if (res?.data) {
+    try {
+      const res = await authService.signup(data);
+      console.log(">>> check res: ", res);
       router.push(`/auth/verify/${res?.data?.id}`);
-    } else {
-      notification.error({
-        message: "Register error",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Register failed";
+      toast.error(msg);
+    } finally {
+      setShowLoader(false);
     }
   };
 
@@ -135,52 +133,70 @@ function Signup() {
 
             {/* Signup Form */}
             <form onSubmit={handleSubmit} className="w-full space-y-4">
-              <Input
-                type="text"
-                name="firstName"
-                placeholder="Họ"
-                value={user.firstName}
-                onChange={handleChange}
-                error={errors.firstName}
-              />
-              <Input
-                type="text"
-                name="lastName"
-                placeholder="Tên"
-                value={user.lastName}
-                onChange={handleChange}
-                error={errors.lastName}
-              />
-              <Input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={user.email}
-                onChange={handleChange}
-                error={errors.email}
-              />
-              <Input
-                type="password"
-                name="password"
-                placeholder="Mật khẩu"
-                value={user.password}
-                onChange={handleChange}
-                error={errors.password}
-              />
+              <div className="space-y-1">
+                <Input
+                  type="text"
+                  name="firstName"
+                  placeholder="Họ"
+                  value={user.firstName}
+                  onChange={handleChange}
+                  className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                />
+                {errors.firstName && <p className="ml-3 text-sm text-red-600">{errors.firstName}</p>}
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="text"
+                  name="lastName"
+                  placeholder="Tên"
+                  value={user.lastName}
+                  onChange={handleChange}
+                  className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                />
+                {errors.lastName && <p className="ml-3 text-sm text-red-600">{errors.lastName}</p>}
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={user.email}
+                  onChange={handleChange}
+                  className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                />
+                {errors.email && <p className="ml-3 text-sm text-red-600">{errors.email}</p>}
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder="Mật khẩu"
+                  value={user.password}
+                  onChange={handleChange}
+                  className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                />
+                {errors.password && <p className="ml-3 text-sm text-red-600">{errors.password}</p>}
+              </div>
 
               {/* Signup Button */}
               <Button
-                text="Đăng ký"
-                loading={showLoader}
+                type="submit"
                 disabled={showLoader}
-              />
+                className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+              >
+                {showLoader ? (
+                  <LoaderCircle className="animate-spin" />
+                ) : (
+                  "Đăng ký"
+                )}
+              </Button>
             </form>
 
             {/* Login Link */}
             <div className="mt-4 w-full text-center">
               <button
                 onClick={() => router.push("/auth/login")}
-                className="w-full rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="w-full rounded-none border border-[#000000] bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 cursor-pointer"
               >
                 Đã có tài khoản? Đăng nhập
               </button>

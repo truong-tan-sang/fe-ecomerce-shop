@@ -1,10 +1,10 @@
 "use client";
-import Button from "@/components/button";
-import Input from "@/components/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoaderCircle } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import "@ant-design/v5-patch-for-react-19";
-import notification from "antd/es/notification";
+import { toast } from "sonner";
 import Image from "next/image";
 import { authService } from "@/services/auth";
 
@@ -51,21 +51,16 @@ function ChangePassword() {
 
     setShowLoader(true);
 
-    const res = await authService.retryPassword({ email: formData.email });
-
-    setShowLoader(false);
-
-    if (res?.data) {
-      notification.success({
-        message: "Thành công",
-        description: "Mã xác nhận đã được gửi đến email của bạn.",
-      });
+    try {
+      await authService.retryPassword({ email: formData.email });
+      toast.success("Mã xác nhận đã được gửi đến email của bạn.");
       setStep(2);
-    } else {
-      notification.error({
-        message: "Lỗi",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Gửi mã xác nhận thất bại.";
+      toast.error(msg);
+    } finally {
+      setShowLoader(false);
     }
   };
 
@@ -106,26 +101,21 @@ function ChangePassword() {
 
     setShowLoader(true);
 
-    const res = await authService.changePassword({
-      codeActive: formData.codeActive,
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
-      email: formData.email,
-    });
-
-    setShowLoader(false);
-
-    if (res?.data) {
-      notification.success({
-        message: "Thành công",
-        description: "Mật khẩu đã được thay đổi thành công. Vui lòng đăng nhập lại.",
+    try {
+      await authService.changePassword({
+        codeActive: formData.codeActive,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        email: formData.email,
       });
+      toast.success("Mật khẩu đã được thay đổi thành công. Vui lòng đăng nhập lại.");
       router.push("/auth/login");
-    } else {
-      notification.error({
-        message: "Lỗi",
-        description: res?.message,
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Đổi mật khẩu thất bại.";
+      toast.error(msg);
+    } finally {
+      setShowLoader(false);
     }
   };
 
@@ -169,20 +159,29 @@ function ChangePassword() {
               {/* Step 1: Enter Email */}
               {step === 1 && (
                 <form onSubmit={handleSubmitStep1} className="w-full space-y-4">
-                  <Input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    error={errors.email}
-                  />
+                  <div className="space-y-1">
+                    <Input
+                      type="email"
+                      name="email"
+                      placeholder="Email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                    />
+                    {errors.email && <p className="ml-3 text-sm text-red-600">{errors.email}</p>}
+                  </div>
 
                   <Button
-                    text="Gửi mã xác nhận"
-                    loading={showLoader}
+                    type="submit"
                     disabled={showLoader}
-                  />
+                    className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+                  >
+                    {showLoader ? (
+                      <LoaderCircle className="animate-spin" />
+                    ) : (
+                      "Gửi mã xác nhận"
+                    )}
+                  </Button>
                 </form>
               )}
 
@@ -191,48 +190,66 @@ function ChangePassword() {
                 <form onSubmit={handleSubmitStep2} className="w-full space-y-4">
                   {/* 2x2 Grid Layout */}
                   <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      type="text"
-                      name="codeActive"
-                      placeholder="Mã xác nhận"
-                      value={formData.codeActive}
-                      onChange={handleChange}
-                      error={errors.codeActive}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        type="text"
+                        name="codeActive"
+                        placeholder="Mã xác nhận"
+                        value={formData.codeActive}
+                        onChange={handleChange}
+                        className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                      />
+                      {errors.codeActive && <p className="ml-3 text-sm text-red-600">{errors.codeActive}</p>}
+                    </div>
 
-                    <Input
-                      type="password"
-                      name="password"
-                      placeholder="Mật khẩu mới"
-                      value={formData.password}
-                      onChange={handleChange}
-                      error={errors.password}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        type="password"
+                        name="password"
+                        placeholder="Mật khẩu mới"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                      />
+                      {errors.password && <p className="ml-3 text-sm text-red-600">{errors.password}</p>}
+                    </div>
 
-                    <Input
-                      type="text"
-                      name="email"
-                      placeholder="Email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={true}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        type="text"
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled
+                        className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                      />
+                    </div>
 
-                    <Input
-                      type="password"
-                      name="confirmPassword"
-                      placeholder="Xác nhận mật khẩu"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      error={errors.confirmPassword}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Xác nhận mật khẩu"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+                      />
+                      {errors.confirmPassword && <p className="ml-3 text-sm text-red-600">{errors.confirmPassword}</p>}
+                    </div>
                   </div>
 
                   <Button
-                    text="Đổi mật khẩu"
-                    loading={showLoader}
+                    type="submit"
                     disabled={showLoader}
-                  />
+                    className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+                  >
+                    {showLoader ? (
+                      <LoaderCircle className="animate-spin" />
+                    ) : (
+                      "Đổi mật khẩu"
+                    )}
+                  </Button>
                 </form>
               )}
 
@@ -240,7 +257,7 @@ function ChangePassword() {
               <div className="mt-4 text-center">
                 <button
                   onClick={() => router.push("/auth/login")}
-                  className="text-sm font-medium text-gray-900 hover:underline"
+                  className="text-sm font-medium text-gray-900 hover:underline cursor-pointer"
                 >
                   Quay lại đăng nhập
                 </button>

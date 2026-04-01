@@ -1,14 +1,14 @@
 "use client";
-import DummyLogo from "@/components/app-logo";
-import Button from "@/components/button";
-import Input from "@/components/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { authService } from "@/services/auth";
-import "@ant-design/v5-patch-for-react-19";
-import notification from "antd/es/notification";
-import { Mail } from "lucide-react";
+import { toast } from "sonner";
+import { LoaderCircle, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
+import Image from "next/image";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -31,68 +31,73 @@ const ForgotPassword = () => {
 
     setLoading(true);
 
-    // TODO: Implement backend forgot password API
-    // API endpoint: POST /auth/retry-password
-    // Request body: { email: string }
-    // Response: { email: string } - confirms email sent
-    // Backend should:
-    //   1. Check if email exists
-    //   2. Generate 6-digit OTP code
-    //   3. Store code with expiration (e.g., 15 minutes)
-    //   4. Send email with code
-    const res = await authService.retryPassword({ email: email.trim() });
-
-    setLoading(false);
-
-    if (res?.data) {
-      notification.success({
-        message: "Email Sent",
-        description: "Please check your inbox for the verification code.",
-      });
-      // Redirect to new change-password page with email (step 2)
+    try {
+      await authService.retryPassword({ email: email.trim() });
+      toast.success("Please check your inbox for the verification code.");
       router.push(`/auth/change-password?email=${encodeURIComponent(email)}`);
-    } else {
-      notification.error({
-        message: "Error",
-        description: res?.message || "Failed to send reset password email.",
-      });
+    } catch (error) {
+      const { ApiError } = await import("@/utils/api-error");
+      const msg = error instanceof ApiError ? error.message : "Failed to send reset password email.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="mx-3 w-full max-w-lg rounded-lg border border-green-200 p-6 sm:p-10">
-        <DummyLogo />
+      <div className="mx-3 w-full max-w-lg border border-gray-200 p-6 sm:p-10">
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/LOGO.svg"
+            alt="Paplé Logo"
+            width={150}
+            height={60}
+            priority
+          />
+        </div>
         <h2 className="mb-12 text-center text-2xl font-semibold text-gray-800">
           Forgot Password?
         </h2>
 
         <div className="mb-6 text-center text-sm text-gray-600">
-          <p>Enter your email address and we'll send you a code to reset your password.</p>
+          <p>Enter your email address and we&apos;ll send you a code to reset your password.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <Input
-            type="email"
-            label="Email Address"
-            name="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={handleChange}
-            error={error}
-            icon={<Mail size={20} />}
-          />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="forgot-email">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-[#9D9D9D]" />
+              <Input
+                id="forgot-email"
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={handleChange}
+                className="border-0 border-b border-[#9D9D9D] bg-transparent pl-10 pr-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
+              />
+            </div>
+            {error && <p className="ml-3 text-sm text-red-600">{error}</p>}
+          </div>
           <Button
-            text="Send Reset Code"
-            loading={loading}
+            type="submit"
             disabled={loading}
-          />
+            className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+          >
+            {loading ? (
+              <LoaderCircle className="animate-spin" />
+            ) : (
+              "Send Reset Code"
+            )}
+          </Button>
         </form>
 
         <div className="mt-4 text-center">
           <Link
             href="/auth/login"
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-sm font-medium text-gray-900 hover:underline cursor-pointer"
           >
             Back to Login
           </Link>
