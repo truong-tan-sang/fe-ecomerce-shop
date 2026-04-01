@@ -50,10 +50,10 @@ Execution Order:
 ### T1: [v1.1.0 | UI System] Standardize customer UI on shadcn/ui — In Progress {#t1-ui-system-01}
 1. T2: shadcn foundation components installed and configured (2pts) — Done {#t2-ui-system-01}
 2. T2: Auth flow uses shadcn instead of Ant Design (5pts) — Done {#t2-ui-system-02}
-3. T2: Customer page buttons and inputs use shadcn (5pts) — In Progress {#t2-ui-system-03}
+3. T2: Customer page buttons and inputs use shadcn (5pts) — Done {#t2-ui-system-03}
 4. T2: Navbar dropdown uses shadcn DropdownMenu (3pts) — Done {#t2-ui-system-04}
 5. T2: Ant Design dependency removed from project (2pts) — Todo {#t2-ui-system-05}
-6. T2: Product cards show rich data and correct images (8pts) — In Progress {#t2-ui-system-06}
+6. T2: Product cards show rich data and correct images (8pts) — Done {#t2-ui-system-06}
 
 Execution Order:
 1. t2-ui-system-01 (foundation — components must be installed first)
