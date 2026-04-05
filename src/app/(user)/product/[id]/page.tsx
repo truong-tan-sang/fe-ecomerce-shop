@@ -79,6 +79,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           reviewCount={reviewCount}
           basePrice={product.price}
           baseStock={product.stock}
+          productImageUrl={product.media?.[0]?.url ?? ""}
           variantsWithMedia={product.productVariants ?? []}
           variants={variants}
           colors={colors}

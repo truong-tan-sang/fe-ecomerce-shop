@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ColorSwatch from "./ColorSwatch";
 import type { ProductVariantWithMediaEntity } from "@/dto/product";
 import type { ColorEntity } from "@/dto/color";
 
@@ -12,6 +11,7 @@ interface ProductCardProps {
   id: string;
   name: string;
   stock: number;
+  productImageUrl: string;
   variants: ProductVariantWithMediaEntity[];
   colors: ColorEntity[];
 }
@@ -23,7 +23,6 @@ function useProductColors(variants: ProductVariantWithMediaEntity[], colors: Col
     const seen = new Set<number>();
     const result: { colorEntity: ColorEntity; imageUrl: string }[] = [];
 
-    // Pick the first size found, then collect one image per unique color
     const firstSize = variants[0]?.variantSize;
     if (!firstSize) return result;
 
@@ -47,19 +46,21 @@ export default function ProductCard({
   id,
   name,
   stock,
+  productImageUrl,
   variants,
   colors,
 }: ProductCardProps) {
   const productColors = useProductColors(variants, colors);
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [hoveredColorIndex, setHoveredColorIndex] = useState<number | null>(null);
 
   const inStock = stock > 0;
   const variantCount = variants.length;
 
-  // Current image based on selected color
-  const currentImage = productColors[selectedColorIndex]?.imageUrl || PLACEHOLDER_IMAGE;
+  const currentImage =
+    hoveredColorIndex !== null
+      ? (productColors[hoveredColorIndex]?.imageUrl ?? productImageUrl)
+      : productImageUrl;
 
-  // Price: find lowest and highest across all variants
   const { lowestPrice, highestPrice } = useMemo(() => {
     if (variants.length === 0) return { lowestPrice: 0, highestPrice: 0 };
     const prices = variants.map((v) => v.price);
@@ -84,7 +85,7 @@ export default function ProductCard({
           src={currentImage}
           alt={name}
           fill
-          className={`object-cover transition-transform duration-500 group-hover:scale-[1.03] ${!inStock ? "grayscale-[30%]" : ""}`}
+          className={`object-cover transition-all duration-500 group-hover:scale-[1.03] ${!inStock ? "grayscale-[30%]" : ""}`}
           sizes="256px"
           unoptimized
         />
@@ -113,37 +114,37 @@ export default function ProductCard({
       </div>
 
       {/* Info */}
-      <div className="flex-1 flex flex-col gap-2.5 p-3 justify-between">
-        <div className="space-y-1.5">
-          <div className="text-sm md:text-base font-semibold leading-tight line-clamp-2 text-black">
-            {name}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm md:text-base font-bold text-black">
-              {formatPrice(lowestPrice)}
-            </span>
-            {hasDiscount && (
-              <span className="text-xs text-gray-400 line-through">
-                {formatPrice(highestPrice)}
-              </span>
-            )}
-          </div>
+      <div className="flex-1 flex flex-col gap-2 p-3">
+        <div className="text-sm md:text-base font-semibold leading-tight line-clamp-2 text-black">
+          {name}
         </div>
+
+        {/* Color swatches — between name and price */}
         {productColors.length > 1 && (
-          <div className="flex gap-2 mt-1">
+          <div className="flex items-center gap-0">
             {productColors.map((pc, i) => (
-              <ColorSwatch
+              <div
                 key={pc.colorEntity.id}
-                color={pc.colorEntity.hexCode}
-                variant={selectedColorIndex === i ? "clicked" : "default"}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedColorIndex(i);
-                }}
+                style={{ backgroundColor: pc.colorEntity.hexCode }}
+                className="h-5 w-5 cursor-pointer transition-all duration-150 hover:w-6"
+                onMouseEnter={() => setHoveredColorIndex(i)}
+                onMouseLeave={() => setHoveredColorIndex(null)}
+                onClick={(e) => e.preventDefault()}
               />
             ))}
           </div>
         )}
+
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm md:text-base font-bold text-black">
+            {formatPrice(lowestPrice)}
+          </span>
+          {hasDiscount && (
+            <span className="text-xs text-gray-400 line-through">
+              {formatPrice(highestPrice)}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

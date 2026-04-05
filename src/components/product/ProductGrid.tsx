@@ -107,6 +107,7 @@ export default function ProductGrid({ initialProducts, initialPage, initialHasMo
                 id={String(product.id)}
                 name={product.name}
                 stock={product.stock}
+                productImageUrl={product.media?.[0]?.url ?? ""}
                 variants={product.productVariants ?? []}
                 colors={colors}
               />
