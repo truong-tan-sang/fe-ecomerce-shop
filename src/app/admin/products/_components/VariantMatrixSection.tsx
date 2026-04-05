@@ -91,7 +91,7 @@ export default function VariantMatrixSection({
     selectedColors.forEach((color) => {
       const key = `${size}__${color.name}`;
       if (!newMatrix[key]) {
-        newMatrix[key] = { stock: 0, price: formState.price };
+        newMatrix[key] = { stock: 0, price: 0 };
       }
     });
     onFieldChange("variantMatrix", newMatrix);

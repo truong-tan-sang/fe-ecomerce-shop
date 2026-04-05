@@ -22,14 +22,10 @@ import ProductFormActions from "./ProductFormActions";
 const initialFormState: ProductFormState = {
   name: "",
   description: "",
-  price: 0,
-  stock: 0,
   stockKeepingUnit: "",
   currencyUnit: "VND",
   categoryId: null,
   voucherId: null,
-  isUnlimitedStock: false,
-  status: "ACTIVE",
   selectedSizes: [],
   selectedColors: [],
   variantMatrix: {},
@@ -147,14 +143,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
             setFormState({
               name: product.name,
               description: product.description ?? "",
-              price: product.price,
-              stock: product.stock,
               stockKeepingUnit: product.stockKeepingUnit,
               currencyUnit: "VND",
               categoryId: product.categoryId ?? null,
               voucherId: product.voucherId ?? null,
-              isUnlimitedStock: product.stock >= 999999,
-              status: "ACTIVE",
               selectedSizes,
               selectedColors,
               variantMatrix: matrix,
@@ -207,7 +199,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
       prev.selectedSizes.forEach((size) => {
         const key = `${size}__${color.name}`;
         if (!newMatrix[key]) {
-          newMatrix[key] = { stock: 0, price: prev.price };
+          newMatrix[key] = { stock: 0, price: 0 };
         }
       });
       const newColorImages = prev.colorImages.find((ci) => ci.color === color.name)
@@ -321,9 +313,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
       return;
     }
 
+    // --- VARIANT VALIDATION ---
+    const { selectedSizes, selectedColors, variantMatrix, colorImages } = formState;
+    if (selectedColors.length === 0 || selectedSizes.length === 0) {
+      alert("Vui lòng thêm ít nhất một màu sắc và một kích cỡ để tạo sản phẩm con.");
+      return;
+    }
+
     // --- IMAGE VALIDATION ---
     // Every color in the matrix must have an image (either a new file or an existing previewUrl)
-    const { selectedSizes, selectedColors, variantMatrix, colorImages } = formState;
     if (selectedColors.length > 0) {
       const colorsWithoutImage = selectedColors.filter((color) => {
         const ci = colorImages.find((c) => c.color === color.name);
@@ -344,13 +342,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
       let resolvedProductId = productId;
       const productFiles: File[] = productImageFile ? [productImageFile] : [];
 
+      // Total stock = sum of all variant cells in the matrix
+      const totalVariantStock = Object.values(formState.variantMatrix).reduce(
+        (sum, cell) => sum + (cell.stock ?? 0),
+        0
+      );
+
+      // Product price = min price across all variant cells
+      const variantPrices = Object.values(formState.variantMatrix).map((cell) => cell.price);
+      const minVariantPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 0;
+
       if (isEditMode && resolvedProductId) {
         // --- UPDATE PRODUCT ---
         const updateData: UpdateProductDto = {
           name,
           description,
-          price: formState.price,
-          stock: formState.isUnlimitedStock ? 999999 : formState.stock,
+          price: minVariantPrice,
+          stock: totalVariantStock,
           stockKeepingUnit,
           currencyUnit: formState.currencyUnit,
           categoryId: categoryId ?? undefined,
@@ -370,10 +378,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
         const createData: CreateProductDto = {
           name,
           description,
-          price: formState.price,
+          price: minVariantPrice,
           currencyUnit: formState.currencyUnit,
           stockKeepingUnit,
-          stock: formState.isUnlimitedStock ? 999999 : formState.stock,
+          stock: totalVariantStock,
           createByUserId: userId,
           categoryId,
           voucherId: formState.voucherId ?? undefined,
@@ -443,6 +451,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
               productVariantService.updateProductVariant(
                 variantIdMap[key],
                 {
+                  variantName: name,
                   price: cell.price,
                   stock: cell.stock,
                   variantSize: size,
@@ -473,13 +482,13 @@ export default function ProductForm({ productId }: ProductFormProps) {
             const variantData: CreateProductVariantDto = {
               productId: resolvedProductId!,
               createByUserId: userId,
-              variantName: `Variant for Product ${resolvedProductId} - Option ${size} - ${color.label}`,
+              variantName: formState.name,
               variantColor: color.label,
               variantSize: size,
-              variantWeight: 0,
-              variantHeight: 0,
-              variantLength: 0,
-              variantWidth: 0,
+              variantWeight: 250, // grams (matches Prisma schema default)
+              variantHeight: 5,   // cm (matches Prisma schema default)
+              variantWidth: 20,   // cm (matches Prisma schema default)
+              variantLength: 25,  // cm (matches Prisma schema default)
               colorId: color.id ?? 0,
               price: cell.price,
               stock: cell.stock,

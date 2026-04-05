@@ -22,14 +22,10 @@ export interface ColorImage {
 export interface ProductFormState {
   name: string;
   description: string;
-  price: number;
-  stock: number;
   stockKeepingUnit: string;
   currencyUnit: string;
   categoryId: number | null;
   voucherId: number | null;
-  isUnlimitedStock: boolean;
-  status: "ACTIVE" | "INACTIVE";
   selectedSizes: string[];
   selectedColors: ColorEntry[];
   variantMatrix: VariantMatrix;
