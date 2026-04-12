@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function AdminCategoriesPage() {
   const { data: session } = useSession();
@@ -78,14 +79,11 @@ export default function AdminCategoriesPage() {
           {
             name: categoryName.trim(),
             description: categoryDesc.trim() || categoryName.trim(),
-            parentId: 0,
             createByUserId: parseInt(session.user.id),
-            voucherId: 0,
-            createdAt: now,
-            updatedAt: now,
           },
           accessToken
         );
+        toast.success("Tạo danh mục thành công");
       } else if (editingCategory) {
         // Use update endpoint — need to add to service
         const { sendRequest } = await import("@/utils/api");
@@ -99,12 +97,13 @@ export default function AdminCategoriesPage() {
           },
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+        toast.success("Cập nhật danh mục thành công");
       }
       setDialogOpen(false);
       await fetchCategories();
     } catch (err) {
       console.error("[Categories] Save error:", err);
-      alert("Lưu danh mục thất bại");
+      toast.error(dialogMode === "add" ? "Tạo danh mục thất bại" : "Cập nhật danh mục thất bại");
     } finally {
       setSaving(false);
     }
@@ -120,10 +119,11 @@ export default function AdminCategoriesPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       setDeleteConfirmId(null);
+      toast.success("Đã xoá danh mục");
       await fetchCategories();
     } catch (err) {
       console.error("[Categories] Delete error:", err);
-      alert("Xóa danh mục thất bại");
+      toast.error("Xoá danh mục thất bại");
     }
   };
 
@@ -140,7 +140,7 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] p-6">
+    <div className="min-h-screen p-6">
       {/* Delete Confirmation Dialog */}
       {deleteConfirmId !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

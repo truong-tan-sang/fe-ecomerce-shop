@@ -12,11 +12,9 @@ export interface CategoryDto {
 export interface CreateCategoryDto {
   name: string;
   description: string;
-  parentId: number;
+  parentId?: number | null;
   createByUserId: number;
-  voucherId: number;
-  createdAt: string;
-  updatedAt: string;
+  voucherId?: number | null;
 }
 
 export interface UpdateCategoryDto {

@@ -314,11 +314,11 @@ export default function AdminCouponsPage() {
     (appliedFilter.isActive !== "all" ? 1 : 0);
 
   return (
-    <div className="h-full bg-[#f9fafb] p-6 flex flex-col">
+    <div className="h-full p-6 flex flex-col">
       {/* Delete Confirmation */}
       {deleteConfirmId !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 max-w-sm w-full mx-4 shadow-xl">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 className="text-lg font-semibold text-[#023337] mb-2">Xác nhận xóa</h3>
             <p className="text-gray-600 mb-4">Bạn có chắc chắn muốn xóa voucher này?</p>
             <div className="flex justify-end gap-3">
@@ -342,7 +342,7 @@ export default function AdminCouponsPage() {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white shadow flex flex-col flex-1 min-h-0">
+      <div className="bg-white shadow rounded-lg flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Search + Filter bar */}
         <div className="flex items-center gap-2 px-4 pt-3 pb-2 flex-shrink-0">
           {/* Search input */}
@@ -385,7 +385,7 @@ export default function AdminCouponsPage() {
             </button>
 
             {filterOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-lg z-30 p-4">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-lg rounded-lg z-30 p-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Bộ lọc</p>
 
                 {/* Discount type */}

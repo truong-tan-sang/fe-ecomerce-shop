@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
@@ -20,6 +20,7 @@ import { productService } from "@/services/product";
 import { categoryService } from "@/services/category";
 import type { ProductDto } from "@/dto/product";
 import type { CategoryDto } from "@/dto/category";
+import ProductForm from "../_components/ProductForm";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type FilterTab = "all" | "on_sale" | "out_of_stock";
 
@@ -37,7 +39,6 @@ const PER_PAGE = 20;
 
 export default function AdminProductsListPage() {
   const { data: session } = useSession();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const accessToken = session?.user?.access_token || "";
 
@@ -49,6 +50,20 @@ export default function AdminProductsListPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  // Product form modal
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+
+  const openCreateModal = () => {
+    setEditingProductId(null);
+    setProductModalOpen(true);
+  };
+
+  const openEditModal = (id: number) => {
+    setEditingProductId(id);
+    setProductModalOpen(true);
+  };
 
   // Track current page for infinite scroll
   const pageRef = useRef(1);
@@ -154,6 +169,13 @@ export default function AdminProductsListPage() {
     }
   }, [accessToken, activeCategoryId, fetchProducts, fetchProductsByCategory]);
 
+  const handleProductSaved = useCallback(() => {
+    setProductModalOpen(false);
+    setEditingProductId(null);
+    pageRef.current = 1;
+    fetchProducts(1, false);
+  }, [fetchProducts]);
+
   const loadNextPage = useCallback(() => {
     if (loadingMore || !hasMore || activeCategoryId !== null) return;
     const nextPage = pageRef.current + 1;
@@ -196,21 +218,18 @@ export default function AdminProductsListPage() {
         {
           name: newCategoryName.trim(),
           description: newCategoryDesc.trim() || newCategoryName.trim(),
-          parentId: 0,
           createByUserId: parseInt(session.user.id),
-          voucherId: 0,
-          createdAt: now,
-          updatedAt: now,
         },
         accessToken
       );
       setAddCategoryOpen(false);
       setNewCategoryName("");
       setNewCategoryDesc("");
+      toast.success("Tạo danh mục thành công");
       await fetchCategories();
     } catch (err) {
       console.error("[ProductList] Error creating category:", err);
-      alert("Tạo danh mục thất bại");
+      toast.error("Tạo danh mục thất bại");
     } finally {
       setCategorySaving(false);
     }
@@ -299,11 +318,11 @@ export default function AdminProductsListPage() {
   ]);
 
   return (
-    <div className="h-screen bg-[#f9fafb] p-6 flex flex-col overflow-hidden">
+    <div className="h-screen p-6 flex flex-col overflow-hidden">
       {/* Delete Confirmation Dialog */}
       {deleteConfirmId !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 max-w-sm w-full mx-4 shadow-xl">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 className="text-lg font-semibold text-[#023337] mb-2">
               Xác nhận xóa
             </h3>
@@ -334,7 +353,7 @@ export default function AdminProductsListPage() {
         <h1 className="text-2xl font-bold text-[#151515]">Danh mục</h1>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push("/admin/products/add")}
+            onClick={openCreateModal}
             className="flex items-center gap-2 bg-[#4ea674] text-white px-4 py-2 font-medium hover:bg-[#3d8a5f] cursor-pointer"
           >
             <PlusSquare size={18} />
@@ -382,7 +401,7 @@ export default function AdminProductsListPage() {
       </div>
 
       {/* Product Table Card */}
-      <div className="bg-white shadow flex flex-col flex-1 min-h-0">
+      <div className="bg-white shadow rounded-lg flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Filter Tabs and Search */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
           {/* Filter Tabs */}
@@ -441,7 +460,7 @@ export default function AdminProductsListPage() {
               <SlidersHorizontal size={18} className="text-gray-500" />
             </button>
             <button
-              onClick={() => router.push("/admin/products/add")}
+              onClick={openCreateModal}
               className="p-2 hover:bg-gray-100 cursor-pointer"
             >
               <PlusSquare size={18} className="text-gray-500" />
@@ -509,9 +528,7 @@ export default function AdminProductsListPage() {
                     key={product.id}
                     data-index={virtualRow.index}
                     ref={rowVirtualizer.measureElement}
-                    onClick={() =>
-                      router.push(`/admin/products/edit/${product.id}`)
-                    }
+                    onClick={() => openEditModal(product.id)}
                     className="grid border-t border-gray-100 hover:bg-gray-50 cursor-pointer items-center"
                     style={{
                       gridTemplateColumns: "60px 1fr 160px 128px 112px 112px",
@@ -556,9 +573,7 @@ export default function AdminProductsListPage() {
                     >
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() =>
-                            router.push(`/admin/products/edit/${product.id}`)
-                          }
+                          onClick={() => openEditModal(product.id)}
                           className="p-1.5 hover:bg-gray-100 cursor-pointer"
                           title="Chỉnh sửa"
                         >
@@ -588,6 +603,24 @@ export default function AdminProductsListPage() {
           )}
         </div>
       </div>
+
+      {/* Product Create / Edit Modal */}
+      <Dialog open={productModalOpen} onOpenChange={(open) => { if (!open) { setProductModalOpen(false); setEditingProductId(null); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto p-0" style={{ maxWidth: "95vw", width: "1400px" }}>
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>
+              {editingProductId ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+            </DialogTitle>
+          </DialogHeader>
+          {productModalOpen && (
+            <ProductForm
+              productId={editingProductId ?? undefined}
+              onSuccess={handleProductSaved}
+              onCancel={() => { setProductModalOpen(false); setEditingProductId(null); }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add Category Dialog */}
       <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
