@@ -14,7 +14,6 @@ import {
   LogOut,
   MessageCircle,
   MessageSquare,
-  PlusCircle,
   Settings,
   ShoppingCart,
   Ticket,
@@ -39,13 +38,8 @@ const mainMenuItems: SidebarItem[] = [
 ];
 
 const productItems: SidebarItem[] = [
-  { label: "Thêm sản phẩm", href: "/admin/products/add", icon: PlusCircle },
   { label: "Danh sách sản phẩm", href: "/admin/products/list", icon: List },
-  {
-    label: "Review sản phẩm",
-    href: "/admin/products/reviews",
-    icon: MessageSquare,
-  },
+  { label: "Review sản phẩm", href: "/admin/products/reviews", icon: MessageSquare },
 ];
 
 const adminItems: SidebarItem[] = [
@@ -79,8 +73,8 @@ export default function Sidebar() {
         href={item.href}
         className={`flex items-center gap-3 px-4 py-2.5 rounded-md text-[16px] cursor-pointer transition-colors ${
           active
-            ? "bg-black text-white font-bold"
-            : "text-[#6a717f] font-normal hover:bg-gray-100"
+            ? "bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)] font-bold"
+            : "text-[#6a717f] font-normal hover:bg-[var(--admin-green-light)]"
         }`}
         title={collapsed ? item.label : undefined}
       >
@@ -99,8 +93,8 @@ export default function Sidebar() {
         href={item.href}
         className={`flex items-center justify-center p-2.5 rounded-md cursor-pointer transition-colors ${
           active
-            ? "bg-black text-white"
-            : "text-[#6a717f] hover:bg-gray-100"
+            ? "bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)]"
+            : "text-[#6a717f] hover:bg-[var(--admin-green-light)]"
         }`}
         title={item.label}
       >
@@ -114,7 +108,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`bg-white flex flex-col h-screen transition-all duration-300 shadow-[0px_3px_4px_0px_rgba(0,0,0,0.12)] ${
+      className={`bg-white flex flex-col h-screen transition-all duration-300 z-10 shadow-[0px_3px_4px_0px_rgba(0,0,0,0.12)] ${
         collapsed ? "w-16" : "w-[260px]"
       }`}
     >
@@ -178,7 +172,7 @@ export default function Sidebar() {
         {/* User profile row */}
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Avatar circle */}
-          <div className="w-9 h-9 rounded-full bg-gray-300 shrink-0 flex items-center justify-center text-white text-sm font-bold">
+          <div className="w-9 h-9 bg-[var(--admin-green-mid)] shrink-0 flex items-center justify-center text-[var(--admin-green-dark)] text-sm font-bold">
             {userName.charAt(0).toUpperCase()}
           </div>
           {!collapsed && (

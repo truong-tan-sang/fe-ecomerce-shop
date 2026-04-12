@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Sidebar from "./sidebar";
 import { auth } from "@/auth";
+import "@/styles/theme-admin.css";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -16,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="h-screen flex bg-gray-50 overflow-hidden">
+    <div className="admin-theme h-screen flex bg-gray-50 overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

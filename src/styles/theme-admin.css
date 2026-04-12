@@ -1,0 +1,82 @@
+/* ============================================================
+   Admin Theme — scoped to .admin-theme
+   Apply this class to the root wrapper of the admin layout.
+
+   Design source: Figma node 528:4778
+   Accent palette: light green (#eaf8e7 / #c1e6ba / #023337)
+   Border radius: 8px (--radius: 0.5rem)
+   ============================================================ */
+
+.admin-theme {
+  /* ── Border Radius ──────────────────────────────────────────
+     sm = 4px  |  md = 6px  |  lg = 8px  |  xl = 12px
+     Tailwind's rounded-* reads var(--radius-*) via @theme inline
+     so overriding --radius here cascades to all rounded-* classes. */
+  --radius: 0.5rem;
+
+  /* ── Green Palette (Figma exact values) ─────────────────────
+     light  = table header / hover surfaces
+     mid    = active/selected state (e.g. current page button)
+     dark   = text rendered on green surfaces */
+  --admin-green-light: #eaf8e7;
+  --admin-green-mid:   #c1e6ba;
+  --admin-green-dark:  #023337;
+
+  /* ── shadcn / Tailwind color token overrides ────────────────
+     These are the same var names used by shadcn components
+     (Button, Badge, Input, Select, etc.) */
+  --primary:            oklch(0.47 0.10 180);   /* ≈ #023337 deep teal-green */
+  --primary-foreground: oklch(1 0 0);           /* white */
+
+  --accent:             oklch(0.966 0.036 149); /* ≈ #eaf8e7 light green */
+  --accent-foreground:  oklch(0.18 0.04 196);   /* ≈ #023337 */
+
+  --ring:               oklch(0.532 0.157 145); /* ≈ #16a34a — focus ring */
+
+  /* Sidebar */
+  --sidebar:                      oklch(0.985 0 0);
+  --sidebar-primary:              oklch(0.47 0.10 180);
+  --sidebar-primary-foreground:   oklch(1 0 0);
+  --sidebar-accent:               oklch(0.966 0.036 149);
+  --sidebar-accent-foreground:    oklch(0.18 0.04 196);
+  --sidebar-border:               oklch(0.922 0 0);
+  --sidebar-ring:                 oklch(0.532 0.157 145);
+
+  /* ── Semantic Spacing ───────────────────────────────────────
+     Use these instead of magic numbers in admin components.
+     xs=4px  sm=8px  md=16px  lg=24px  xl=32px  2xl=48px */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+
+  /* ── Semantic Font Sizes ────────────────────────────────────
+     Matches Figma: body text = 15px, labels = 14px
+     xs=12px  sm=14px  md=15px  lg=18px  xl=20px  2xl=24px */
+  --text-xs:  0.75rem;
+  --text-sm:  0.875rem;
+  --text-md:  0.9375rem;
+  --text-lg:  1.125rem;
+  --text-xl:  1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* ── Component-level tokens (use in admin components) ───────
+     Reference these vars instead of raw colors. */
+  --admin-table-header-bg:     var(--admin-green-light);
+  --admin-table-header-text:   var(--admin-green-dark);
+  --admin-table-row-hover:     var(--admin-green-light);
+  --admin-table-border:        #d1d5db;   /* neutral/300 */
+
+  --admin-pagination-active-bg:   var(--admin-green-mid);
+  --admin-pagination-active-text: var(--admin-green-dark);
+
+  --admin-card-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2);
+
+  /* Status colors (same Figma values used across admin tables) */
+  --admin-status-active:   #21c45d;
+  --admin-status-inactive: #ef4343;
+  --admin-status-warning:  #fbbd23;
+  --admin-status-info:     #6467f2;
+}
