@@ -8,7 +8,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { authenticate } from "@/utils/actions";
 import { toast } from "sonner";
-import ModalReactive from "@/components/auth/modal.reactive";
+import ModalReactive from "@/components/auth/ModalReactive";
 import Image from "next/image";
 
 function Login() {

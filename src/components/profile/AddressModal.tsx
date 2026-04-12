@@ -57,8 +57,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
   const [showWardDropdown, setShowWardDropdown] = useState(false);
 
   const [formData, setFormData] = useState({
-    recipientName: "",
-    recipientPhone: "",
     street: "",
     ward: "",
     district: "",
@@ -120,8 +118,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
   useEffect(() => {
     if (editAddress) {
       setFormData({
-        recipientName: "", // Not in API, keep for UX
-        recipientPhone: "", // Not in API, keep for UX
         street: editAddress.street,
         ward: editAddress.ward,
         district: editAddress.district,
@@ -135,8 +131,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
     } else {
       // Reset form for new address
       setFormData({
-        recipientName: "",
-        recipientPhone: "",
         street: "",
         ward: "",
         district: "",
@@ -302,32 +296,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Recipient info - UI only, not sent to backend */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Họ và tên người nhận
-              </label>
-              <Input
-                type="text"
-                value={formData.recipientName}
-                onChange={(e) => handleChange("recipientName", e.target.value)}
-                placeholder="Nhập họ tên"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Số điện thoại người nhận
-              </label>
-              <Input
-                type="tel"
-                value={formData.recipientPhone}
-                onChange={(e) => handleChange("recipientPhone", e.target.value)}
-                placeholder="Nhập số điện thoại"
-              />
-            </div>
-          </div>
-
           {/* Street address */}
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -360,7 +328,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
                 required
               />
               {showProvinceDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-black max-h-60 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[var(--border-primary)] max-h-60 overflow-y-auto">
                   {isLoadingLocation ? (
                     <div className="px-3 py-2 text-gray-500 text-sm">Đang tải...</div>
                   ) : filteredProvinces.length === 0 ? (
@@ -397,7 +365,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
                 className="disabled:bg-gray-50"
               />
               {showDistrictDropdown && districts.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-black max-h-60 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[var(--border-primary)] max-h-60 overflow-y-auto">
                   {filteredDistricts.length === 0 ? (
                     <div className="px-3 py-2 text-gray-500 text-sm">Không tìm thấy</div>
                   ) : (
@@ -432,7 +400,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
                 className="disabled:bg-gray-50"
               />
               {showWardDropdown && wards.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-black max-h-60 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[var(--border-primary)] max-h-60 overflow-y-auto">
                   {filteredWards.length === 0 ? (
                     <div className="px-3 py-2 text-gray-500 text-sm">Không tìm thấy</div>
                   ) : (
@@ -491,14 +459,14 @@ export default function AddressModal({ isOpen, onClose, onSuccess, editAddress }
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-black px-4 py-3 h-auto"
+              className="flex-1 border-[var(--border-primary)] px-4 py-3 h-auto"
               disabled={isSubmitting}
             >
               Hủy
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-black text-white px-4 py-3 h-auto hover:bg-gray-800 disabled:bg-gray-400"
+              className="flex-1 bg-[var(--bg-button)] text-[var(--text-inverse)] px-4 py-3 h-auto hover:bg-[var(--bg-button-hover)] disabled:bg-gray-400"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Đang lưu..." : editAddress ? "Cập nhật" : "Thêm địa chỉ"}

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useProfile } from "./ProfileContext";
 import { userService } from "../../services/user";
 import { addressService } from "../../services/address";
@@ -18,21 +19,26 @@ const subTabs = ["Hồ sơ", "Bảng Size", "Địa chỉ", "Đổi mật khẩu
 export default function ProfileContent() {
     const profile = useProfile();
     const { data: session } = useSession();
+    const router = useRouter();
     const [activeSubTab, setActiveSubTab] = useState("Hồ sơ");
     const [isEditing, setIsEditing] = useState(false);
 
-    // Controlled state for editable fields (backend-aligned)
-    const initialUsername = profile?.username || "";
-    const initialName = profile?.name || ""; // Will be mapped to firstName; lastName blank (or split heuristic)
-    const initialPhone = profile?.phone || "";
-
-    const [username, setUsername] = useState(initialUsername);
-    const [fullName, setFullName] = useState(initialName);
-    const [phone, setPhone] = useState(initialPhone);
-    
     type Gender = "MALE" | "FEMALE" | "OTHER" | "";
-    const initialGender: Gender = profile?.gender || "";
-    const [gender, setGender] = useState<Gender>(initialGender);
+
+    const [username, setUsername] = useState(profile?.username || "");
+    const [lastName, setLastName] = useState(profile?.lastName || "");
+    const [firstName, setFirstName] = useState(profile?.firstName || "");
+    const [phone, setPhone] = useState(profile?.phone || "");
+    const [gender, setGender] = useState<Gender>((profile?.gender || "") as Gender);
+
+    // Sync state whenever profile context updates (e.g. after router.refresh())
+    useEffect(() => {
+      setLastName(profile?.lastName || "");
+      setFirstName(profile?.firstName || "");
+      setUsername(profile?.username || "");
+      setPhone(profile?.phone || "");
+      setGender((profile?.gender || "") as Gender);
+    }, [profile]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -125,14 +131,9 @@ export default function ProfileContent() {
         setMessage(null);
         setError(null);
 
-        // Split full name into firstName/lastName
-        const parts = fullName.trim().split(/\s+/);
-        const firstName = parts[0] || "";
-        const lastName = parts.slice(1).join(" ");
-
         const updatePayload = {
             username,
-            firstName,
+            firstName: firstName || undefined,
             lastName: lastName || undefined,
             phone: phone || undefined,
             gender: gender || undefined,
@@ -153,6 +154,7 @@ export default function ProfileContent() {
             console.log("[ProfileContent] Update response:", JSON.stringify(res, null, 2));
             setMessage("Cập nhật thành công");
             setIsEditing(false);
+            router.refresh();
         } catch (error) {
             console.error("[ProfileContent] Update error:", error);
             const { ApiError } = await import("@/utils/api-error");
@@ -203,14 +205,24 @@ export default function ProfileContent() {
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                                 <Label className="text-sm text-gray-600 font-normal">Họ và tên</Label>
-                                <Input
-                                    type="text"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Nhập họ và tên"
-                                    disabled={!isEditing}
-                                    className="text-sm disabled:bg-gray-50"
-                                />
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="text"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        placeholder="Họ và tên đệm"
+                                        disabled={!isEditing}
+                                        className="flex-1 text-sm disabled:bg-gray-50"
+                                    />
+                                    <Input
+                                        type="text"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        placeholder="Tên"
+                                        disabled={!isEditing}
+                                        className="w-28 text-sm disabled:bg-gray-50"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
@@ -289,7 +301,7 @@ export default function ProfileContent() {
 
                         {/* Right column - Avatar */}
                         <div className="flex flex-col items-center gap-4 pl-8">
-                            <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+                            <div className="relative w-32 h-32 overflow-hidden bg-gray-200">
                                 <Image
                                     src={profile?.image || "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=200&q=80"}
                                     alt="Avatar"
@@ -348,17 +360,7 @@ export default function ProfileContent() {
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="font-semibold">
-                                                        {/* TODO: Add recipient name from profile or separate field */}
-                                                        {profile?.name || "Người nhận"}
-                                                    </span>
-                                                    <span className="text-gray-600">|</span>
-                                                    <span className="text-gray-600">
-                                                        {profile?.phone || "(+84)927439685"}
-                                                    </span>
-                                                </div>
-                                                <p className="text-gray-700 text-sm mb-2">
+                                                <p className="font-semibold text-gray-900 mb-2">
                                                     {fullAddress}
                                                 </p>
                                                 {isDefault && (

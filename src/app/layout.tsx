@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NextAuthWrapper from "@/library/next.auth.wrapper";
 import { Toaster } from "@/components/ui/sonner";
+import FloatingChat from "@/components/chat/FloatingChat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}
       >
-        <NextAuthWrapper>{children}</NextAuthWrapper>
+        <NextAuthWrapper>
+          {children}
+          <FloatingChat />
+        </NextAuthWrapper>
         <Toaster />
       </body>
     </html>

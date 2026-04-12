@@ -20,7 +20,9 @@ export default async function ProfileDataProvider({
         const d = res.data;
         profile = {
           id: d.id || session.user.id,
-          name: d.name || session.user.name,
+          name: (d.firstName || d.lastName)
+            ? [d.lastName, d.firstName].filter(Boolean).join(' ')
+            : (d.name || session.user.name || ''),
           email: d.email || session.user.email,
           phone: d.phone,
           image: d.image,

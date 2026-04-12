@@ -1,6 +1,6 @@
 "use client";
 
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -147,13 +147,13 @@ export default function VNPayReturnPage() {
               <div className="flex gap-3 justify-center">
                 <Link
                   href="/profile/orders"
-                  className="inline-block bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
                 >
                   XEM ĐƠN HÀNG
                 </Link>
                 <Link
                   href="/homepage"
-                  className="inline-block border border-black px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   TRANG CHỦ
                 </Link>
@@ -188,19 +188,19 @@ export default function VNPayReturnPage() {
               <div className="flex gap-3 justify-center">
                 <Link
                   href="/profile/orders"
-                  className="inline-block bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
                 >
                   XEM ĐƠN HÀNG
                 </Link>
                 <Link
                   href="/cart"
-                  className="inline-block border border-black px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   VỀ GIỎ HÀNG
                 </Link>
                 <Link
                   href="/homepage"
-                  className="inline-block border border-black px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   TRANG CHỦ
                 </Link>

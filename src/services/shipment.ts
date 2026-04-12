@@ -27,4 +27,19 @@ export const shipmentService = {
     console.log("[ShipmentService] Preview response:", response);
     return response;
   },
+
+  async getGHNTrackingUrl(
+    orderId: number,
+    accessToken: string
+  ): Promise<IBackendRes<string>> {
+    const url = `${BACKEND_URL}/shipments/${orderId}/ghn-tracking-url`;
+    console.log("[ShipmentService] Fetching GHN tracking URL for order:", orderId);
+    const response = await sendRequest<IBackendRes<string>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[ShipmentService] GHN tracking URL response:", response);
+    return response;
+  },
 };

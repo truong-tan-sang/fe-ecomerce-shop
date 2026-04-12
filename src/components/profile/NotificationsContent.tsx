@@ -68,7 +68,7 @@ export default function NotificationsContent() {
             <div className="flex items-start gap-4">
               {/* Icon */}
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                className={`w-10 h-10 flex items-center justify-center flex-shrink-0 ${
                   notification.type === "order"
                     ? "bg-green-100 text-green-600"
                     : notification.type === "promotion"

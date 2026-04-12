@@ -1,4 +1,4 @@
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import HeroBanner from "@/components/home/HeroBanner";
 import ProductGrid from "@/components/product/ProductGrid";
 import { productService } from "@/services/product";

@@ -1,6 +1,6 @@
 "use client";
 
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -57,6 +57,7 @@ export default function CheckoutPage() {
   // User profile state
   const [phone, setPhone] = useState("");
   const [phoneLoaded, setPhoneLoaded] = useState(false);
+  const [profileName, setProfileName] = useState("");
 
   // Address state
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
@@ -101,6 +102,13 @@ export default function CheckoutPage() {
         const res = await userService.getUser(session.user.id, session.user.access_token);
         if (res.data?.phone) {
           setPhone(res.data.phone);
+        }
+        const d = res.data;
+        if (d) {
+          const name = (d.firstName || d.lastName)
+            ? [d.lastName, d.firstName].filter(Boolean).join(" ")
+            : (d.name || session.user.name || "");
+          setProfileName(name);
         }
       } catch (error) {
         console.error("[CheckoutPage] Failed to load user profile:", error);
@@ -410,9 +418,7 @@ export default function CheckoutPage() {
 
   // ── Helpers ──
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
-  const recipientName = [session?.user?.firstName, session?.user?.lastName]
-    .filter(Boolean)
-    .join(" ") || session?.user?.name || "";
+  const recipientName = profileName || session?.user?.name || "";
 
   const handleAddressChange = (value: string) => {
     if (value === "new") {
@@ -849,7 +855,7 @@ export default function CheckoutPage() {
               <Button
                 onClick={() => setShowConfirm(true)}
                 disabled={step !== "previewed" || !phone.trim()}
-                className="w-full mt-4 bg-black text-white py-3 h-auto hover:bg-gray-800 disabled:bg-gray-400"
+                className="w-full mt-4 bg-[var(--bg-button)] text-[var(--text-inverse)] py-3 h-auto hover:bg-[var(--bg-button-hover)] disabled:bg-gray-400"
               >
                 {step === "placing" ? (
                   <>
@@ -881,9 +887,9 @@ export default function CheckoutPage() {
                   <div>
                     <span className="text-gray-600">Giao đến:</span>
                     <p className="font-medium mt-1">
-                      {recipientName} — {phone}
+                      {recipientName}{phone ? ` — ${phone}` : ""}
                     </p>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 mt-0.5">
                       {selectedAddress.street}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.province}
                     </p>
                   </div>
@@ -906,7 +912,7 @@ export default function CheckoutPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowConfirm(false)}
-                  className="flex-1 border-black py-3 h-auto"
+                  className="flex-1 border-[var(--border-primary)] py-3 h-auto"
                 >
                   Hủy
                 </Button>
@@ -915,7 +921,7 @@ export default function CheckoutPage() {
                     setShowConfirm(false);
                     handlePlaceOrder();
                   }}
-                  className="flex-1 bg-black text-white py-3 h-auto hover:bg-gray-800"
+                  className="flex-1 bg-[var(--bg-button)] text-[var(--text-inverse)] py-3 h-auto hover:bg-[var(--bg-button-hover)]"
                 >
                   Xác nhận đặt hàng
                 </Button>

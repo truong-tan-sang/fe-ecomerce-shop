@@ -1,6 +1,6 @@
     "use client";
 
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -286,7 +286,7 @@ export default function CartPage() {
                         </div>
                         <div className="text-xl font-bold text-black">{VND.format(total)}</div>
                         <Button
-                            className="ml-2 bg-black text-white px-6 py-3 h-auto font-semibold hover:bg-gray-800 whitespace-nowrap disabled:bg-gray-300"
+                            className="ml-2 bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 h-auto font-semibold hover:bg-[var(--bg-button-hover)] whitespace-nowrap disabled:bg-gray-300"
                             disabled={selectedCount === 0}
                             onClick={() => {
                                 const selectedIdsParam = Array.from(selectedIds).join(',');
