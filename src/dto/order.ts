@@ -16,9 +16,21 @@ export type OrderStatus =
   | "WAITING_FOR_PICKUP"
   | "SHIPPED"
   | "DELIVERED"
+  | "DELIVERED_FAILED"
   | "COMPLETED"
   | "CANCELLED"
   | "RETURNED";
+
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED";
+
+export type ShipmentStatus =
+  | "PENDING"
+  | "WAITING_FOR_PICKUP"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "DELIVERED_FAILED"
+  | "RETURNED"
+  | "CANCELLED";
 
 // ── Package / Shipping Preview DTOs ──
 
@@ -159,6 +171,8 @@ export interface OrderFullInformationEntity {
   userId: number;
   shippingAddressId: number;
   processByStaffId: number | null;
+  ghnPickShiftId: number | null;
+  description: string | null;
   orderDate: string;
   status: OrderStatus;
   subTotal: number;
@@ -187,6 +201,17 @@ interface DatabaseAddressFields {
   updatedAt: string;
 }
 
+export interface ProductVariantForOrderItem {
+  id: number;
+  productId: number;
+  variantName: string;
+  variantColor: string;
+  variantSize: string;
+  price: number;
+  currencyUnit: string;
+  media: Array<{ id: number; url: string; type: string }>;
+}
+
 export interface OrderItemEntity {
   id: number;
   orderId: number;
@@ -194,18 +219,26 @@ export interface OrderItemEntity {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  discountValue: number;
+  currencyUnit: string;
   createdAt: string;
   updatedAt: string;
+  productVariant: ProductVariantForOrderItem;
 }
 
 export interface ShipmentEntity {
   id: number;
   orderId: number;
-  carrier: string;
-  trackingNumber: string;
-  status: string;
+  processByStaffId: number | null;
+  ghnOrderCode: string | null;
   estimatedDelivery: string;
   deliveredAt: string | null;
+  estimatedShipDate: string;
+  shippedAt: string | null;
+  carrier: string;
+  trackingNumber: string;
+  description: string | null;
+  status: ShipmentStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -213,12 +246,12 @@ export interface ShipmentEntity {
 export interface PaymentEntity {
   id: number;
   orderId: number;
+  transactionId: string;
+  paymentMethod: string;
+  paymentDate: string;
   amount: number;
-  method: PaymentMethod;
-  status: string;
-  transactionId: string | null;
-  createdAt: string;
-  updatedAt: string;
+  currencyUnit: string;
+  status: PaymentStatus;
 }
 
 // ── Legacy DTOs (kept for backward compat with order list/detail pages) ──

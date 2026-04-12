@@ -34,15 +34,105 @@ export const orderService = {
   async getUserOrders(
     userId: number,
     accessToken: string
-  ): Promise<IBackendRes<OrderDto[]>> {
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
     const url = `${BACKEND_URL}/user/${userId}/order-list`;
     console.log("[OrderService] Fetching orders for user:", userId);
-    const response = await sendRequest<IBackendRes<OrderDto[]>>({
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[OrderService] Get user orders response:", response);
+    return response;
+  },
+
+  async getUserConfirmedOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/confirmed-order-list`;
+    console.log("[OrderService] Fetching confirmed orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get confirmed orders response:", response);
+    return response;
+  },
+
+  async getUserShippedOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/shipped-order-list`;
+    console.log("[OrderService] Fetching shipped orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get shipped orders response:", response);
+    return response;
+  },
+
+  async getUserDeliveredOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/delivered-order-list`;
+    console.log("[OrderService] Fetching delivered orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get delivered orders response:", response);
+    return response;
+  },
+
+  async getUserCompletedOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/completed-order-list`;
+    console.log("[OrderService] Fetching completed orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get completed orders response:", response);
+    return response;
+  },
+
+  async getUserCancelledOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/cancelled-order-list`;
+    console.log("[OrderService] Fetching cancelled orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get cancelled orders response:", response);
+    return response;
+  },
+
+  async getUserReturnedOrders(
+    userId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/user/${userId}/returned-order-list`;
+    console.log("[OrderService] Fetching returned orders for user:", userId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Get returned orders response:", response);
     return response;
   },
 
@@ -108,6 +198,36 @@ export const orderService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[OrderService] Update order item response:", response);
+    return response;
+  },
+
+  async getOrderDetail(
+    orderId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/order-detail`;
+    console.log("[OrderService] Fetching order detail:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Order detail response:", response);
+    return response;
+  },
+
+  async cancelOrder(
+    orderId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/cancel`;
+    console.log("[OrderService] Cancelling order:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Cancel order response:", response);
     return response;
   },
 
