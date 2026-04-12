@@ -1,5 +1,10 @@
 # Claude Code Project Rules for fe-ecomerce-shop
 
+## Language
+- All user-facing UI text MUST be written in Vietnamese by default — no exceptions.
+- This applies to: labels, placeholders, buttons, empty states, error messages, tooltips, loading text, section headers, aria-labels — anything a user sees on screen.
+- Do not wait to be told. Every component you write or modify must follow this rule automatically.
+
 ## Core Principles
 - Never use `any`. Strictly type everything via DTOs from `openapi.json`.
 - Run `npx tsc --noEmit` after changes.

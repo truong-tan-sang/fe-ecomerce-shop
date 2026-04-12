@@ -18,8 +18,6 @@ export default function ColorImageUploadSection({
 
   const { selectedColors, colorImages } = formState;
 
-  const selectedImage = colorImages.find((ci) => ci.previewUrl);
-
   if (selectedColors.length === 0) return null;
 
   const handleFileSelect = (colorName: string, file: File) => {
@@ -31,22 +29,7 @@ export default function ColorImageUploadSection({
       <h3 className="text-lg font-semibold text-[#023337] mb-4">
         Upload ảnh sản phẩm theo màu
       </h3>
-      <div className="flex gap-6">
-        {/* Main preview */}
-        <div className="w-48 h-48 flex-shrink-0 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
-          {selectedImage?.previewUrl ? (
-            <img
-              src={selectedImage.previewUrl}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-gray-400 text-sm">Chọn ảnh</span>
-          )}
-        </div>
-
-        {/* Color image grid */}
-        <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
           {selectedColors.map((color) => {
             const ci = colorImages.find((c) => c.color === color.name);
             return (
@@ -95,7 +78,6 @@ export default function ColorImageUploadSection({
               </div>
             );
           })}
-        </div>
       </div>
     </div>
   );

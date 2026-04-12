@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { productService } from "@/services/product";
 import { productVariantService } from "@/services/product-variant";
 import { categoryService } from "@/services/category";
@@ -34,9 +35,12 @@ const initialFormState: ProductFormState = {
 
 interface ProductFormProps {
   productId?: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export default function ProductForm({ productId }: ProductFormProps) {
+export default function ProductForm({ productId, onSuccess, onCancel }: ProductFormProps) {
+  const isModal = !!onCancel;
   const isEditMode = productId !== undefined;
   const { data: session } = useSession();
   const router = useRouter();
@@ -531,6 +535,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
       console.log("[ProductForm] All operations complete");
       if (failedCreates.length > 0) {
         alert(`Một số sản phẩm con tạo thất bại: ${failedCreates.join(", ")}\nKiểm tra console để biết chi tiết.`);
+      } else if (onSuccess) {
+        onSuccess();
       } else if (isEditMode) {
         alert("Lưu thành công");
       } else {
@@ -552,7 +558,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
     try {
       await productService.deleteProduct(productId, session.user.access_token);
       console.log("[ProductForm] Product deleted");
-      router.push("/admin/products/list");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/admin/products/list");
+      }
     } catch (error) {
       console.error("[ProductForm] Error deleting:", error);
       alert("Có lỗi xảy ra khi xóa sản phẩm");
@@ -563,32 +573,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
   if (pageLoading) {
     return (
-      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Đang tải...</p>
+      <div className={`flex items-center justify-center gap-2 text-gray-500 ${isModal ? "py-16" : "p-8 bg-gray-50 min-h-screen"}`}>
+        <Loader2 size={20} className="animate-spin" />
+        <span>Đang tải...</span>
       </div>
     );
   }
 
-  return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-[#023337]">
-          {isEditMode ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
-        </h1>
-        <Button
-          onClick={handleSave}
-          disabled={loading}
-          className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white px-6 cursor-pointer"
-        >
-          {loading
-            ? "Đang lưu..."
-            : isEditMode
-              ? "Lưu thay đổi"
-              : "Đăng tải sản phẩm"}
-        </Button>
-      </div>
-
+  const formBody = (
+    <>
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <ProductBasicInfoCard
@@ -628,6 +621,66 @@ export default function ProductForm({ productId }: ProductFormProps) {
           onColorImageRemove={handleColorImageRemove}
         />
       </div>
+    </>
+  );
+
+  if (isModal) {
+    return (
+      <div className="p-6">
+        {formBody}
+        {/* Modal footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div>
+            {isEditMode && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading}
+                className="cursor-pointer"
+              >
+                Xóa sản phẩm
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+              className="cursor-pointer"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white cursor-pointer"
+            >
+              {loading ? "Đang lưu..." : isEditMode ? "Lưu thay đổi" : "Tạo sản phẩm"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-[#023337]">
+          {isEditMode ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
+        </h1>
+        <Button
+          onClick={handleSave}
+          disabled={loading}
+          className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white px-6 cursor-pointer"
+        >
+          {loading ? "Đang lưu..." : isEditMode ? "Lưu thay đổi" : "Đăng tải sản phẩm"}
+        </Button>
+      </div>
+
+      {formBody}
 
       {/* Save / Delete actions */}
       <ProductFormActions
