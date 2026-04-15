@@ -2,10 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { MessageSquare, Send, Wifi, WifiOff, Loader2, Users } from "lucide-react";
+import Image from "next/image";
+import {
+  MessageSquare,
+  Send,
+  Wifi,
+  WifiOff,
+  Loader2,
+  Users,
+  Clock,
+} from "lucide-react";
 import { useChatSocket, ChatMessage } from "@/hooks/useChatSocket";
 import { chatService } from "@/services/chat";
 import { ChatMessageDto, ChatRoomDto } from "@/dto/chat";
+import { userService, getAvatarUrl } from "@/services/user";
 
 // Extract the other participant's email from a private room name.
 // Room name is `emailA-emailB` (lexicographic). Strip the current user's email.
@@ -14,13 +24,35 @@ function getPeerLabel(roomName: string, myEmail: string): string {
   return withoutMine || roomName;
 }
 
-// Get the other member's userId from a room's members list
-function getPeerUserId(
-  room: ChatRoomDto,
-  myUserId: number
-): string | null {
+// Get peer userId from a private room's members list (backward compat)
+function getPeerUserId(room: ChatRoomDto, myUserId: number): string | null {
   const other = room.members?.find((m) => m.userId !== myUserId);
   return other ? String(other.userId) : null;
+}
+
+// Derive a human-readable label for a support room.
+// Uses room description (set by customer at creation) with fallback to ID.
+function getSupportRoomLabel(room: ChatRoomDto): string {
+  if (room.description) return room.description;
+  const match = room.name.match(/^support-(\d+)$/);
+  return match ? `Khách hàng #${match[1]}` : room.name;
+}
+
+// Returns true if the room is a customer support room
+function isSupportRoom(room: ChatRoomDto): boolean {
+  return room.name.startsWith("support-");
+}
+
+// Minutes since a date
+function minutesAgo(dateStr: string): number {
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+}
+
+type SenderKind = "mine" | "customer" | "colleague";
+
+interface SenderProfile {
+  name: string;
+  avatarUrl?: string;
 }
 
 export default function AdminChatPage() {
@@ -29,68 +61,106 @@ export default function AdminChatPage() {
   const currentUserEmail = session?.user?.email ?? null;
   const myUserId = session?.user?.id ? Number(session.user.id) : null;
 
-  const [rooms, setRooms] = useState<ChatRoomDto[]>([]);
+  const [joinedRooms, setJoinedRooms] = useState<ChatRoomDto[]>([]);
+  const [queueRooms, setQueueRooms] = useState<ChatRoomDto[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState<ChatRoomDto | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [input, setInput] = useState("");
+  const [senderProfiles, setSenderProfiles] = useState<Record<string, SenderProfile>>({});
+  // Customer's email — needed to classify real-time WS messages (which carry email, not numeric ID)
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  // Admin's own profile for the avatar shown on "mine" bubbles
+  const [myProfile, setMyProfile] = useState<SenderProfile | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleIncoming = useCallback(
-    (msg: ChatMessage) => {
-      // Ignore echo of own messages — already shown via optimistic update
-      if (msg.isMine) return;
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-    },
-    []
-  );
+  const handleIncoming = useCallback((msg: ChatMessage) => {
+    if (msg.isMine) return;
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === msg.id)) return prev;
+      return [...prev, msg];
+    });
+  }, []);
 
-  const { connected, sendPrivateMessage } = useChatSocket({
-    accessToken,
-    currentUserEmail,
-    onMessage: handleIncoming,
-  });
+  const { connected, sendPrivateMessage, sendRoomMessage, joinRoom } =
+    useChatSocket({
+      accessToken,
+      currentUserEmail,
+      onMessage: handleIncoming,
+    });
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load all rooms on mount
+  // Load rooms (joined + queue) — runs on mount and every 30s
+  const loadRooms = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const [joinedRes, adminRes] = await Promise.all([
+        chatService.getAllRooms(accessToken),
+        chatService.getAdminRooms(accessToken).catch(() => null), // graceful until partner adds endpoint
+      ]);
+
+      const joined = (joinedRes?.data ?? []) as ChatRoomDto[];
+      const joinedIds = new Set(joined.map((r) => r.id));
+
+      const allSupportRooms = (adminRes?.data ?? []) as ChatRoomDto[];
+      const queue = allSupportRooms.filter((r) => !joinedIds.has(r.id));
+
+      setJoinedRooms(joined);
+      setQueueRooms(queue);
+    } catch (err) {
+      console.error("[AdminChat] Failed to load rooms:", err);
+    }
+  }, [accessToken]);
+
+  // Fetch admin's own profile once for avatar display on "mine" bubbles
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!accessToken || !userId) return;
+    userService.getUserWithMedia(userId, accessToken).then((res) => {
+      if (res?.data) {
+        const d = res.data;
+        const name =
+          [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+          d.username ||
+          d.email ||
+          "Tôi";
+        setMyProfile({ name, avatarUrl: getAvatarUrl(d.userMedia) ?? d.image });
+      }
+    }).catch(() => {/* silently ignore */});
+  }, [accessToken, session?.user?.id]);
+
   useEffect(() => {
     if (!accessToken) return;
+    setRoomsLoading(true);
+    loadRooms().finally(() => setRoomsLoading(false));
 
-    async function loadRooms() {
-      if (!accessToken) return;
-      setRoomsLoading(true);
-      try {
-        const res = await chatService.getAllRooms(accessToken);
-        if (res?.data) {
-          const all = res.data as ChatRoomDto[];
-          // Admin sees all rooms; show private ones first
-          const sorted = [...all].sort((a, b) =>
-            Number(b.isPrivate) - Number(a.isPrivate)
-          );
-          setRooms(sorted);
-        }
-      } catch (err) {
-        console.error("[AdminChat] Failed to load rooms:", err);
-      } finally {
-        setRoomsLoading(false);
-      }
-    }
+    const interval = setInterval(loadRooms, 30_000);
+    return () => clearInterval(interval);
+  }, [accessToken, loadRooms]);
 
-    loadRooms();
-  }, [accessToken]);
+  // Classify message sender.
+  // Historical messages carry senderEmail = String(senderId) — compare to numeric customerId.
+  // Real-time WS messages carry senderEmail = sender's email — compare to fetched customerEmail.
+  function classifyMessage(msg: ChatMessage, customerId: string | null): SenderKind {
+    if (msg.isMine) return "mine";
+    if (customerId && msg.senderEmail === customerId) return "customer"; // history
+    if (customerEmail && msg.senderEmail === customerEmail) return "customer"; // real-time
+    return "colleague";
+  }
 
   // Load message history when active room changes
   useEffect(() => {
     if (!activeRoom || !accessToken) return;
+
+    const customerIdMatch = activeRoom.name.match(/^support-(\d+)$/);
+    const customerId = customerIdMatch?.[1] ?? null;
+    setCustomerEmail(null); // reset on room switch
 
     async function loadMessages() {
       if (!activeRoom || !accessToken) return;
@@ -115,6 +185,10 @@ export default function AdminChatPage() {
               timestamp: new Date(m.createdAt),
             }));
           setMessages(history);
+          await Promise.all([
+            loadCustomerProfile(),
+            loadColleagueProfiles(history),
+          ]);
         }
       } catch (err) {
         console.error("[AdminChat] Failed to load messages:", err);
@@ -123,17 +197,91 @@ export default function AdminChatPage() {
       }
     }
 
+    // Fetch customer profile for avatar + name
+    async function loadCustomerProfile() {
+      if (!customerId || !accessToken) return;
+      if (senderProfiles[customerId]) return; // already cached
+      try {
+        const res = await userService.getUserWithMedia(customerId, accessToken);
+        if (res?.data) {
+          const d = res.data;
+          const name =
+            [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+            d.username ||
+            d.email ||
+            `Khách hàng #${customerId}`;
+          const profileAvatarUrl = getAvatarUrl(d.userMedia) ?? d.image;
+          setCustomerEmail(d.email || null);
+          setSenderProfiles((prev) => ({
+            ...prev,
+            [customerId]: { name, avatarUrl: profileAvatarUrl },
+          }));
+        }
+      } catch {
+        // silently ignore
+      }
+    }
+
+    // Fetch profiles for any colleague (admin) senders found in history
+    async function loadColleagueProfiles(msgs: ChatMessage[]) {
+      if (!accessToken) return;
+      const seen = new Set<string>();
+      for (const msg of msgs) {
+        if (msg.isMine) continue;
+        if (customerId && msg.senderEmail === customerId) continue;
+        if (seen.has(msg.senderEmail) || senderProfiles[msg.senderEmail]) continue;
+        seen.add(msg.senderEmail);
+        try {
+          const res = await userService.getUserWithMedia(msg.senderEmail, accessToken);
+          if (res?.data) {
+            const d = res.data;
+            const name =
+              [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+              d.username ||
+              d.email ||
+              "Đồng nghiệp";
+            const profileAvatarUrl = getAvatarUrl(d.userMedia) ?? d.image;
+            setSenderProfiles((prev) => ({
+              ...prev,
+              [msg.senderEmail]: { name, avatarUrl: profileAvatarUrl },
+            }));
+          }
+        } catch {
+          // silently ignore
+        }
+      }
+    }
+
     loadMessages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRoom, accessToken, myUserId]);
+
+  // Admin picks a room from the queue → join via WS + move to active
+  function handlePickFromQueue(room: ChatRoomDto) {
+    joinRoom(room.name);
+    // Optimistically move from queue to joined
+    setQueueRooms((prev) => prev.filter((r) => r.id !== room.id));
+    setJoinedRooms((prev) => {
+      if (prev.some((r) => r.id === room.id)) return prev;
+      return [room, ...prev];
+    });
+    setActiveRoom(room);
+  }
 
   function handleSend() {
     const text = input.trim();
     if (!text || !connected || !activeRoom || myUserId === null) return;
 
-    const peerId = getPeerUserId(activeRoom, myUserId);
-    if (!peerId) return;
+    let sent = false;
+    if (activeRoom.isPrivate) {
+      // Backward compat for any old private rooms
+      const peerId = getPeerUserId(activeRoom, myUserId);
+      if (!peerId) return;
+      sent = sendPrivateMessage(peerId, text);
+    } else {
+      sent = sendRoomMessage(activeRoom.name, text);
+    }
 
-    const sent = sendPrivateMessage(peerId, text);
     if (!sent) return;
 
     const optimistic: ChatMessage = {
@@ -154,8 +302,10 @@ export default function AdminChatPage() {
     }
   }
 
-  const privateRooms = rooms.filter((r) => r.isPrivate);
-  const publicRooms = rooms.filter((r) => !r.isPrivate);
+  function getRoomLabel(room: ChatRoomDto): string {
+    if (room.isPrivate) return getPeerLabel(room.name, currentUserEmail ?? "");
+    return getSupportRoomLabel(room);
+  }
 
   return (
     <div className="flex h-full bg-white rounded-lg overflow-hidden shadow">
@@ -167,9 +317,13 @@ export default function AdminChatPage() {
             <h1 className="font-bold text-lg">Chat</h1>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               {connected ? (
-                <><Wifi size={13} className="text-green-500" /> Trực tuyến</>
+                <>
+                  <Wifi size={13} className="text-green-500" /> Trực tuyến
+                </>
               ) : (
-                <><WifiOff size={13} className="text-red-400" /> Ngoại tuyến</>
+                <>
+                  <WifiOff size={13} className="text-red-400" /> Ngoại tuyến
+                </>
               )}
             </div>
           </div>
@@ -179,44 +333,49 @@ export default function AdminChatPage() {
         <div className="flex-1 overflow-y-auto">
           {roomsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 size={20} className="animate-spin text-gray-400" />
-            </div>
-          ) : rooms.length === 0 ? (
-            <div className="px-4 py-8 text-sm text-gray-400 text-center">
-              Chưa có cuộc trò chuyện nào
+              <Loader2 size={20} className="animate-spin text-[var(--admin-green-dark)]" />
             </div>
           ) : (
             <>
-              {privateRooms.length > 0 && (
+              {/* Queue section */}
+              {queueRooms.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                    Tin nhắn riêng
+                  <div className="px-4 py-2 text-[11px] font-semibold text-[var(--admin-green-dark)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock size={11} />
+                    Chờ xử lý ({queueRooms.length})
                   </div>
-                  {privateRooms.map((room) => (
-                    <RoomItem
+                  {queueRooms.map((room) => (
+                    <QueueRoomItem
                       key={room.id}
                       room={room}
-                      myEmail={currentUserEmail ?? ""}
+                      label={getRoomLabel(room)}
+                      onClick={() => handlePickFromQueue(room)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Active / joined section */}
+              {joinedRooms.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Đang xử lý ({joinedRooms.length})
+                  </div>
+                  {joinedRooms.map((room) => (
+                    <ActiveRoomItem
+                      key={room.id}
+                      room={room}
+                      label={getRoomLabel(room)}
                       active={activeRoom?.id === room.id}
                       onClick={() => setActiveRoom(room)}
                     />
                   ))}
                 </div>
               )}
-              {publicRooms.length > 0 && (
-                <div>
-                  <div className="px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                    Phòng chung
-                  </div>
-                  {publicRooms.map((room) => (
-                    <RoomItem
-                      key={room.id}
-                      room={room}
-                      myEmail={currentUserEmail ?? ""}
-                      active={activeRoom?.id === room.id}
-                      onClick={() => setActiveRoom(room)}
-                    />
-                  ))}
+
+              {queueRooms.length === 0 && joinedRooms.length === 0 && (
+                <div className="px-4 py-8 text-sm text-gray-400 text-center">
+                  Chưa có cuộc trò chuyện nào
                 </div>
               )}
             </>
@@ -229,24 +388,29 @@ export default function AdminChatPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Chat header */}
           <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3 flex-shrink-0">
-            <div className="w-9 h-9 bg-[var(--admin-green-dark)] flex items-center justify-center text-white text-sm font-bold shrink-0">
+            <div className="w-9 h-9 rounded-md bg-[var(--admin-green-mid)] flex items-center justify-center text-[var(--admin-green-dark)] text-sm font-bold shrink-0">
               {activeRoom.isPrivate ? (
-                getPeerLabel(activeRoom.name, currentUserEmail ?? "").charAt(0).toUpperCase()
+                getPeerLabel(activeRoom.name, currentUserEmail ?? "")
+                  .charAt(0)
+                  .toUpperCase()
               ) : (
                 <Users size={16} />
               )}
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm truncate">
-                {activeRoom.isPrivate
-                  ? getPeerLabel(activeRoom.name, currentUserEmail ?? "")
-                  : activeRoom.name}
+              <p className="font-semibold text-sm truncate text-[var(--admin-green-dark)]">
+                {getRoomLabel(activeRoom)}
               </p>
+              {!activeRoom.isPrivate && (
+                <p className="text-xs text-gray-400 truncate">
+                  {activeRoom.name}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-gray-50">
+          <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50">
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 size={20} className="animate-spin text-gray-400" />
@@ -258,33 +422,14 @@ export default function AdminChatPage() {
                 </p>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isMine ? "justify-end" : "justify-start"}`}
-                >
-                  {!msg.isMine && (
-                    <div className="w-7 h-7 bg-gray-300 flex items-center justify-center text-xs font-bold text-white mr-2 shrink-0 self-end">
-                      {msg.senderEmail.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[60%] px-4 py-2.5 text-sm rounded-lg ${
-                      msg.isMine
-                        ? "bg-[var(--admin-green-dark)] text-white rounded-br-none"
-                        : "bg-white border border-gray-200 text-black rounded-bl-none"
-                    }`}
-                  >
-                    <p className="leading-snug">{msg.text}</p>
-                    <p className={`text-[10px] mt-1 text-right ${msg.isMine ? "text-gray-400" : "text-gray-400"}`}>
-                      {msg.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))
+              <MessageList
+                messages={messages}
+                myUserId={myUserId}
+                activeRoom={activeRoom}
+                senderProfiles={senderProfiles}
+                myProfile={myProfile}
+                classifyMessage={classifyMessage}
+              />
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -319,33 +464,199 @@ export default function AdminChatPage() {
   );
 }
 
-function RoomItem({
+// Message list with Messenger-style grouping and avatar circles
+function MessageList({
+  messages,
+  myUserId,
+  activeRoom,
+  senderProfiles,
+  myProfile,
+  classifyMessage,
+}: {
+  messages: ChatMessage[];
+  myUserId: number | null;
+  activeRoom: ChatRoomDto | null;
+  senderProfiles: Record<string, { name: string; avatarUrl?: string }>;
+  myProfile: SenderProfile | null;
+  classifyMessage: (msg: ChatMessage, customerId: string | null) => SenderKind;
+}) {
+  const customerIdMatch = activeRoom?.name.match(/^support-(\d+)$/);
+  const customerId = customerIdMatch?.[1] ?? null;
+
+  // Group consecutive messages from the same sender
+  type Group = { senderId: string; kind: SenderKind; msgs: ChatMessage[] };
+  const groups: Group[] = [];
+  for (const msg of messages) {
+    const kind = classifyMessage(msg, customerId);
+    const senderId = msg.senderEmail;
+    const last = groups[groups.length - 1];
+    if (last && last.senderId === senderId) {
+      last.msgs.push(msg);
+    } else {
+      groups.push({ senderId, kind, msgs: [msg] });
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      {groups.map((group, gi) => {
+        const profile =
+          group.kind === "mine"
+            ? myProfile
+            : senderProfiles[group.senderId];
+        const senderName =
+          profile?.name ??
+          (customerId && group.senderId === customerId
+            ? `Khách hàng #${customerId}`
+            : group.kind === "colleague"
+            ? "Đồng nghiệp"
+            : group.senderId);
+        const avatarUrl = profile?.avatarUrl;
+
+        // Only MY messages go on the right — customer and colleague both go left
+        const isRight = group.kind === "mine";
+
+        return (
+          <div
+            key={`group-${gi}`}
+            className={`flex flex-col gap-0.5 mb-3 ${isRight ? "items-end" : "items-start"}`}
+          >
+            {/* Sender name — always visible for customer and colleague */}
+            {group.kind !== "mine" && (
+              <p className="text-[11px] text-gray-400 ml-9 mb-0.5">{senderName}</p>
+            )}
+
+            {group.msgs.map((msg, mi) => {
+              const isLast = mi === group.msgs.length - 1;
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex items-end gap-2 ${isRight ? "flex-row-reverse" : "flex-row"}`}
+                >
+                  {/* Avatar — left side only, shown on last bubble of each group */}
+                  <div className={`w-7 h-7 shrink-0 ${isLast ? "visible" : "invisible"}`}>
+                    {isLast && (
+                      avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={senderName}
+                          width={28}
+                          height={28}
+                          className="rounded-full object-cover w-7 h-7"
+                          unoptimized
+                        />
+                      ) : (
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                            group.kind === "colleague" ? "bg-indigo-500" : "bg-gray-300"
+                          }`}
+                        >
+                          {senderName.charAt(0).toUpperCase()}
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  {/* Bubble */}
+                  <div
+                    className={`max-w-[70%] px-4 py-2.5 text-sm rounded-2xl ${
+                      group.kind === "mine"
+                        ? "bg-[var(--admin-green-dark)] text-white"
+                        : group.kind === "colleague"
+                        ? "bg-indigo-500 text-white"
+                        : "bg-white border border-gray-200 text-black"
+                    }`}
+                  >
+                    <p className="leading-snug">{msg.text}</p>
+                    <p className="text-[10px] mt-1 text-right opacity-50">
+                      {msg.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Queue room — unjoined, needs attention
+function QueueRoomItem({
   room,
-  myEmail,
-  active,
+  label,
   onClick,
 }: {
   room: ChatRoomDto;
-  myEmail: string;
-  active: boolean;
+  label: string;
   onClick: () => void;
 }) {
-  const label = room.isPrivate
-    ? getPeerLabel(room.name, myEmail)
-    : room.name;
+  const isNew = minutesAgo(room.createdAt) < 10;
 
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${
-        active ? "bg-[var(--admin-green-light)] border-l-2 border-[var(--admin-green-dark)]" : "hover:bg-[var(--admin-green-light)]/50 border-l-2 border-transparent"
-      }`}
+      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer bg-[var(--admin-green-light)] hover:bg-[var(--admin-green-mid)] border-l-2 border-[var(--admin-green-dark)]"
     >
-      <div className="w-9 h-9 bg-black flex items-center justify-center text-white text-sm font-bold shrink-0">
-        {room.isPrivate ? label.charAt(0).toUpperCase() : <Users size={16} />}
+      <div className="relative w-9 h-9 rounded-md bg-[var(--admin-green-mid)] flex items-center justify-center text-[var(--admin-green-dark)] text-sm font-bold shrink-0">
+        <Users size={16} />
+        {isNew && (
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[var(--admin-green-dark)] rounded-full animate-pulse" />
+        )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm truncate ${active ? "font-semibold" : "font-medium"}`}>
+        <p className="text-sm font-medium truncate text-[var(--admin-green-dark)]">{label}</p>
+        <p className="text-[11px] text-[var(--admin-green-dark)] opacity-60 mt-0.5">
+          {isNew ? "Mới • " : ""}
+          {minutesAgo(room.createdAt)} phút trước
+        </p>
+      </div>
+    </button>
+  );
+}
+
+// Active room — already joined
+function ActiveRoomItem({
+  room,
+  label,
+  active,
+  onClick,
+}: {
+  room: ChatRoomDto;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer border-l-2 ${
+        active
+          ? "bg-[var(--admin-green-mid)] border-[var(--admin-green-dark)]"
+          : "hover:bg-[var(--admin-green-light)] border-transparent"
+      }`}
+    >
+      <div className={`w-9 h-9 rounded-md flex items-center justify-center text-sm font-bold shrink-0 ${
+        active
+          ? "bg-[var(--admin-green-dark)] text-white"
+          : "bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)]"
+      }`}>
+        {room.isPrivate ? (
+          label.charAt(0).toUpperCase()
+        ) : (
+          <Users size={16} />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`text-sm truncate ${
+          active
+            ? "font-semibold text-[var(--admin-green-dark)]"
+            : "font-medium text-gray-700"
+        }`}>
           {label}
         </p>
       </div>

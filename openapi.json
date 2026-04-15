@@ -4069,7 +4069,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductEntity"
+                    "$ref": "#/components/schemas/ProductWithVariantsAndMediaEntity"
                   }
                 }
               }
@@ -7438,6 +7438,161 @@
         ]
       }
     },
+    "/notification/personal": {
+      "post": {
+        "operationId": "NotificationController_sendPersonalNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Personal notification payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonalNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Personal notification is created and emitted"
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a personal notification to specific user",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/shop": {
+      "post": {
+        "operationId": "NotificationController_sendShopNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Shop notification payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShopNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Shop notification is created and emitted to all users"
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a shop notification to all users",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/me": {
+      "get": {
+        "operationId": "NotificationController_getNotificationsForMe",
+        "parameters": [
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (starts from 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return notifications visible to authenticated user"
+          },
+          "400": {
+            "description": "Bad Request."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all notifications for authenticated user with pagination",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/personal/{notificationId}/read": {
+      "patch": {
+        "operationId": "NotificationController_markPersonalNotificationAsRead",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "description": "Personal notification id to mark as read",
+            "schema": {
+              "example": 1001,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification read status updated successfully"
+          },
+          "400": {
+            "description": "Bad Request."
+          },
+          "404": {
+            "description": "Not Found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark personal notification as read for authenticated user",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
     "/shipments": {
       "post": {
         "operationId": "ShipmentsController_create",
@@ -10381,7 +10536,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:11.734Z"
+            "example": "2026-04-15T15:01:03.139Z"
           },
           "isActive": {
             "type": "boolean",
@@ -10389,16 +10544,16 @@
           },
           "codeActive": {
             "type": "string",
-            "example": "24ec2224-eb43-42c4-a52c-be7b5c750360"
+            "example": "dfbef8a9-6974-4424-a6f3-7c7510aec1c7"
           },
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:11.735Z"
+            "example": "2026-04-15T15:01:03.140Z"
           },
           "staffCode": {
             "type": "string",
-            "example": "2aa92556-227d-47e5-bcd6-565b9e91d1ac"
+            "example": "833a540b-4cc3-4147-bee8-57c6ea4cd1e8"
           },
           "loyaltyCard": {
             "type": "string",
@@ -10481,7 +10636,7 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:11.734Z"
+            "example": "2026-04-15T15:01:03.139Z"
           },
           "isActive": {
             "type": "boolean",
@@ -10489,16 +10644,16 @@
           },
           "codeActive": {
             "type": "string",
-            "example": "24ec2224-eb43-42c4-a52c-be7b5c750360"
+            "example": "dfbef8a9-6974-4424-a6f3-7c7510aec1c7"
           },
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:11.735Z"
+            "example": "2026-04-15T15:01:03.140Z"
           },
           "staffCode": {
             "type": "string",
-            "example": "2aa92556-227d-47e5-bcd6-565b9e91d1ac"
+            "example": "833a540b-4cc3-4147-bee8-57c6ea4cd1e8"
           },
           "loyaltyCard": {
             "type": "string",
@@ -10582,7 +10737,7 @@
           },
           "staffCode": {
             "type": "string",
-            "example": "2aa92556-227d-47e5-bcd6-565b9e91d1ac"
+            "example": "833a540b-4cc3-4147-bee8-57c6ea4cd1e8"
           },
           "loyaltyCard": {
             "type": "string",
@@ -12031,7 +12186,7 @@
           "codeActiveExpire": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:12.584Z"
+            "example": "2026-04-15T15:01:04.801Z"
           }
         },
         "required": [
@@ -13768,7 +13923,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.686Z"
+            "example": "2026-04-15T15:01:09.098Z"
           },
           "amount": {
             "type": "number",
@@ -14508,7 +14663,7 @@
           "paymentDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.686Z"
+            "example": "2026-04-15T15:01:09.098Z"
           },
           "amount": {
             "type": "number",
@@ -14523,6 +14678,50 @@
             "example": "PENDING"
           }
         }
+      },
+      "CreatePersonalNotificationDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Notification title shown to users",
+            "example": "Order Update: Your order #1234 has been shipped!"
+          },
+          "content": {
+            "type": "string",
+            "description": "Detailed notification message content",
+            "example": "Dear customer, your order #1234 has been shipped and is expected to arrive within 3-5 business days. Thank you for shopping with us!"
+          },
+          "recipientId": {
+            "type": "number",
+            "description": "ID of the user who will receive this personal notification",
+            "example": 1034
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "recipientId"
+        ]
+      },
+      "CreateShopNotificationDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Notification title shown to users",
+            "example": "New Sale Alert: 20% off on all electronics!"
+          },
+          "content": {
+            "type": "string",
+            "description": "Detailed notification message content",
+            "example": "You can save 20% on all electronics from Aug 1 to Aug 7. Don't miss out on this limited-time offer!"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
       },
       "EnrichedPackageDetailEntity": {
         "type": "object",
@@ -14649,25 +14848,25 @@
           "estimatedDelivery": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at shop, estimate time when leave from shop"
           },
           "deliveredAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at shop, actual time when leave from shop"
           },
           "estimatedShipDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at customer, estimate time when arrive to customer"
           },
           "shippedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at customer, actual time when arrive to customer"
           },
           "carrier": {
@@ -15294,25 +15493,25 @@
           "estimatedDelivery": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at shop, estimate time when leave from shop"
           },
           "deliveredAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at shop, actual time when leave from shop"
           },
           "estimatedShipDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at customer, estimate time when arrive to customer"
           },
           "shippedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:14.778Z",
+            "example": "2026-04-15T15:01:09.403Z",
             "description": "at customer, actual time when arrive to customer"
           },
           "carrier": {
@@ -15557,12 +15756,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.178Z"
+            "example": "2026-04-15T15:01:09.948Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.178Z"
+            "example": "2026-04-15T15:01:09.948Z"
           },
           "usageLimit": {
             "type": "number",
@@ -15617,12 +15816,12 @@
           "validFrom": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.178Z"
+            "example": "2026-04-15T15:01:09.948Z"
           },
           "validTo": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.178Z"
+            "example": "2026-04-15T15:01:09.948Z"
           },
           "usageLimit": {
             "type": "number",
@@ -15932,12 +16131,12 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.311Z"
+            "example": "2026-04-15T15:01:10.118Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.311Z"
+            "example": "2026-04-15T15:01:10.118Z"
           },
           "voucherStatus": {
             "type": "string",
@@ -15968,12 +16167,12 @@
           "useVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.311Z"
+            "example": "2026-04-15T15:01:10.118Z"
           },
           "saveVoucherAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2026-04-10T17:09:15.311Z"
+            "example": "2026-04-15T15:01:10.118Z"
           },
           "voucherStatus": {
             "type": "string",

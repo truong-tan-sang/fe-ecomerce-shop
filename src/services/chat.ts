@@ -75,4 +75,13 @@ export const chatService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   },
+
+  getAdminRooms(accessToken: string) {
+    console.log("[chatService] Request: GET /chat/admin/rooms");
+    return sendRequest<IBackendRes<ChatRoomDto[]>>({
+      url: `${CHAT_BASE}/admin/rooms`,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
 };

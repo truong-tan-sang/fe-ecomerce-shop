@@ -96,5 +96,17 @@ export function useChatSocket({
     return true;
   }, []);
 
-  return { connected, sendPrivateMessage, sendRoomMessage };
+  const createRoom = useCallback((name: string, description?: string) => {
+    if (!socketRef.current?.connected) return false;
+    socketRef.current.emit("createNewPublicRoom", { name, description });
+    return true;
+  }, []);
+
+  const joinRoom = useCallback((name: string) => {
+    if (!socketRef.current?.connected) return false;
+    socketRef.current.emit("joinPublicRoom", { name });
+    return true;
+  }, []);
+
+  return { connected, sendPrivateMessage, sendRoomMessage, createRoom, joinRoom };
 }

@@ -7,9 +7,7 @@ import { MessageSquare, X, Send, Loader2, Wifi, WifiOff } from "lucide-react";
 import { useChatSocket, ChatMessage } from "@/hooks/useChatSocket";
 import { chatService } from "@/services/chat";
 import { ChatMessageDto, ChatRoomDto } from "@/dto/chat";
-
-const SUPPORT_USER_ID =
-  process.env.NEXT_PUBLIC_SUPPORT_USER_ID ?? "1";
+import { ApiError } from "@/utils/api-error";
 
 export default function FloatingChat() {
   const { data: session } = useSession();
@@ -19,11 +17,12 @@ export default function FloatingChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [supportRoom, setSupportRoom] = useState<ChatRoomDto | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const accessToken = session?.user?.access_token ?? null;
   const currentUserEmail = session?.user?.email ?? null;
+  const userId = session?.user?.id ? String(session.user.id) : null;
+  const supportRoomName = userId ? `support-${userId}` : null;
 
   const handleIncoming = useCallback((msg: ChatMessage) => {
     // Ignore echo of own messages — already shown via optimistic update
@@ -34,7 +33,7 @@ export default function FloatingChat() {
     });
   }, []);
 
-  const { connected, sendPrivateMessage } = useChatSocket({
+  const { connected, sendRoomMessage, createRoom } = useChatSocket({
     accessToken,
     currentUserEmail,
     onMessage: handleIncoming,
@@ -47,30 +46,37 @@ export default function FloatingChat() {
     }
   }, [messages, open]);
 
-  // Load message history when chat opens
+  // Load message history and ensure room exists when chat opens
   useEffect(() => {
-    if (!open || !accessToken || historyLoaded) return;
+    if (!open || !accessToken || !userId || !supportRoomName || historyLoaded) return;
 
     async function loadHistory() {
-      if (!accessToken) return;
+      if (!accessToken || !userId || !supportRoomName) return;
       setLoading(true);
       try {
-        console.log("[FloatingChat] Loading rooms...");
+        console.log("[FloatingChat] Loading rooms for user:", userId);
         const roomsRes = await chatService.getAllRooms(accessToken);
-        if (!roomsRes?.data) {
+        const rooms = (roomsRes?.data ?? []) as ChatRoomDto[];
+        const alreadyInRoom = rooms.some((r) => r.name === supportRoomName);
+
+        if (!alreadyInRoom) {
+          // First time: create the room via WebSocket (creates membership + joins socket)
+          const displayName =
+            (session?.user as { name?: string } | undefined)?.name ??
+            currentUserEmail ??
+            "Khách hàng";
+          console.log("[FloatingChat] Creating support room:", supportRoomName);
+          createRoom(supportRoomName, displayName);
+          // Room is new — no history to load
           setHistoryLoaded(true);
           return;
         }
 
-        // Find existing private support room
-        const rooms = roomsRes.data as ChatRoomDto[];
-        const privateRoom = rooms.find((r) => r.isPrivate) ?? null;
-        setSupportRoom(privateRoom);
-
-        if (privateRoom) {
-          console.log("[FloatingChat] Found support room:", privateRoom.name);
+        // Room exists — socket already joined via initJoin on connect
+        console.log("[FloatingChat] Found support room:", supportRoomName);
+        try {
           const msgRes = await chatService.getRoomMessages(
-            privateRoom.name,
+            supportRoomName,
             accessToken,
             1,
             30
@@ -83,10 +89,17 @@ export default function FloatingChat() {
                 id: `hist-${m.id}`,
                 senderEmail: m.senderId.toString(),
                 text: m.content,
-                isMine: m.senderId === Number(session?.user?.id),
+                isMine: m.senderId === Number(userId),
                 timestamp: new Date(m.createdAt),
               }));
             setMessages(history);
+          }
+        } catch (err) {
+          if (err instanceof ApiError && err.statusCode === 404) {
+            // Room exists in membership but no messages yet
+            console.log("[FloatingChat] No messages yet in support room");
+          } else {
+            throw err;
           }
         }
       } catch (err) {
@@ -98,13 +111,13 @@ export default function FloatingChat() {
     }
 
     loadHistory();
-  }, [open, accessToken, historyLoaded, session?.user?.id]);
+  }, [open, accessToken, userId, supportRoomName, historyLoaded, session, currentUserEmail, createRoom]);
 
   function handleSend() {
     const text = input.trim();
-    if (!text || !connected) return;
+    if (!text || !connected || !supportRoomName) return;
 
-    const sent = sendPrivateMessage(SUPPORT_USER_ID, text);
+    const sent = sendRoomMessage(supportRoomName, text);
     if (!sent) return;
 
     const optimisticMsg: ChatMessage = {
@@ -133,8 +146,10 @@ export default function FloatingChat() {
     <>
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 flex flex-col bg-white border border-black shadow-2xl"
-          style={{ height: "420px" }}>
+        <div
+          className="fixed bottom-20 right-6 z-50 w-80 flex flex-col bg-white border border-black shadow-2xl"
+          style={{ height: "420px" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-black text-white flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -166,9 +181,7 @@ export default function FloatingChat() {
             {!loading && messages.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <p className="text-xs text-gray-400 text-center">
-                  {supportRoom
-                    ? "Chưa có tin nhắn. Hãy bắt đầu!"
-                    : "Gửi tin nhắn để bắt đầu trò chuyện với bộ phận hỗ trợ."}
+                  Gửi tin nhắn để bắt đầu trò chuyện với bộ phận hỗ trợ.
                 </p>
               </div>
             )}
@@ -191,8 +204,13 @@ export default function FloatingChat() {
                     </p>
                   )}
                   <p className="leading-snug">{msg.text}</p>
-                  <p className={`text-[10px] mt-1 ${msg.isMine ? "text-gray-300" : "text-gray-400"} text-right`}>
-                    {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  <p
+                    className={`text-[10px] mt-1 ${msg.isMine ? "text-gray-300" : "text-gray-400"} text-right`}
+                  >
+                    {msg.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </div>
               </div>

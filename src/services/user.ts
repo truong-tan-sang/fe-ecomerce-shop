@@ -2,6 +2,18 @@ import { sendRequest, sendRequestFile } from "@/utils/api";
 
 export type UserRole = "ADMIN" | "OPERATOR" | "USER";
 
+export interface UserMediaDto {
+  id: number;
+  url: string;
+  type: "IMAGE" | "VIDEO" | "DOCUMENT";
+  isAvatarFile: boolean;
+  isShopLogo: boolean;
+  isShopBanner: boolean;
+  isCategoryFile: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserDto {
   id: number;
   name?: string;
@@ -17,6 +29,10 @@ export interface UserDto {
   status?: "ACTIVE" | "INACTIVE" | "VIP";
 }
 
+export interface UserFullDto extends UserDto {
+  userMedia: UserMediaDto[];
+}
+
 export interface IUpdateUserDto {
   firstName?: string;
   lastName?: string;
@@ -26,6 +42,11 @@ export interface IUpdateUserDto {
   username?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
   role?: UserRole;
+}
+
+/** Extract avatar URL from userMedia array */
+export function getAvatarUrl(userMedia?: UserMediaDto[]): string | undefined {
+  return userMedia?.find((m) => m.isAvatarFile)?.url;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -59,12 +80,26 @@ export const userService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     }),
 
-  updateUser: (id: string, data: IUpdateUserDto, accessToken: string) => {
+  /** Fetch full user profile including userMedia (avatar URL) */
+  getUserWithMedia: (id: string | number, accessToken: string) =>
+    sendRequest<IBackendRes<UserFullDto>>({
+      url: `${BASE_URL}/user/${id}`,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
+
+  updateUser: (
+    id: string,
+    data: IUpdateUserDto,
+    accessToken: string,
+    file?: File
+  ) => {
     const formData = new FormData();
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) formData.append(key, String(value));
     }
-    return sendRequestFile<IBackendRes<UserDto>>({
+    if (file) formData.append("file", file);
+    return sendRequestFile<IBackendRes<UserFullDto>>({
       url: `${BASE_URL}/user/${id}`,
       method: "PATCH",
       body: formData,
