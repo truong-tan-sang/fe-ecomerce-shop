@@ -7,6 +7,9 @@ import type {
   CreateOrderItemDto,
   UpdateOrderItemDto,
   OrderItemDto,
+  GhnPickShift,
+  UpdateOrderToWaitingPickupDto,
+  UpdateOrderStatusWithStaffDto,
 } from "@/dto/order";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -228,6 +231,204 @@ export const orderService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[OrderService] Cancel order response:", response);
+    return response;
+  },
+
+  async getAllOrderDetails(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/order-detail-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching all order details page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] All order details response:", response?.data?.length, "items");
+    return response;
+  },
+
+  async getShopConfirmedOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/confirmed-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching confirmed orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopWaitingPickupOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/waiting-for-ghn-pickup-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching waiting pickup orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopShippedOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/shipped-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching shipped orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopDeliveredOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/delivered-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching delivered orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopCompletedOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/completed-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching completed orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopCancelledOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/cancelled-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching cancelled orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getGhnPickShifts(
+    accessToken: string
+  ): Promise<IBackendRes<GhnPickShift[]>> {
+    const url = `${BACKEND_URL}/orders/ghn/pick-shift-list`;
+    console.log("[OrderService] Fetching GHN pick shifts");
+    const response = await sendRequest<IBackendRes<GhnPickShift[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async updateOrderToWaitingPickup(
+    orderId: number,
+    data: UpdateOrderToWaitingPickupDto,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/waiting-pickup`;
+    console.log("[OrderService] Updating order to waiting-pickup:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "PATCH",
+      body: data,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async updateOrderToShipped(
+    orderId: number,
+    data: UpdateOrderStatusWithStaffDto,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/shipped`;
+    console.log("[OrderService] Updating order to shipped:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "PATCH",
+      body: data,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async updateOrderToDelivered(
+    orderId: number,
+    data: UpdateOrderStatusWithStaffDto,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/delivered`;
+    console.log("[OrderService] Updating order to delivered:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "PATCH",
+      body: data,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async updateOrderToDeliveryFailed(
+    orderId: number,
+    data: UpdateOrderStatusWithStaffDto,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/delivery-failed`;
+    console.log("[OrderService] Updating order to delivery-failed:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "PATCH",
+      body: data,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getShopReturnedOrders(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/returned-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching returned orders page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     return response;
   },
 

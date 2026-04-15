@@ -310,6 +310,27 @@ export interface UpdateOrderItemDto {
   totalPrice?: number;
 }
 
+// ── Admin order transition DTOs ──
+
+export interface GhnPickShift {
+  id: number;
+  title: string;
+  from_time: number;
+  to_time: number;
+}
+
+export interface UpdateOrderToWaitingPickupDto {
+  processByStaffId: number;
+  ghnPickShiftId: number;
+  ghnTitle: string;
+  ghnFromTime: number;
+  ghnToTime: number;
+}
+
+export interface UpdateOrderStatusWithStaffDto {
+  processByStaffId: number;
+}
+
 export interface OrderWithDetails extends OrderDto {
   orderItems?: OrderItemWithDetails[];
 }
