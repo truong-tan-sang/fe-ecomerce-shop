@@ -1,13 +1,12 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  CreditCard,
-  ExternalLink,
   Home,
   LayoutGrid,
   List,
@@ -17,9 +16,9 @@ import {
   Settings,
   ShoppingCart,
   Ticket,
-  UserCircle,
   Users,
 } from "lucide-react";
+import { userService, getAvatarUrl } from "@/services/user";
 
 interface SidebarItem {
   label: string;
@@ -32,7 +31,6 @@ const mainMenuItems: SidebarItem[] = [
   { label: "Quản lý đơn hàng", href: "/admin/orders", icon: ShoppingCart },
   { label: "Khách hàng", href: "/admin/users", icon: Users },
   { label: "Danh mục", href: "/admin/categories", icon: LayoutGrid },
-  { label: "Giao dịch", href: "/admin/transactions", icon: CreditCard },
   { label: "Chat", href: "/admin/chat", icon: MessageCircle },
   { label: "Voucher", href: "/admin/coupons", icon: Ticket },
 ];
@@ -43,7 +41,6 @@ const productItems: SidebarItem[] = [
 ];
 
 const adminItems: SidebarItem[] = [
-  { label: "Admin role", href: "/admin/roles", icon: UserCircle },
   { label: "Cài đặt Quyền", href: "/admin/authority", icon: Settings },
 ];
 
@@ -51,6 +48,17 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const accessToken = session?.user?.access_token;
+    const userId = session?.user?.id;
+    if (!accessToken || !userId) return;
+    userService.getUserWithMedia(userId, accessToken).then((res) => {
+      const url = getAvatarUrl(res?.data?.userMedia);
+      if (url) setAvatarUrl(url);
+    }).catch(() => {/* silently ignore */});
+  }, [session?.user?.access_token, session?.user?.id]);
 
   const isActive = (href: string): boolean => {
     if (href === "/admin") {
@@ -171,13 +179,26 @@ export default function Sidebar() {
       <div className="border-t border-gray-100">
         {/* User profile row */}
         <div className="flex items-center gap-3 px-4 py-3">
-          {/* Avatar circle */}
-          <div className="w-9 h-9 bg-[var(--admin-green-mid)] shrink-0 flex items-center justify-center text-[var(--admin-green-dark)] text-sm font-bold">
-            {userName.charAt(0).toUpperCase()}
-          </div>
+          {/* Avatar circle — links to profile */}
+          <Link href="/admin/profile" className="shrink-0 cursor-pointer">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={userName}
+                width={36}
+                height={36}
+                className="rounded-full object-cover w-9 h-9"
+                unoptimized
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-[var(--admin-green-mid)] flex items-center justify-center text-[var(--admin-green-dark)] text-sm font-bold">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </Link>
           {!collapsed && (
             <>
-              <div className="flex-1 min-w-0">
+              <Link href="/admin/profile" className="flex-1 min-w-0 cursor-pointer">
                 <div className="text-sm font-semibold text-gray-900 truncate">
                   {userName}
                 </div>
@@ -186,11 +207,11 @@ export default function Sidebar() {
                     {userEmail}
                   </div>
                 )}
-              </div>
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/auth/login" })}
                 className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer text-[#6a717f]"
-                title="Log out"
+                title="Đăng xuất"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -200,31 +221,13 @@ export default function Sidebar() {
             <button
               onClick={() => signOut({ callbackUrl: "/auth/login" })}
               className="sr-only"
-              title="Log out"
+              title="Đăng xuất"
             >
-              Log out
+              Đăng xuất
             </button>
           )}
         </div>
 
-        {/* Your Shop link */}
-        {!collapsed ? (
-          <Link
-            href="/admin/shop"
-            className="flex items-center gap-2 px-4 py-3 text-[16px] text-[#6a717f] hover:bg-gray-100 cursor-pointer border-t border-gray-100"
-          >
-            <ExternalLink className="w-[22px] h-[22px]" />
-            <span>Your Shop</span>
-          </Link>
-        ) : (
-          <Link
-            href="/admin/shop"
-            className="flex items-center justify-center p-2.5 hover:bg-gray-100 cursor-pointer text-[#6a717f] border-t border-gray-100"
-            title="Your Shop"
-          >
-            <ExternalLink className="w-[22px] h-[22px]" />
-          </Link>
-        )}
       </div>
     </aside>
   );
