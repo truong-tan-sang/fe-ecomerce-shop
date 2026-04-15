@@ -16,6 +16,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 const ROW_HEIGHT = 53;
 const PER_PAGE = 50;
@@ -322,8 +331,8 @@ export default function AdminCouponsPage() {
             <h3 className="text-lg font-semibold text-[#023337] mb-2">Xác nhận xóa</h3>
             <p className="text-gray-600 mb-4">Bạn có chắc chắn muốn xóa voucher này?</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer">Hủy</button>
-              <button onClick={() => handleDelete(deleteConfirmId)} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 cursor-pointer">Xóa</button>
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md cursor-pointer">Hủy</button>
+              <button onClick={() => handleDelete(deleteConfirmId)} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-md cursor-pointer">Xóa</button>
             </div>
           </div>
         </div>
@@ -332,13 +341,10 @@ export default function AdminCouponsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 className="text-2xl font-bold text-[#151515]">Voucher</h1>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-[#4ea674] text-white px-4 py-2 font-medium hover:bg-[#3d8a5f] cursor-pointer"
-        >
+        <Button onClick={openCreate} className="flex items-center gap-2 cursor-pointer">
           <PlusSquare size={18} />
           Thêm voucher
-        </button>
+        </Button>
       </div>
 
       {/* Table Card */}
@@ -353,7 +359,7 @@ export default function AdminCouponsPage() {
               placeholder="Tìm mã voucher..."
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 pr-8 py-2 bg-gray-100 text-sm outline-none focus:ring-1 focus:ring-[#4ea674] w-full"
+              className="pl-9 pr-8 py-2 bg-gray-100 text-sm outline-none focus:ring-1 focus:ring-[var(--admin-green-mid)] rounded-md w-full"
             />
             {searchInput && (
               <button onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
@@ -364,25 +370,23 @@ export default function AdminCouponsPage() {
 
           {/* Filter button + popover */}
           <div className="relative" ref={filterPanelRef}>
-            <button
+            <Button
+              variant={activeFilterCount > 0 ? "default" : "outline"}
+              size="sm"
               onClick={() => {
                 setPendingFilter(appliedFilter);
                 setFilterOpen((o) => !o);
               }}
-              className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border cursor-pointer transition-colors ${
-                activeFilterCount > 0
-                  ? "bg-[#023337] text-white border-[#023337]"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-              }`}
+              className="gap-2 cursor-pointer"
             >
               <SlidersHorizontal size={15} />
               Bộ lọc
               {activeFilterCount > 0 && (
-                <span className="bg-white text-[#023337] text-xs font-bold w-4 h-4 flex items-center justify-center">
+                <span className="bg-white/20 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full">
                   {activeFilterCount}
                 </span>
               )}
-            </button>
+            </Button>
 
             {filterOpen && (
               <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-lg rounded-lg z-30 p-4">
@@ -393,17 +397,15 @@ export default function AdminCouponsPage() {
                   <p className="text-xs text-gray-500 mb-1.5">Loại giảm giá</p>
                   <div className="flex gap-2 flex-wrap">
                     {([["", "Tất cả"], ["FIXED_AMOUNT", "Số tiền"], ["PERCENTAGE", "Phần trăm"]] as const).map(([val, label]) => (
-                      <button
+                      <Button
                         key={val}
+                        size="sm"
+                        variant={pendingFilter.discountType === val ? "default" : "outline"}
                         onClick={() => setPendingFilter((f) => ({ ...f, discountType: val as FilterState["discountType"] }))}
-                        className={`px-3 py-1 text-xs font-medium border cursor-pointer transition-colors ${
-                          pendingFilter.discountType === val
-                            ? "bg-[#023337] text-white border-[#023337]"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-[#023337]"
-                        }`}
+                        className="cursor-pointer"
                       >
                         {label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -413,35 +415,27 @@ export default function AdminCouponsPage() {
                   <p className="text-xs text-gray-500 mb-1.5">Trạng thái</p>
                   <div className="flex gap-2 flex-wrap">
                     {([["all", "Tất cả"], ["active", "Còn hiệu lực"], ["inactive", "Hết hiệu lực"]] as const).map(([val, label]) => (
-                      <button
+                      <Button
                         key={val}
+                        size="sm"
+                        variant={pendingFilter.isActive === val ? "default" : "outline"}
                         onClick={() => setPendingFilter((f) => ({ ...f, isActive: val }))}
-                        className={`px-3 py-1 text-xs font-medium border cursor-pointer transition-colors ${
-                          pendingFilter.isActive === val
-                            ? "bg-[#023337] text-white border-[#023337]"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-[#023337]"
-                        }`}
+                        className="cursor-pointer"
                       >
                         {label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={resetFilters}
-                    className="flex-1 py-1.5 text-sm border border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                  >
+                  <Button variant="outline" size="sm" onClick={resetFilters} className="flex-1 cursor-pointer">
                     Đặt lại
-                  </button>
-                  <button
-                    onClick={applyFilters}
-                    className="flex-1 py-1.5 text-sm bg-[#023337] text-white hover:bg-[#034a50] cursor-pointer"
-                  >
+                  </Button>
+                  <Button size="sm" onClick={applyFilters} className="flex-1 cursor-pointer">
                     Áp dụng
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -451,13 +445,13 @@ export default function AdminCouponsPage() {
           {hasActiveFilters(appliedFilter) && (
             <div className="flex items-center gap-1.5 flex-wrap ml-1">
               {appliedFilter.discountType && (
-                <span className="flex items-center gap-1 bg-[#eaf8e7] text-[#023337] text-xs px-2 py-0.5 font-medium">
+                <span className="flex items-center gap-1 bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] text-xs px-2 py-0.5 font-medium rounded-md">
                   {appliedFilter.discountType === "PERCENTAGE" ? "Phần trăm" : "Số tiền"}
                   <button onClick={() => { const f = { ...appliedFilter, discountType: "" as const }; setAppliedFilter(f); triggerNewSearch(appliedSearch, f); }} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
                 </span>
               )}
               {appliedFilter.isActive !== "all" && (
-                <span className="flex items-center gap-1 bg-[#eaf8e7] text-[#023337] text-xs px-2 py-0.5 font-medium">
+                <span className="flex items-center gap-1 bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] text-xs px-2 py-0.5 font-medium rounded-md">
                   {appliedFilter.isActive === "active" ? "Còn hiệu lực" : "Hết hiệu lực"}
                   <button onClick={() => { const f = { ...appliedFilter, isActive: "all" as const }; setAppliedFilter(f); triggerNewSearch(appliedSearch, f); }} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
                 </span>
@@ -519,9 +513,9 @@ export default function AdminCouponsPage() {
                       <div className="px-4 py-3 font-mono font-semibold tracking-wide">{v.code}</div>
                       <div className="px-4 py-3 text-gray-600 truncate">{v.description ?? "—"}</div>
                       <div className="px-4 py-3">
-                        <span className={`px-2 py-0.5 text-xs font-medium ${v.discountType === "PERCENTAGE" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"}`}>
+                        <Badge className={`border-0 ${v.discountType === "PERCENTAGE" ? "bg-[var(--admin-green-light)] text-[var(--admin-green-dark)]" : "bg-gray-100 text-gray-600"}`}>
                           {v.discountType === "PERCENTAGE" ? "Phần trăm" : "Số tiền cố định"}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="px-4 py-3 font-semibold">
                         {v.discountType === "PERCENTAGE" ? `${v.discountValue}%` : `${v.discountValue.toLocaleString("vi-VN")} ₫`}
@@ -529,16 +523,16 @@ export default function AdminCouponsPage() {
                       <div className="px-4 py-3 text-gray-600">{formatDate(v.validFrom)}</div>
                       <div className="px-4 py-3 text-gray-600">{formatDate(v.validTo)}</div>
                       <div className="px-4 py-3">
-                        <span className={`px-2 py-0.5 text-xs font-medium ${v.isActive ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        <Badge className={`border-0 ${v.isActive ? "bg-[var(--admin-green-light)] text-[var(--admin-green-dark)]" : "bg-gray-100 text-gray-500"}`}>
                           {v.isActive ? "Còn hiệu lực" : "Hết hiệu lực"}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 cursor-pointer" title="Chỉnh sửa">
+                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-[var(--admin-green-light)] rounded-md cursor-pointer" title="Chỉnh sửa">
                             <Pencil size={16} className="text-gray-600" />
                           </button>
-                          <button onClick={() => setDeleteConfirmId(v.id)} className="p-1.5 hover:bg-red-50 cursor-pointer" title="Xóa">
+                          <button onClick={() => setDeleteConfirmId(v.id)} className="p-1.5 hover:bg-red-50 rounded-md cursor-pointer" title="Xóa">
                             <Trash2 size={16} className="text-red-500" />
                           </button>
                         </div>
@@ -577,14 +571,18 @@ export default function AdminCouponsPage() {
               </div>
               <div>
                 <Label className="text-sm text-gray-600">Loại giảm giá *</Label>
-                <select
+                <Select
                   value={form.discountType}
-                  onChange={(e) => setForm((f) => ({ ...f, discountType: e.target.value as DiscountType }))}
-                  className="mt-1 w-full border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                  onValueChange={(v) => setForm((f) => ({ ...f, discountType: v as DiscountType }))}
                 >
-                  <option value="FIXED_AMOUNT">Số tiền cố định (₫)</option>
-                  <option value="PERCENTAGE">Phần trăm (%)</option>
-                </select>
+                  <SelectTrigger className="mt-1 w-full cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FIXED_AMOUNT">Số tiền cố định (₫)</SelectItem>
+                    <SelectItem value="PERCENTAGE">Phần trăm (%)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
@@ -631,21 +629,22 @@ export default function AdminCouponsPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <Switch
+                checked={form.isActive}
+                onCheckedChange={(checked) => setForm((f) => ({ ...f, isActive: checked }))}
+                className="cursor-pointer"
+              />
+              <Label
+                className="text-sm text-gray-600 cursor-pointer"
                 onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
-                className={`relative inline-flex h-6 w-11 items-center transition-colors cursor-pointer ${form.isActive ? "bg-[#4ea674]" : "bg-gray-300"}`}
               >
-                <span className={`inline-block h-4 w-4 bg-white transition-transform ${form.isActive ? "translate-x-6" : "translate-x-1"}`} />
-              </button>
-              <Label className="text-sm text-gray-600 cursor-pointer" onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}>
                 {form.isActive ? "Còn hiệu lực" : "Hết hiệu lực"}
               </Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="cursor-pointer">Hủy</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white cursor-pointer">
+            <Button onClick={handleSave} disabled={saving} className="cursor-pointer">
               {saving ? "Đang lưu..." : dialogMode === "create" ? "Tạo" : "Cập nhật"}
             </Button>
           </DialogFooter>

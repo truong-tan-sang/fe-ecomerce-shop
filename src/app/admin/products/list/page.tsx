@@ -6,9 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
-  SlidersHorizontal,
   PlusSquare,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Plus,
@@ -30,6 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 type FilterTab = "all" | "on_sale" | "out_of_stock";
@@ -331,18 +331,8 @@ export default function AdminProductsListPage() {
               hoàn tác.
             </p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirmId)}
-                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-              >
-                Xóa
-              </button>
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="cursor-pointer">Hủy</Button>
+              <Button variant="destructive" onClick={() => handleDelete(deleteConfirmId)} className="cursor-pointer">Xóa</Button>
             </div>
           </div>
         </div>
@@ -352,51 +342,47 @@ export default function AdminProductsListPage() {
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <h1 className="text-2xl font-bold text-[#151515]">Danh mục</h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 bg-[#4ea674] text-white px-4 py-2 font-medium hover:bg-[#3d8a5f] cursor-pointer"
-          >
+          <Button onClick={openCreateModal} className="gap-2 cursor-pointer">
             <PlusSquare size={18} />
             Thêm sản phẩm
-          </button>
-          <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
-            Hành động khác
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Category Chips */}
       <div className="flex items-center gap-2 mb-3 flex-shrink-0 overflow-x-auto pb-1">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setAddCategoryOpen(true)}
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-gray-300 bg-white text-gray-400 text-sm hover:border-[#4ea674] hover:text-[#4ea674] cursor-pointer transition-colors"
+          className="flex-shrink-0 gap-1.5 cursor-pointer border-dashed"
         >
           <Plus size={14} />
           Thêm
-        </button>
+        </Button>
 
         {activeCategoryId !== null && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={clearCategoryFilter}
-            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-500 text-sm cursor-pointer hover:bg-gray-200 transition-colors"
+            className="flex-shrink-0 gap-1 cursor-pointer"
           >
             <X size={12} />
             Bỏ lọc
-          </button>
+          </Button>
         )}
 
         {categories.map((cat) => (
-          <button
+          <Button
             key={cat.id}
+            size="sm"
+            variant={activeCategoryId === cat.id ? "default" : "outline"}
             onClick={() => handleCategoryClick(cat.id)}
-            className={`flex-shrink-0 px-3 py-1.5 text-sm font-medium cursor-pointer transition-all ${
-              activeCategoryId === cat.id
-                ? "bg-[#4ea674] text-white shadow-sm"
-                : "bg-white text-[#023337] border border-gray-200 hover:border-[#4ea674] hover:text-[#4ea674]"
-            }`}
+            className="flex-shrink-0 cursor-pointer"
           >
             {cat.name}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -405,80 +391,37 @@ export default function AdminProductsListPage() {
         {/* Filter Tabs and Search */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
           {/* Filter Tabs */}
-          <div className="flex items-center bg-[#eaf8e7] p-1">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
-                activeTab === "all"
-                  ? "bg-white text-[#023337] shadow-sm"
-                  : "text-[#023337] hover:bg-white/50"
-              }`}
-            >
-              Tất cả sản phẩm{" "}
-              <span className="text-[#4ea674] font-semibold">
-                ({products.length})
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab("on_sale")}
-              className={`px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
-                activeTab === "on_sale"
-                  ? "bg-white text-[#023337] shadow-sm"
-                  : "text-[#023337] hover:bg-white/50"
-              }`}
-            >
-              Đang giảm giá
-            </button>
-            <button
-              onClick={() => setActiveTab("out_of_stock")}
-              className={`px-4 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
-                activeTab === "out_of_stock"
-                  ? "bg-white text-[#023337] shadow-sm"
-                  : "text-[#023337] hover:bg-white/50"
-              }`}
-            >
-              Hết hàng
-            </button>
-          </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
+            <TabsList className="bg-[var(--admin-green-light)]">
+              <TabsTrigger value="all" className="cursor-pointer">
+                Tất cả sản phẩm{" "}
+                <span className="ml-1 text-[var(--admin-green-dark)] font-semibold">({products.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="on_sale" className="cursor-pointer">Đang giảm giá</TabsTrigger>
+              <TabsTrigger value="out_of_stock" className="cursor-pointer">Hết hàng</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-          {/* Search and Icons */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 py-2 bg-gray-100 text-sm outline-none focus:ring-1 focus:ring-[#4ea674] w-56"
-              />
-            </div>
-            <button className="p-2 hover:bg-gray-100 cursor-pointer">
-              <SlidersHorizontal size={18} className="text-gray-500" />
-            </button>
-            <button
-              onClick={openCreateModal}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
-            >
-              <PlusSquare size={18} className="text-gray-500" />
-            </button>
-            <button className="p-2 hover:bg-gray-100 cursor-pointer">
-              <MoreHorizontal size={18} className="text-gray-500" />
-            </button>
+          {/* Search */}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Input
+              placeholder="Tìm kiếm..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-gray-100 text-sm w-56"
+            />
           </div>
         </div>
 
         {/* Table Header */}
         <div
-          className="grid bg-[#eaf8e7] flex-shrink-0"
-          style={{ gridTemplateColumns: "60px 1fr 160px 128px 112px 112px" }}
+          className="grid bg-[var(--admin-green-light)] flex-shrink-0"
+          style={{ gridTemplateColumns: "48px 2fr 1fr 120px 80px 80px 110px 88px" }}
         >
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">STT</div>
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">Sản phẩm</div>
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">STT</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Sản phẩm</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">
             <div className="flex items-center gap-1">
               Danh mục
               {activeCategoryId !== null ? (
@@ -487,16 +430,18 @@ export default function AdminProductsListPage() {
                   className="p-0.5 hover:bg-white/50 cursor-pointer"
                   title="Xóa bộ lọc danh mục"
                 >
-                  <Filter size={14} className="text-[#4ea674]" />
+                  <Filter size={14} className="text-[var(--admin-green-dark)]" />
                 </button>
               ) : (
                 <Filter size={14} className="text-gray-400" />
               )}
             </div>
           </div>
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">Ngày thêm</div>
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">Số đơn hàng</div>
-          <div className="px-4 py-3 text-sm font-semibold text-[#023337]">Hành động</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Giá từ</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Tồn kho</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Biến thể</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Ngày thêm</div>
+          <div className="px-3 py-3 text-sm font-semibold text-[var(--admin-green-dark)]">Hành động</div>
         </div>
 
         {/* Virtualized scrollable body */}
@@ -531,7 +476,7 @@ export default function AdminProductsListPage() {
                     onClick={() => openEditModal(product.id)}
                     className="grid border-t border-gray-100 hover:bg-gray-50 cursor-pointer items-center"
                     style={{
-                      gridTemplateColumns: "60px 1fr 160px 128px 112px 112px",
+                      gridTemplateColumns: "48px 2fr 1fr 120px 80px 80px 110px 88px",
                       position: "absolute",
                       top: 0,
                       left: 0,
@@ -539,12 +484,12 @@ export default function AdminProductsListPage() {
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    <div className="px-4 py-3 text-sm text-black">
+                    <div className="px-3 py-3 text-sm text-gray-500">
                       {virtualRow.index + 1}
                     </div>
-                    <div className="px-4 py-3">
+                    <div className="px-3 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 border border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-9 h-9 border border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden rounded-md">
                           {imgUrl ? (
                             <img
                               src={imgUrl}
@@ -555,37 +500,52 @@ export default function AdminProductsListPage() {
                             <div className="w-full h-full bg-gray-200" />
                           )}
                         </div>
-                        <span className="text-sm text-black font-medium truncate">
-                          {product.name}
-                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{product.stockKeepingUnit}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="px-4 py-3 text-sm text-black">
+                    <div className="px-3 py-3 text-sm text-gray-600">
                       {getCategoryName(product.categoryId)}
                     </div>
-                    <div className="px-4 py-3 text-sm text-black">
+                    <div className="px-3 py-3 text-sm font-medium text-gray-800">
+                      {product.price.toLocaleString("vi-VN")}₫
+                    </div>
+                    <div className="px-3 py-3">
+                      <span className={`text-sm font-medium ${product.stock === 0 ? "text-red-500" : "text-gray-800"}`}>
+                        {product.stock}
+                      </span>
+                    </div>
+                    <div className="px-3 py-3 text-sm text-gray-600">
+                      {product.productVariants?.length ?? 0}
+                    </div>
+                    <div className="px-3 py-3 text-sm text-gray-500">
                       {formatDate(product.createdAt)}
                     </div>
-                    <div className="px-4 py-3 text-sm text-black">0</div>
                     <div
-                      className="px-4 py-3"
+                      className="px-3 py-3"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center gap-2">
-                        <button
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => openEditModal(product.id)}
-                          className="p-1.5 hover:bg-gray-100 cursor-pointer"
+                          className="cursor-pointer"
                           title="Chỉnh sửa"
                         >
                           <Pencil size={16} className="text-gray-600" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setDeleteConfirmId(product.id)}
-                          className="p-1.5 hover:bg-red-50 cursor-pointer"
+                          className="cursor-pointer hover:bg-red-50"
                           title="Xóa"
                         >
                           <Trash2 size={16} className="text-red-500" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -630,9 +590,9 @@ export default function AdminProductsListPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 Tên danh mục
-              </label>
+              </Label>
               <Input
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
@@ -640,9 +600,9 @@ export default function AdminProductsListPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 Mô tả
-              </label>
+              </Label>
               <Input
                 value={newCategoryDesc}
                 onChange={(e) => setNewCategoryDesc(e.target.value)}
@@ -663,7 +623,7 @@ export default function AdminProductsListPage() {
               type="button"
               onClick={handleAddCategory}
               disabled={categorySaving || !newCategoryName.trim()}
-              className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white cursor-pointer"
+              className="cursor-pointer"
             >
               {categorySaving ? "Đang tạo..." : "Tạo"}
             </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -36,7 +37,7 @@ export default function ProductImageCard({
     <div className="space-y-6">
       {/* Image Upload */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-[#023337] mb-4">
+        <h3 className="text-lg font-semibold text-[var(--admin-green-dark)] mb-4">
           Upload ảnh sản phẩm
         </h3>
         <div
@@ -65,20 +66,24 @@ export default function ProductImageCard({
         </div>
         {productImagePreview && (
           <div className="flex gap-2 mt-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer"
             >
               Thay thế
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onProductImageRemove}
-              className="px-4 py-2 text-sm border border-red-300 rounded-lg text-red-500 cursor-pointer hover:bg-red-50"
+              className="border-red-300 text-red-500 hover:bg-red-50 cursor-pointer"
             >
               Xóa ảnh
-            </button>
+            </Button>
           </div>
         )}
         <input
@@ -96,7 +101,7 @@ export default function ProductImageCard({
 
       {/* Category */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-[#023337] mb-4">
+        <h3 className="text-lg font-semibold text-[var(--admin-green-dark)] mb-4">
           Loại sản phẩm
         </h3>
         <div>

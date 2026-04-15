@@ -654,7 +654,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white cursor-pointer"
+              className="cursor-pointer"
             >
               {loading ? "Đang lưu..." : isEditMode ? "Lưu thay đổi" : "Tạo sản phẩm"}
             </Button>
@@ -668,7 +668,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-[#023337]">
+        <h1 className="text-2xl font-bold text-[var(--admin-green-dark)]">
           {isEditMode ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
         </h1>
         <Button

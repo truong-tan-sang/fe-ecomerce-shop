@@ -26,7 +26,7 @@ export default function ColorImageUploadSection({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-[#023337] mb-4">
+      <h3 className="text-lg font-semibold text-[var(--admin-green-dark)] mb-4">
         Upload ảnh sản phẩm theo màu
       </h3>
       <div className="flex flex-wrap gap-3">

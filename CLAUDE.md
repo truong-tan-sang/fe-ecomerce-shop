@@ -31,10 +31,32 @@
 - Don't leak full tokens (truncate if needed)
 
 ## Admin Pages
-- Light theme, black/white accents
-- Use shadcn/ui components (Button, Table, Badge, etc.)
+- Scoped theme: `src/styles/theme-admin.css` (imported in admin layout) overrides globals
+- Border radius: 8px (`--radius: 0.5rem`) — `rounded-lg` / `rounded-md` ARE correct in admin
+- Accent palette (green): `var(--admin-green-light)` #eaf8e7 · `var(--admin-green-mid)` #c1e6ba · `var(--admin-green-dark)` #023337
+- Active state: `bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)]`
+- Cards: `bg-white rounded-lg shadow-[var(--admin-card-shadow)]`
 - Collapsible sidebar, expanded menu sections
-- Active links: bold or bg-black
+- NOTE: Core Principles (`--radius: 0`, black/white accents) apply to **storefront only**, not admin
+
+### Admin component checklist — apply every time you write OR touch any admin file
+**Raw HTML → shadcn substitution (NEVER use the raw version in admin):**
+| Raw HTML | shadcn replacement |
+|---|---|
+| `<button>` | `<Button>` (variant: default/outline/ghost/destructive/icon) |
+| `<input>` | `<Input>` |
+| `<select>` / `<option>` | `<Select>` + `<SelectTrigger>` + `<SelectContent>` + `<SelectItem>` |
+| `<label>` | `<Label>` |
+| `<span>` status/type badge | `<Badge>` |
+| custom toggle/switch | `<Switch>` |
+| manual tab bar (`<button>` row) | `<Tabs>` + `<TabsList>` + `<TabsTrigger>` |
+
+**Color rule — NEVER hardcode palette hex in admin:**
+- ❌ `#4ea674`, `#023337`, `#eaf8e7`, `#c1e6ba`, `bg-black`, `bg-blue-*`, `bg-orange-*`
+- ✅ `var(--admin-green-light/mid/dark)`, or just use default shadcn `<Button>` / `<Badge>` and let `--primary` handle it
+- Red for destructive actions is OK. `bg-black/50` modal overlays are OK.
+
+**Portal fix — already solved globally:** `AdminBodyTheme` in `src/app/admin/layout.tsx` adds `admin-theme` to `<body>`, so all Dialog/Sheet/Popover portals inherit the theme automatically. Never add `admin-theme` to individual `DialogContent`.
 
 ## Examples
 ```ts

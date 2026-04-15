@@ -18,7 +18,7 @@ export default function ProductBasicInfoCard({
     <div className="space-y-6">
       {/* Basic Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-[#023337] mb-4">
+        <h3 className="text-lg font-semibold text-[var(--admin-green-dark)] mb-4">
           Thông tin cơ bản
         </h3>
         <div className="space-y-4">

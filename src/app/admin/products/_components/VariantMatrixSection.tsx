@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -204,7 +205,7 @@ export default function VariantMatrixSection({
                 <button
                   type="button"
                   onClick={() => openEditColorDialog(color)}
-                  className="text-gray-400 hover:text-blue-500 text-xs px-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="text-gray-400 hover:text-[var(--admin-green-dark)] text-xs px-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Sửa"
                 >
                   &#9998;
@@ -226,7 +227,7 @@ export default function VariantMatrixSection({
           <button
             type="button"
             onClick={openCreateColorDialog}
-            className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-gray-100 text-sm text-[#4ea674] font-medium cursor-pointer"
+            className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-gray-100 text-sm text-[var(--admin-green-dark)] font-medium cursor-pointer"
           >
             + Tạo màu mới
           </button>
@@ -238,23 +239,13 @@ export default function VariantMatrixSection({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-[#023337]">
+        <h3 className="text-lg font-semibold text-[var(--admin-green-dark)]">
           Ma trận sản phẩm con
         </h3>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "stock" | "price")}>
-          <TabsList className="bg-[#eaf8e7]">
-            <TabsTrigger
-              value="stock"
-              className="cursor-pointer data-[state=active]:bg-[#4ea674] data-[state=active]:text-white"
-            >
-              Số lượng
-            </TabsTrigger>
-            <TabsTrigger
-              value="price"
-              className="cursor-pointer data-[state=active]:bg-[#4ea674] data-[state=active]:text-white"
-            >
-              Giá
-            </TabsTrigger>
+          <TabsList className="bg-[var(--admin-green-light)]">
+            <TabsTrigger value="stock" className="cursor-pointer">Số lượng</TabsTrigger>
+            <TabsTrigger value="price" className="cursor-pointer">Giá</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -312,7 +303,7 @@ export default function VariantMatrixSection({
                 <tr key={size} className="border-t border-gray-100">
                   <td className="p-2">
                     <div className="flex items-center gap-1">
-                      <span className="bg-[#eaf8e7] text-[#4ea674] px-3 py-1 rounded-md text-sm font-medium">
+                      <span className="bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] px-3 py-1 rounded-md text-sm font-medium">
                         {size}
                       </span>
                       <button
@@ -437,9 +428,9 @@ export default function VariantMatrixSection({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 Tên màu
-              </label>
+              </Label>
               <Input
                 value={colorName}
                 onChange={(e) => setColorName(e.target.value)}
@@ -447,9 +438,9 @@ export default function VariantMatrixSection({
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 Mã màu (Hex)
-              </label>
+              </Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -487,7 +478,7 @@ export default function VariantMatrixSection({
               type="button"
               onClick={handleColorDialogSave}
               disabled={colorSaving || !colorName.trim() || !colorHex.trim()}
-              className="bg-[#4ea674] hover:bg-[#3d8a5f] text-white cursor-pointer"
+              className="cursor-pointer"
             >
               {colorSaving ? "Đang lưu..." : colorDialogMode === "create" ? "Tạo" : "Cập nhật"}
             </Button>
