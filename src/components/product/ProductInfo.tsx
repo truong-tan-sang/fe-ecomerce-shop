@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import ColorSwatch from "./ColorSwatch";
 import type { ProductVariantEntity } from "@/dto/product-variant";
 import type { ColorEntity } from "@/dto/color";
 import { cartService } from "@/services/cart";
-import Toast from "../toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/utils/api-error";
@@ -69,11 +70,9 @@ export default function ProductInfo({
         return result;
     }, [variants]);
     const [quantity, setQuantity] = useState(1);
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState("");
-    const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
     const [isLoading, setIsLoading] = useState(false);
     const { data: session } = useSession();
+    const router = useRouter();
 
     // Find the currently selected variant based on size and colorId
     const selectedVariant = useMemo(() => {
@@ -157,80 +156,67 @@ export default function ProductInfo({
     const incrementQty = () => setQuantity((q) => Math.min(q + 1, displayStock));
     const decrementQty = () => setQuantity((q) => Math.max(q - 1, 1));
 
+    const getOrCreateCartId = async (userId: number, token: string): Promise<number> => {
+        try {
+            const cartResponse = await cartService.getCartById(userId, token);
+            console.log("[ProductInfo] Using existing cart:", cartResponse.data!.id);
+            return cartResponse.data!.id;
+        } catch (err) {
+            // Backend throws 404 (NotFoundException) when no cart exists,
+            // but its own catch block re-wraps it as 400 (BadRequestException) — handle both
+            if (err instanceof ApiError && (err.statusCode === 404 || err.statusCode === 400)) {
+                console.log("[ProductInfo] No cart found, creating new cart");
+                const createCartResponse = await cartService.createCart(userId, { userId }, token);
+                if (!createCartResponse.data?.id) throw new Error("Failed to create cart");
+                console.log("[ProductInfo] Cart created:", createCartResponse.data.id);
+                return createCartResponse.data.id;
+            }
+            throw err;
+        }
+    };
+
     const handleAddToCart = async () => {
         if (!selectedVariant) return;
         if (!session?.user?.id || !session?.user?.access_token) {
-            console.log("[ProductInfo] User not authenticated");
-            setToastMessage("Please log in to add items to cart");
-            setToastType("error");
-            setShowToast(true);
+            toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
             return;
         }
 
         setIsLoading(true);
         const userId = parseInt(session.user.id, 10);
-        console.log("[ProductInfo] Adding to cart:", {
-            variantId: selectedVariant.id,
-            quantity,
-            userId,
-        });
+        console.log("[ProductInfo] Adding to cart:", { variantId: selectedVariant.id, quantity, userId });
 
         try {
-            // Get or create user cart
-            let cartId: number;
-
-            try {
-                const cartResponse = await cartService.getCartById(
-                    userId,
-                    session.user.access_token
-                );
-                cartId = cartResponse.data!.id;
-                console.log("[ProductInfo] Using existing cart:", cartId);
-            } catch (err) {
-                // Backend throws 404 (NotFoundException) when no cart exists,
-                // but its own catch block re-wraps it as 400 (BadRequestException) — handle both
-                if (err instanceof ApiError && (err.statusCode === 404 || err.statusCode === 400)) {
-                    console.log("[ProductInfo] No cart found, creating new cart");
-                    const createCartResponse = await cartService.createCart(
-                        userId,
-                        { userId },
-                        session.user.access_token
-                    );
-
-                    if (!createCartResponse.data?.id) {
-                        throw new Error("Failed to create cart");
-                    }
-
-                    cartId = createCartResponse.data.id;
-                    console.log("[ProductInfo] Cart created:", cartId);
-                } else {
-                    throw err;
-                }
-            }
-
-            // Create cart item
-            await cartService.createCartItem(
-                userId,
-                { 
-                    cartId,
-                    productVariantId: selectedVariant.id,
-                    quantity,
-                },
-                session.user.access_token
-            );
-
+            const cartId = await getOrCreateCartId(userId, session.user.access_token);
+            await cartService.createCartItem(userId, { cartId, productVariantId: selectedVariant.id, quantity }, session.user.access_token);
             console.log("[ProductInfo] Cart item created successfully");
-            setToastMessage("Added to cart successfully");
-            setToastType("success");
-            setShowToast(true);
+            toast.success("Đã thêm vào giỏ hàng");
         } catch (error) {
             console.error("[ProductInfo] Add to cart failed:", error);
-            setToastMessage("Failed to add to cart");
-            setToastType("error");
-            setShowToast(true);
+            toast.error("Thêm vào giỏ hàng thất bại");
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleBuyNow = () => {
+        if (!selectedVariant) return;
+        if (!session?.user?.id) {
+            toast.error("Vui lòng đăng nhập để mua hàng");
+            return;
+        }
+
+        console.log("[ProductInfo] Buy now:", { variantId: selectedVariant.id, quantity });
+        sessionStorage.setItem("buyNowItem", JSON.stringify({
+            productVariantId: selectedVariant.id,
+            quantity,
+            price: selectedVariant.price,
+            productName: selectedVariant.variantName,
+            variantSize: selectedVariant.variantSize ?? null,
+            variantColor: selectedVariant.variantColor ?? null,
+            imageUrl: null,
+        }));
+        router.push("/checkout?buyNow=1");
     };
 
     // Handle size selection - color will auto-adjust via useEffect
@@ -402,11 +388,19 @@ export default function ProductInfo({
                     </Button>
                 </div>
                 <Button
-                    className="flex-1 bg-black text-white py-3 px-6 h-auto font-semibold hover:bg-gray-800"
+                    variant="outline"
+                    className="flex-1 py-3 px-6 h-auto font-semibold border-black text-black hover:bg-gray-100 cursor-pointer"
                     disabled={!selectedVariant || displayStock === 0 || isLoading}
                     onClick={handleAddToCart}
                 >
-                    {isLoading ? "Adding..." : displayStock === 0 ? "Out of Stock" : "Add to cart"}
+                    {isLoading ? "Đang thêm..." : displayStock === 0 ? "Hết hàng" : "Thêm vào giỏ"}
+                </Button>
+                <Button
+                    className="flex-1 bg-black text-white py-3 px-6 h-auto font-semibold hover:bg-gray-800 cursor-pointer"
+                    disabled={!selectedVariant || displayStock === 0 || isLoading}
+                    onClick={handleBuyNow}
+                >
+                    Mua ngay
                 </Button>
             </div>
 
@@ -457,14 +451,6 @@ export default function ProductInfo({
                 <div className="text-xs text-gray-500">Guarantee safe & secure checkout</div>
             </div>
 
-            {/* Toast notification */}
-            {showToast && (
-                <Toast
-                    message={toastMessage}
-                    type={toastType}
-                    onClose={() => setShowToast(false)}
-                />
-            )}
         </div>
     );
 }
