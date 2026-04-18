@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { orderService } from "@/services/order";
 import type { OrderFullInformationEntity, OrderStatus } from "@/dto/order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import BuyAgainButton from "@/components/profile/BuyAgainButton";
+
+const PER_PAGE = 10; // backend default page size
 
 const VND = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
@@ -46,10 +51,12 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 function OrderActions({
   status,
   orderId,
+  orderItems,
   onCancelled,
 }: {
   status: OrderStatus;
   orderId: number;
+  orderItems: { productVariantId: number }[];
   onCancelled: (orderId: number) => void;
 }) {
   const [cancelling, setCancelling] = useState(false);
@@ -95,9 +102,7 @@ function OrderActions({
         <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer">
           Yêu cầu trả hàng/hoàn tiền
         </Button>
-        <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer">
-          Mua lại
-        </Button>
+        <BuyAgainButton orderItems={orderItems} />
       </>
     );
   }
@@ -107,18 +112,12 @@ function OrderActions({
         <Button variant="outline" className="px-4 py-2 h-auto border-black text-sm font-semibold cursor-pointer">
           Đánh giá
         </Button>
-        <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer">
-          Mua lại
-        </Button>
+        <BuyAgainButton orderItems={orderItems} />
       </>
     );
   }
   if (status === "CANCELLED" || status === "RETURNED") {
-    return (
-      <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer">
-        Mua lại
-      </Button>
-    );
+    return <BuyAgainButton orderItems={orderItems} />;
   }
   // SHIPPED, DELIVERED_FAILED — no actions
   return null;
@@ -127,51 +126,66 @@ function OrderActions({
 export default function OrdersContent() {
   const [orders, setOrders] = useState<OrderFullInformationEntity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const pageRef = useRef(1);
   const { data: session } = useSession();
+  const router = useRouter();
 
   const handleOrderCancelled = (orderId: number) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: "CANCELLED" } : o))
-    );
+    router.push(`/profile/orders/${orderId}`);
+  };
+
+  const fetchPage = async (page: number, append: boolean) => {
+    if (!session?.user?.id || !session?.user?.access_token) return;
+
+    const userId = parseInt(session.user.id, 10);
+    const token = session.user.access_token;
+    console.log("[OrdersContent] Loading orders for user:", userId, "tab:", activeTab, "page:", page);
+
+    if (append) setLoadingMore(true);
+    else setIsLoading(true);
+
+    try {
+      const fetchers: Record<TabKey, () => Promise<IBackendRes<OrderFullInformationEntity[]>>> = {
+        all:       () => orderService.getUserOrders(userId, token, page, PER_PAGE),
+        confirmed: () => orderService.getUserConfirmedOrders(userId, token, page, PER_PAGE),
+        shipped:   () => orderService.getUserShippedOrders(userId, token, page, PER_PAGE),
+        delivered: () => orderService.getUserDeliveredOrders(userId, token, page, PER_PAGE),
+        completed: () => orderService.getUserCompletedOrders(userId, token, page, PER_PAGE),
+        cancelled: () => orderService.getUserCancelledOrders(userId, token, page, PER_PAGE),
+        returned:  () => orderService.getUserReturnedOrders(userId, token, page, PER_PAGE),
+      };
+      const response = await fetchers[activeTab]();
+      console.log("[OrdersContent] Orders response page", page, ":", response);
+      const incoming = Array.isArray(response.data) ? response.data : [];
+      setOrders((prev) => (append ? [...prev, ...incoming] : incoming));
+      setHasMore(incoming.length === PER_PAGE);
+    } catch (error) {
+      console.error("[OrdersContent] Failed to load orders:", error);
+      if (!append) setOrders([]);
+    } finally {
+      if (append) setLoadingMore(false);
+      else setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    const loadOrders = async () => {
-      if (!session?.user?.id || !session?.user?.access_token) {
-        console.log("[OrdersContent] User not authenticated");
-        setIsLoading(false);
-        return;
-      }
+    if (!session?.user?.id || !session?.user?.access_token) {
+      setIsLoading(false);
+      return;
+    }
+    pageRef.current = 1;
+    fetchPage(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, session?.user?.access_token, activeTab]);
 
-      const userId = parseInt(session.user.id, 10);
-      const token = session.user.access_token;
-      console.log("[OrdersContent] Loading orders for user:", userId, "tab:", activeTab);
-
-      setIsLoading(true);
-      try {
-        const fetchers: Record<TabKey, () => Promise<IBackendRes<OrderFullInformationEntity[]>>> = {
-          all:       () => orderService.getUserOrders(userId, token),
-          confirmed: () => orderService.getUserConfirmedOrders(userId, token),
-          shipped:   () => orderService.getUserShippedOrders(userId, token),
-          delivered: () => orderService.getUserDeliveredOrders(userId, token),
-          completed: () => orderService.getUserCompletedOrders(userId, token),
-          cancelled: () => orderService.getUserCancelledOrders(userId, token),
-          returned:  () => orderService.getUserReturnedOrders(userId, token),
-        };
-        const response = await fetchers[activeTab]();
-        console.log("[OrdersContent] Orders response:", response);
-        setOrders(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        console.error("[OrdersContent] Failed to load orders:", error);
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadOrders();
-  }, [session, activeTab]);
+  const handleLoadMore = () => {
+    const next = pageRef.current + 1;
+    pageRef.current = next;
+    fetchPage(next, true);
+  };
 
   if (isLoading) {
     return (
@@ -229,7 +243,8 @@ export default function OrdersContent() {
             <p>{activeTab === "all" ? "Bạn chưa có đơn hàng nào" : "Không có đơn hàng nào trong mục này"}</p>
           </div>
         ) : (
-          orders.map((order) => {
+          <>
+          {orders.map((order) => {
             const statusInfo = STATUS_CONFIG[order.status] ?? { text: order.status, color: "text-gray-600" };
             const orderDate = new Date(order.orderDate).toLocaleDateString("vi-VN");
             const payment = order.payment?.[0];
@@ -323,7 +338,7 @@ export default function OrdersContent() {
                         Xem chi tiết
                       </Button>
                     </Link>
-                    <OrderActions status={order.status} orderId={order.id} onCancelled={handleOrderCancelled} />
+                    <OrderActions status={order.status} orderId={order.id} orderItems={order.orderItems ?? []} onCancelled={handleOrderCancelled} />
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600 mb-1">Tổng tiền:</p>
@@ -334,7 +349,24 @@ export default function OrdersContent() {
                 </div>
               </div>
             );
-          })
+          })}
+          {hasMore && (
+            <div className="flex justify-center pt-2 pb-4">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-8 py-2 h-auto border-gray-300 text-sm cursor-pointer"
+              >
+                {loadingMore ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang tải...</>
+                ) : (
+                  "Xem thêm"
+                )}
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </div>
     </>

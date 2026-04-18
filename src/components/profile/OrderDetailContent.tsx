@@ -18,6 +18,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { returnRequestService } from "@/services/returnRequest";
+import { VIETNAM_BANK_OPTIONS, type VietnamBankName } from "@/dto/returnRequest";
+import BuyAgainButton from "@/components/profile/BuyAgainButton";
 
 const VND = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -348,6 +361,129 @@ function CancelButton({ order, onCancelled }: { order: OrderFullInformationEntit
   );
 }
 
+// ── Return request dialog ──────────────────────────────────────────────────
+
+function ReturnRequestDialog({
+  order,
+  open,
+  onClose,
+}: {
+  order: OrderFullInformationEntity;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { data: session } = useSession();
+  const [submitting, setSubmitting] = useState(false);
+  const [description, setDescription] = useState("");
+  const [bankName, setBankName] = useState<VietnamBankName | "">("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+
+  const handleSubmit = async () => {
+    if (!session?.user?.access_token) return;
+    if (!description.trim()) { toast.error("Vui lòng nhập lý do trả hàng."); return; }
+    if (!bankName) { toast.error("Vui lòng chọn ngân hàng."); return; }
+    if (!bankAccountNumber.trim()) { toast.error("Vui lòng nhập số tài khoản."); return; }
+    if (!bankAccountName.trim()) { toast.error("Vui lòng nhập tên chủ tài khoản."); return; }
+
+    setSubmitting(true);
+    try {
+      await returnRequestService.create(
+        {
+          userId: order.userId,
+          orderId: order.id,
+          description: description.trim(),
+          bankName: bankName as VietnamBankName,
+          bankAccountNumber: bankAccountNumber.trim(),
+          bankAccountName: bankAccountName.trim(),
+        },
+        session.user.access_token
+      );
+      toast.success("Yêu cầu hoàn trả đã được gửi. Chúng tôi sẽ liên hệ trong thời gian sớm nhất.");
+      onClose();
+    } catch {
+      toast.error("Gửi yêu cầu thất bại. Vui lòng thử lại.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Yêu cầu trả hàng / hoàn tiền</DialogTitle>
+          <DialogDescription>
+            Đơn hàng #{order.id}. Vui lòng cung cấp lý do và thông tin tài khoản để nhận hoàn tiền.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rr-desc">Lý do trả hàng <span className="text-red-500">*</span></Label>
+            <Textarea
+              id="rr-desc"
+              placeholder="Mô tả lý do bạn muốn trả hàng..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rr-bank">Ngân hàng <span className="text-red-500">*</span></Label>
+            <Select value={bankName} onValueChange={(v) => setBankName(v as VietnamBankName)}>
+              <SelectTrigger id="rr-bank" className="cursor-pointer">
+                <SelectValue placeholder="Chọn ngân hàng" />
+              </SelectTrigger>
+              <SelectContent>
+                {VIETNAM_BANK_OPTIONS.map((b) => (
+                  <SelectItem key={b.value} value={b.value} className="cursor-pointer">
+                    {b.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rr-acc-num">Số tài khoản <span className="text-red-500">*</span></Label>
+            <Input
+              id="rr-acc-num"
+              placeholder="VD: 0123456789"
+              value={bankAccountNumber}
+              onChange={(e) => setBankAccountNumber(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rr-acc-name">Tên chủ tài khoản <span className="text-red-500">*</span></Label>
+            <Input
+              id="rr-acc-name"
+              placeholder="VD: NGUYEN VAN A"
+              value={bankAccountName}
+              onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting} className="cursor-pointer">
+            Huỷ
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-[var(--bg-button)] text-[var(--text-inverse)] hover:bg-[var(--bg-button-hover)] cursor-pointer"
+          >
+            {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Action buttons ─────────────────────────────────────────────────────────
 
 function OrderActions({
@@ -357,37 +493,53 @@ function OrderActions({
   order: OrderFullInformationEntity;
   onCancelled: () => void;
 }) {
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+
   if (order.status === "DELIVERED") {
+    const shipment = order.shipments?.[0];
+    const deliveredAt = shipment?.deliveredAt ? new Date(shipment.deliveredAt) : null;
+    const withinReturnWindow = deliveredAt
+      ? Date.now() - deliveredAt.getTime() < 7 * 24 * 60 * 60 * 1000
+      : false;
+
     return (
-      <div className="flex gap-2">
-        <Button className="bg-[var(--bg-button)] text-[var(--text-inverse)] hover:bg-[var(--bg-button-hover)] cursor-pointer">
-          Đã nhận được hàng
-        </Button>
-        <Button variant="outline" className="border-gray-300 cursor-pointer">
-          Yêu cầu trả hàng / hoàn tiền
-        </Button>
-      </div>
+      <>
+        <div className="flex gap-2">
+          {withinReturnWindow && (
+            <Button
+              variant="outline"
+              className="border-gray-300 cursor-pointer"
+              onClick={() => setShowReturnDialog(true)}
+            >
+              Yêu cầu trả hàng / hoàn tiền
+            </Button>
+          )}
+          <BuyAgainButton orderItems={order.orderItems ?? []} />
+        </div>
+        <ReturnRequestDialog
+          order={order}
+          open={showReturnDialog}
+          onClose={() => setShowReturnDialog(false)}
+        />
+      </>
     );
   }
+
   if (order.status === "COMPLETED") {
     return (
       <div className="flex gap-2">
         <Button variant="outline" className="border-[var(--border-primary)] font-semibold cursor-pointer">
           Đánh giá
         </Button>
-        <Button variant="outline" className="border-gray-300 cursor-pointer">
-          Mua lại
-        </Button>
+        <BuyAgainButton orderItems={order.orderItems ?? []} />
       </div>
     );
   }
+
   if (order.status === "CANCELLED" || order.status === "RETURNED") {
-    return (
-      <Button variant="outline" className="border-gray-300 cursor-pointer">
-        Mua lại
-      </Button>
-    );
+    return <BuyAgainButton orderItems={order.orderItems ?? []} />;
   }
+
   return null;
 }
 
@@ -437,22 +589,24 @@ export default function OrderDetailContent({ orderId }: { orderId: number }) {
   const { data: session } = useSession();
   const router = useRouter();
 
+  const loadOrder = async () => {
+    if (!session?.user?.access_token) {
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const response = await orderService.getOrderDetail(orderId, session.user.access_token);
+      setOrder(response.data ?? null);
+    } catch {
+      toast.error("Không thể tải thông tin đơn hàng.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadOrder = async () => {
-      if (!session?.user?.access_token) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const response = await orderService.getOrderDetail(orderId, session.user.access_token);
-        setOrder(response.data ?? null);
-      } catch {
-        toast.error("Không thể tải thông tin đơn hàng.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
     loadOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, orderId]);
 
   if (isLoading) {
@@ -496,13 +650,13 @@ export default function OrderDetailContent({ orderId }: { orderId: number }) {
 
       {/* ── Stepper (cancel button lives inside when applicable) ── */}
       <div className="border bg-white">
-        <Stepper order={order} onCancelled={() => router.back()} />
+        <Stepper order={order} onCancelled={loadOrder} />
       </div>
 
       {/* ── Non-cancel actions (delivered, completed, etc.) ── */}
       {order.status !== "SHIPPED" && order.status !== "WAITING_FOR_PICKUP" && order.status !== "DELIVERED_FAILED" && order.status !== "PENDING" && order.status !== "PAYMENT_PROCESSING" && order.status !== "PAYMENT_CONFIRMED" && (
         <div className="border bg-white px-6 py-4 flex justify-end">
-          <OrderActions order={order} onCancelled={() => router.back()} />
+          <OrderActions order={order} onCancelled={loadOrder} />
         </div>
       )}
 
