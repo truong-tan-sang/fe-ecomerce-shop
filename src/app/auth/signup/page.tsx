@@ -182,7 +182,7 @@ function Signup() {
               <Button
                 type="submit"
                 disabled={showLoader}
-                className="w-full border border-neutral-800 bg-neutral-800 px-4 py-2 text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
+                className="w-full h-auto border border-neutral-800 bg-neutral-800 px-4 py-3 text-sm font-medium text-white hover:border-gray-700 hover:bg-gray-900 cursor-pointer"
               >
                 {showLoader ? (
                   <LoaderCircle className="animate-spin" />
