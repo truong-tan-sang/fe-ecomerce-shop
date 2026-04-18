@@ -87,6 +87,7 @@ export default function CheckoutPage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isBuyNow = searchParams.get("buyNow") === "1";
   const selectedItemIdsParam = searchParams.get("items") || "";
   const selectedItemIds = selectedItemIdsParam
     ? selectedItemIdsParam.split(",").map(Number)
@@ -119,10 +120,11 @@ export default function CheckoutPage() {
     loadProfile();
   }, [session]);
 
-  // ── Load cart items ──
+  // ── Load cart items (or read buy-now item from sessionStorage) ──
   useEffect(() => {
     if (cartLoadedRef.current) return;
-    if (sessionStatus === "loading") return; // wait for session to resolve
+    if (sessionStatus === "loading") return;
+
     const loadCart = async () => {
       if (!session?.user?.id || !session?.user?.access_token) {
         console.log("[CheckoutPage] User not authenticated");
@@ -132,6 +134,47 @@ export default function CheckoutPage() {
 
       cartLoadedRef.current = true;
 
+      // ── Buy-now fast path ──
+      if (isBuyNow) {
+        try {
+          const raw = sessionStorage.getItem("buyNowItem");
+          if (!raw) throw new Error("Không tìm thấy thông tin sản phẩm");
+          const buyNow = JSON.parse(raw) as {
+            productVariantId: number;
+            quantity: number;
+            price: number;
+            productName: string;
+            variantSize: string | null;
+            variantColor: string | null;
+            imageUrl: string | null;
+          };
+          sessionStorage.removeItem("buyNowItem");
+          console.log("[CheckoutPage] Buy-now item:", buyNow);
+          setItems([{
+            id: 0, // synthetic — no real cart item
+            cartId: 0,
+            productVariantId: buyNow.productVariantId,
+            quantity: buyNow.quantity,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            productName: buyNow.productName,
+            variantSize: buyNow.variantSize,
+            variantColor: buyNow.variantColor,
+            price: buyNow.price,
+            imageUrl: buyNow.imageUrl,
+          }]);
+          setItemsReady(true);
+          setStep("ready");
+        } catch (error) {
+          console.error("[CheckoutPage] Buy-now load failed:", error);
+          router.push("/");
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // ── Normal cart path ──
       try {
         const userId = parseInt(session.user.id, 10);
         console.log("[CheckoutPage] Loading cart for user:", userId);
@@ -369,11 +412,11 @@ export default function CheckoutPage() {
       const orderId = orderResponse.data.id;
       console.log("[CheckoutPage] Order created:", orderId);
 
-      // Delete cart items after successful order
+      // Delete cart items after successful order (skip buy-now synthetic items)
       await Promise.all(
-        items.map((item) =>
-          cartService.deleteCartItem(item.id, session.user.access_token!)
-        )
+        items
+          .filter((item) => item.id > 0)
+          .map((item) => cartService.deleteCartItem(item.id, session.user.access_token!))
       );
 
       if (paymentMethod === "VNPAY") {
@@ -405,8 +448,8 @@ export default function CheckoutPage() {
         return;
       }
 
-      // COD: go to orders page
-      router.push("/profile/orders");
+      // COD: go directly to the order detail page
+      router.push(`/profile/orders/${orderId}`);
     } catch (error) {
       console.error("[CheckoutPage] Failed to place order:", error);
       const msg =

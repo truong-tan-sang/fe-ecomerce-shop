@@ -146,7 +146,7 @@ export default function VNPayReturnPage() {
 
               <div className="flex gap-3 justify-center">
                 <Link
-                  href="/profile/orders"
+                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
                   className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
                 >
                   XEM ĐƠN HÀNG
@@ -187,7 +187,7 @@ export default function VNPayReturnPage() {
 
               <div className="flex gap-3 justify-center">
                 <Link
-                  href="/profile/orders"
+                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
                   className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
                 >
                   XEM ĐƠN HÀNG
