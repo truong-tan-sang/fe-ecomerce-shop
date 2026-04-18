@@ -166,6 +166,17 @@ export interface CreateOrderDto {
 
 // ── Order Response DTOs ──
 
+export interface UserInOrderDto {
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  email: string;
+  phone?: string | null;
+  username?: string;
+  isActive?: boolean;
+  userMedia?: Array<{ id: number; url: string; isAvatarFile: boolean; type: string }>;
+}
+
 export interface OrderFullInformationEntity {
   id: number;
   userId: number;
@@ -182,6 +193,7 @@ export interface OrderFullInformationEntity {
   currencyUnit: string;
   createdAt: string;
   updatedAt: string;
+  user: UserInOrderDto;
   shippingAddress: DatabaseAddressFields;
   orderItems: OrderItemEntity[];
   shipments: ShipmentEntity[];

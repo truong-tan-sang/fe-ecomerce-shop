@@ -36,8 +36,8 @@ export const STATUS_RANK: Record<OrderStatus, number> = {
   WAITING_FOR_PICKUP: 3,
   SHIPPED:            4,
   DELIVERED:          5,
-  DELIVERED_FAILED:   5,
+  DELIVERED_FAILED:   45, // branch from SHIPPED, not on the main happy-path
   COMPLETED:          6,
   CANCELLED:          -1,
-  RETURNED:           -1,
+  RETURNED:           -2,
 };

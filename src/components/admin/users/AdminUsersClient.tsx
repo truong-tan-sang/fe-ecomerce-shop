@@ -183,7 +183,7 @@ export default function AdminUsersClient() {
     setOrdersLoading(true);
     try {
       console.log("[AdminUsers] Fetching orders for user:", user.id);
-      const res = await orderService.getUserOrders(user.id, accessToken);
+      const res = await orderService.getUserOrders(user.id, accessToken, 1, 9999);
       console.log("[AdminUsers] Orders:", res);
       setUserOrders(res?.data ?? []);
     } catch (err) {

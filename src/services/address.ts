@@ -3,6 +3,7 @@ import type {
   CreateAddressDto,
   UpdateAddressDto,
   AddressDto,
+  AddressWithMeta,
   CreateAddressForOrderResponseDto,
 } from "@/dto/address";
 
@@ -51,7 +52,7 @@ export const addressService = {
    * @param accessToken Bearer authentication token
    * @returns Backend response with array of addresses
    */
-  async getUserAddresses(userId: number, accessToken: string): Promise<IBackendRes<AddressDto[]>> {
+  async getUserAddresses(userId: number, accessToken: string): Promise<IBackendRes<AddressWithMeta[]>> {
     const url = `${BACKEND_URL}/user/${userId}/address-list`;
     console.log("[AddressService] Fetching addresses for user:", userId);
     const response = await sendRequest<IBackendRes<AddressDto[]>>({

@@ -18,11 +18,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { orderService } from "@/services/order";
+import { shipmentService } from "@/services/shipment";
 import type {
   OrderFullInformationEntity,
   GhnPickShift,
 } from "@/dto/order";
 import { STATUS_CONFIG, STATUS_RANK } from "./orderStatusConfig";
+import UserDetailCard from "@/components/admin/users/UserDetailCard";
+import type { UserDto } from "@/services/user";
+
+function GHNTrackingLink({ orderId, accessToken }: { orderId: number; accessToken: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleOpen = async () => {
+    setLoading(true);
+    try {
+      const res = await shipmentService.getGHNTrackingUrl(orderId, accessToken);
+      if (res.data) {
+        window.open(res.data, "_blank", "noopener,noreferrer");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleOpen}
+      disabled={loading}
+      className="cursor-pointer w-full mt-1"
+    >
+      {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+      Tra cứu vận đơn GHN
+    </Button>
+  );
+}
 
 interface OrderDetailSheetProps {
   order: OrderFullInformationEntity | null;
@@ -49,16 +81,31 @@ export default function OrderDetailSheet({
 
   const [submitting, setSubmitting] = useState(false);
 
+  // User orders state (for UserDetailCard stats)
+  const [userOrders, setUserOrders] = useState<OrderFullInformationEntity[]>([]);
+  const [loadingUserOrders, setLoadingUserOrders] = useState(false);
+
   // GHN shift state (for Step 1)
   const [ghnShifts, setGhnShifts] = useState<GhnPickShift[]>([]);
   const [selectedShiftId, setSelectedShiftId] = useState<string>("");
   const [loadingShifts, setLoadingShifts] = useState(false);
 
-  const rank = order ? (STATUS_RANK[order.status] ?? -1) : -1;
+  const rank = order ? (STATUS_RANK[order.status] ?? -99) : -99;
 
-  const step1State = rank < 2 ? "pending" : rank === 2 ? "active" : "completed";
-  const step2State = rank < 3 ? "pending" : "active";
-  const step3State = rank < 4 ? "pending" : rank === 4 ? "active" : "completed";
+  // Terminal states exit the normal flow entirely
+  const isTerminal =
+    order?.status === "CANCELLED" ||
+    order?.status === "DELIVERED_FAILED" ||
+    order?.status === "RETURNED";
+
+  const step1State = rank < 2 ? "pending" : rank === 2 ? "active" : "done";
+  // Step 2 has two sub-states: waiting-for-pickup (action needed) vs shipped (info only)
+  const step2State =
+    rank < 3 ? "pending" :
+    rank === 3 ? "action" :   // WAITING_FOR_PICKUP — show button
+    rank === 4 ? "info" :      // SHIPPED — show tracking info
+    "done";
+  const step3State = rank < 4 ? "pending" : rank === 4 ? "active" : "done";
 
   const fetchGhnShifts = useCallback(async () => {
     if (!accessToken) return;
@@ -81,6 +128,17 @@ export default function OrderDetailSheet({
     }
   }, [open, step1State, fetchGhnShifts]);
 
+  // Fetch user's orders for UserDetailCard stats
+  useEffect(() => {
+    if (!open || !order || !accessToken) return;
+    setUserOrders([]);
+    setLoadingUserOrders(true);
+    orderService.getUserOrders(order.userId, accessToken, 1, 9999)
+      .then((res) => setUserOrders(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setUserOrders([]))
+      .finally(() => setLoadingUserOrders(false));
+  }, [open, order?.userId, accessToken]);
+
   if (!order) return null;
 
   const shipment = order.shipments?.[0];
@@ -97,6 +155,18 @@ export default function OrderDetailSheet({
   ]
     .filter(Boolean)
     .join(", ");
+
+  // Map order.user → UserDto shape for UserDetailCard
+  const customerUser: UserDto = {
+    id: order.user.id,
+    firstName: order.user.firstName ?? undefined,
+    lastName: order.user.lastName ?? undefined,
+    email: order.user.email,
+    phone: order.user.phone ?? undefined,
+    username: order.user.username,
+    isActive: order.user.isActive,
+    image: order.user.userMedia?.find((m) => m.isAvatarFile)?.url,
+  };
 
   async function runAction(action: () => Promise<IBackendRes<OrderFullInformationEntity>>) {
     if (!accessToken) return;
@@ -134,6 +204,11 @@ export default function OrderDetailSheet({
     );
   };
 
+  const handleMarkShipped = () =>
+    runAction(() =>
+      orderService.updateOrderToShipped(order.id, { processByStaffId: staffId }, accessToken)
+    );
+
   const handleConfirmDelivered = () =>
     runAction(() =>
       orderService.updateOrderToDelivered(order.id, { processByStaffId: staffId }, accessToken)
@@ -149,11 +224,14 @@ export default function OrderDetailSheet({
     runAction(() => orderService.cancelOrder(order.id, accessToken));
   };
 
-  const canCancel = rank >= 0 && rank <= 2;
+  const canCancel =
+    order.status === "PENDING" ||
+    order.status === "PAYMENT_PROCESSING" ||
+    order.status === "PAYMENT_CONFIRMED";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-[90vw] p-0 flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[75vw] max-w-[75vw] sm:max-w-[75vw] p-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle className="text-[var(--admin-green-dark)]">
             Chi tiết đơn hàng #{order.id}
@@ -162,7 +240,7 @@ export default function OrderDetailSheet({
 
         <div className="flex flex-1 overflow-hidden min-h-0">
           {/* ── Left panel ── */}
-          <div className="w-[280px] shrink-0 border-r overflow-y-auto p-4 flex flex-col gap-4 bg-gray-50">
+          <div className="w-[340px] shrink-0 border-r overflow-y-auto p-4 flex flex-col gap-4 bg-gray-50">
             {/* Status card */}
             <div className="bg-white rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.2)] p-4 flex flex-col gap-3">
               <p className="text-[13px] text-gray-400">Tình trạng</p>
@@ -180,14 +258,18 @@ export default function OrderDetailSheet({
               )}
             </div>
 
+            {/* Customer profile card */}
+            <UserDetailCard
+              user={customerUser}
+              orders={userOrders}
+              loading={loadingUserOrders}
+              hideStatus={true}
+            />
+
             {/* Order info card */}
             <div className="bg-white rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.2)] p-4 flex flex-col gap-3">
               <p className="text-[13px] text-gray-400">Thông tin đơn hàng</p>
               <div className="flex flex-col gap-2 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Khách hàng</span>
-                  <span className="font-medium text-[var(--admin-green-dark)]">#{order.userId}</span>
-                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Ngày đặt</span>
                   <span>{formatDate(order.orderDate)}</span>
@@ -205,13 +287,6 @@ export default function OrderDetailSheet({
               </div>
             </div>
 
-            {/* Address card */}
-            {addressLine && (
-              <div className="bg-white rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.2)] p-4 flex flex-col gap-2">
-                <p className="text-[13px] text-gray-400">Địa chỉ giao hàng</p>
-                <p className="text-sm text-gray-600 leading-snug">{addressLine}</p>
-              </div>
-            )}
           </div>
 
           {/* ── Right panel ── */}
@@ -269,183 +344,220 @@ export default function OrderDetailSheet({
 
             <div className="border-t" />
 
-            {/* ── Step 1 ── */}
-            <div className="flex flex-col gap-3">
-              <p
-                className={`font-bold text-base ${
-                  step1State === "pending" ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Bước 1: Xác nhận đơn hàng
-              </p>
+            {/* ── 2-column layout: left = actions, right = shipping info ── */}
+            <div className="flex gap-6 items-start">
 
-              {step1State === "active" && (
-                <div className="border rounded-lg p-4 flex flex-col gap-3 bg-gray-50">
-                  <p className="text-sm text-gray-600">Chọn ca lấy hàng GHN:</p>
-                  {loadingShifts ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Đang tải ca lấy...
-                    </div>
-                  ) : (
-                    <Select
-                      value={selectedShiftId}
-                      onValueChange={setSelectedShiftId}
-                    >
-                      <SelectTrigger className="cursor-pointer">
-                        <SelectValue placeholder="Chọn ca lấy hàng" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ghnShifts.map((s) => (
-                          <SelectItem
-                            key={s.id}
-                            value={String(s.id)}
-                            className="cursor-pointer"
-                          >
-                            {s.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {/* ── Left: step actions ── */}
+              <div className="flex-1 flex flex-col gap-6">
+
+                {/* Step 1 */}
+                <div className="flex flex-col gap-3">
+                  <p className={`font-bold text-base ${step1State === "pending" ? "text-gray-300" : "text-black"}`}>
+                    Bước 1: Xác nhận đơn hàng
+                  </p>
+
+                  {step1State === "pending" && (
+                    <p className="text-sm text-gray-300">Chờ thanh toán</p>
                   )}
-                  <Button
-                    onClick={handleConfirmOrder}
-                    disabled={submitting || loadingShifts || !selectedShiftId}
-                    className="w-fit cursor-pointer"
-                  >
-                    {submitting ? (
-                      <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang xử lý...</>
-                    ) : (
-                      "Xác nhận"
-                    )}
-                  </Button>
-                </div>
-              )}
 
-              {step1State === "completed" && (
-                <div className="border rounded-lg px-4 py-2 w-fit">
-                  <p className="text-sm text-gray-400">Đã xác nhận</p>
-                </div>
-              )}
-
-              {step1State === "pending" && (
-                <div className="border rounded-lg px-4 py-2 w-fit bg-gray-50 border-gray-200">
-                  <p className="text-sm text-gray-300">Xác nhận</p>
-                </div>
-              )}
-            </div>
-
-            {/* ── Step 2 ── */}
-            <div className="flex flex-col gap-3">
-              <p
-                className={`font-bold text-base ${
-                  step2State === "pending" ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Bước 2: Chuyển cho đơn vị vận chuyển
-              </p>
-
-              {step2State === "active" && shipment && (
-                <div className="border rounded-lg p-4 flex flex-col gap-3 bg-gray-50">
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="text-gray-500 w-28 shrink-0">Mã vận đơn:</span>
-                    <span className="font-mono font-bold text-[var(--admin-green-dark)]">
-                      {shipment.ghnOrderCode ?? shipment.trackingNumber ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="text-gray-500 w-28 shrink-0">ĐVVC:</span>
-                    <span className="font-bold">{shipment.carrier ?? "—"}</span>
-                  </div>
-
-                  {/* Shipment timeline */}
-                  <div className="mt-2 flex flex-col gap-2">
-                    {[
-                      { label: "Ngày lấy dự kiến", date: shipment.estimatedShipDate },
-                      { label: "Đã lấy hàng", date: shipment.shippedAt },
-                      { label: "Ngày giao dự kiến", date: shipment.estimatedDelivery },
-                      { label: "Đã giao hàng", date: shipment.deliveredAt },
-                    ]
-                      .filter((e) => e.date)
-                      .map((e) => (
-                        <div key={e.label} className="flex items-start gap-3 text-sm">
-                          <div className="w-2 h-2 rounded-full bg-[var(--admin-green-dark)] mt-1.5 shrink-0" />
-                          <div>
-                            <p className="text-gray-400 text-xs">{e.label}</p>
-                            <p className="text-gray-700">{formatDate(e.date)}</p>
-                          </div>
+                  {step1State === "active" && (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm text-gray-600">Chọn ca lấy hàng GHN:</p>
+                      {loadingShifts ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Đang tải ca lấy...
                         </div>
-                      ))}
+                      ) : (
+                        <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                          <SelectTrigger className="cursor-pointer">
+                            <SelectValue placeholder="Chọn ca lấy hàng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ghnShifts.map((s) => (
+                              <SelectItem key={s.id} value={String(s.id)} className="cursor-pointer">
+                                {s.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button
+                        onClick={handleConfirmOrder}
+                        disabled={submitting || loadingShifts || !selectedShiftId}
+                        className="w-fit cursor-pointer"
+                      >
+                        {submitting ? (
+                          <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang xử lý...</>
+                        ) : (
+                          "Xác nhận & tạo đơn GHN"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {step1State === "done" && (
+                    <p className="text-sm text-gray-400">Đã xác nhận</p>
+                  )}
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex flex-col gap-3">
+                  <p className={`font-bold text-base ${step2State === "pending" ? "text-gray-300" : "text-black"}`}>
+                    Bước 2: Giao cho đơn vị vận chuyển
+                  </p>
+
+                  {step2State === "pending" && (
+                    <p className="text-sm text-gray-300">Chờ xác nhận bước 1</p>
+                  )}
+
+                  {step2State === "action" && (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm text-gray-600">Đơn hàng đang chờ GHN đến lấy hàng.</p>
+                      <Button
+                        onClick={handleMarkShipped}
+                        disabled={submitting}
+                        className="w-fit cursor-pointer"
+                      >
+                        {submitting ? (
+                          <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang xử lý...</>
+                        ) : (
+                          "Xác nhận GHN đã lấy hàng"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {(step2State === "info" || step2State === "done") && (
+                    <p className="text-sm text-gray-400">
+                      {step2State === "info" ? "Đang vận chuyển" : "GHN đã lấy hàng"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex flex-col gap-3">
+                  <p className={`font-bold text-base ${step3State === "pending" ? "text-gray-300" : "text-black"}`}>
+                    Bước 3: Xác nhận kết quả giao hàng
+                  </p>
+
+                  {step3State === "pending" && (
+                    <p className="text-sm text-gray-300">Chờ GHN lấy hàng</p>
+                  )}
+
+                  {step3State === "active" && (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm text-gray-600">Đơn hàng đang trên đường giao đến khách.</p>
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleConfirmDelivered}
+                          disabled={submitting}
+                          className="cursor-pointer"
+                        >
+                          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Giao thành công"}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeliveryFailed}
+                          disabled={submitting}
+                          className="cursor-pointer"
+                        >
+                          Giao thất bại
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {step3State === "done" && (
+                    <div className="flex flex-col gap-1">
+                      {(order.status === "DELIVERED" || order.status === "COMPLETED") && (
+                        <p className="text-sm font-medium text-green-700">Giao hàng thành công</p>
+                      )}
+                      {shipment?.deliveredAt && (
+                        <p className="text-sm text-gray-500">Lúc: {formatDate(shipment.deliveredAt)}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {order.status === "DELIVERED_FAILED" && (
+                    <div className="rounded-lg p-3 bg-orange-50 border border-orange-200">
+                      <p className="text-sm font-medium text-orange-600">Giao hàng thất bại — chờ xử lý</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Terminal banners */}
+                {(order.status === "CANCELLED" || order.status === "RETURNED") && (
+                  <div className={`rounded-lg p-4 border ${
+                    order.status === "CANCELLED" ? "bg-red-50 border-red-200" : "bg-purple-50 border-purple-200"
+                  }`}>
+                    <p className={`font-bold text-sm ${
+                      order.status === "CANCELLED" ? "text-red-600" : "text-purple-700"
+                    }`}>
+                      {order.status === "CANCELLED" && "Đơn hàng đã bị hủy"}
+                      {order.status === "RETURNED" && "Đơn hàng đã được hoàn tiền"}
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {step2State === "pending" && (
-                <div className="border rounded-lg px-4 py-2 w-fit bg-gray-50 border-gray-200">
-                  <p className="text-sm text-gray-300">Chờ xác nhận bước 1</p>
-                </div>
-              )}
+                {/* Cancel button */}
+                {canCancel && (
+                  <div>
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancel}
+                      disabled={submitting}
+                      className="cursor-pointer"
+                    >
+                      Hủy đơn hàng
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Right: shipping info card (always visible) ── */}
+              <div className="w-72 shrink-0 border rounded-lg bg-gray-50 p-4 flex flex-col gap-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Thông tin vận chuyển</p>
+                {shipment ? (
+                  <>
+                    <div className="flex flex-col gap-1 text-sm">
+                      <span className="text-gray-400 text-xs">Mã vận đơn</span>
+                      <span className="font-mono font-bold text-[var(--admin-green-dark)] break-all">
+                        {shipment.ghnOrderCode ?? shipment.trackingNumber ?? "—"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-sm">
+                      <span className="text-gray-400 text-xs">Đơn vị vận chuyển</span>
+                      <span className="font-bold">{shipment.carrier ?? "—"}</span>
+                    </div>
+                    {shipment.ghnOrderCode && (
+                      <GHNTrackingLink orderId={order.id} accessToken={accessToken} />
+                    )}
+                    <div className="border-t pt-3 flex flex-col gap-3">
+                      {[
+                        { label: "Ngày lấy dự kiến", date: shipment.estimatedShipDate },
+                        { label: "Đã lấy hàng", date: shipment.shippedAt },
+                        { label: "Ngày giao dự kiến", date: shipment.estimatedDelivery },
+                        { label: "Đã giao hàng", date: shipment.deliveredAt },
+                      ]
+                        .filter((e) => e.date)
+                        .map((e) => (
+                          <div key={e.label} className="flex items-start gap-2 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-[var(--admin-green-dark)] mt-1.5 shrink-0" />
+                            <div>
+                              <p className="text-gray-400 text-xs">{e.label}</p>
+                              <p className="text-gray-700">{formatDate(e.date)}</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400">Chưa có thông tin vận chuyển</p>
+                )}
+              </div>
+
             </div>
-
-            {/* ── Step 3 ── */}
-            <div className="flex flex-col gap-3">
-              <p
-                className={`font-bold text-base ${
-                  step3State === "pending" ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Bước 3: Xác nhận hoàn tất đơn hàng
-              </p>
-
-              {step3State === "active" && (
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleConfirmDelivered}
-                    disabled={submitting}
-                    className="cursor-pointer"
-                  >
-                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Xác nhận hoàn thành"}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeliveryFailed}
-                    disabled={submitting}
-                    className="cursor-pointer"
-                  >
-                    Giao thất bại
-                  </Button>
-                </div>
-              )}
-
-              {step3State === "completed" && (
-                <div className="border rounded-lg px-4 py-2 w-fit">
-                  <p className="text-sm text-gray-400">Đã hoàn thành</p>
-                </div>
-              )}
-
-              {step3State === "pending" && (
-                <div className="border rounded-lg px-4 py-2 w-fit bg-gray-50 border-gray-200">
-                  <p className="text-sm text-gray-300">Xác nhận hoàn thành</p>
-                </div>
-              )}
-            </div>
-
-            {/* ── Cancel ── */}
-            {canCancel && (
-              <>
-                <div className="border-t" />
-                <div>
-                  <Button
-                    variant="destructive"
-                    onClick={handleCancel}
-                    disabled={submitting}
-                    className="cursor-pointer"
-                  >
-                    Hủy đơn hàng
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </DialogContent>

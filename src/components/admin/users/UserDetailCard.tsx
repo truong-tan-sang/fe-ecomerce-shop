@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Loader2, Phone, MapPin } from "lucide-react";
 import type { UserDto } from "@/services/user";
 import type { OrderFullInformationEntity } from "@/dto/order";
+import { addressService } from "@/services/address";
 
 type UserStatus = "ACTIVE" | "INACTIVE" | "VIP";
 
@@ -36,8 +39,12 @@ export interface UserDetailCardProps {
   user: UserDto;
   orders: OrderFullInformationEntity[];
   loading: boolean;
-  /** When provided, shown in the address row instead of "Chưa có địa chỉ" */
-  addressLine?: string;
+  /** Skip the Phone + Address rows */
+  hideContactInfo?: boolean;
+  /** Skip the "Tổng quan mua hàng" section */
+  hideOrderStats?: boolean;
+  /** Skip the "Tình trạng" section */
+  hideStatus?: boolean;
 }
 
 export function EmptyUserDetailCard() {
@@ -48,7 +55,24 @@ export function EmptyUserDetailCard() {
   );
 }
 
-export default function UserDetailCard({ user, orders, loading, addressLine }: UserDetailCardProps) {
+export default function UserDetailCard({ user, orders, loading, hideContactInfo, hideOrderStats, hideStatus }: UserDetailCardProps) {
+  const { data: session } = useSession();
+  const [addressLine, setAddressLine] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const token = session?.user?.access_token;
+    if (!token || !user.id) return;
+    addressService.getUserAddresses(user.id, token).then((res) => {
+      const list = Array.isArray(res?.data) ? res.data : [];
+      const addr = list.find((a) => a.isDefault) ?? list[0];
+      if (addr) {
+        setAddressLine(
+          [addr.street, addr.ward, addr.district, addr.province].filter(Boolean).join(", ")
+        );
+      }
+    }).catch(() => {});
+  }, [user.id, session?.user?.access_token]);
+
   const name   = getDisplayName(user);
   const status = getStatus(user);
   const cfg    = STATUS_CONFIG[status];
@@ -77,58 +101,68 @@ export default function UserDetailCard({ user, orders, loading, addressLine }: U
         </div>
       </div>
 
-      <p className="text-[14px] text-[#9ca3af]">Thông tin khách hàng</p>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-1 border border-[#e5e7eb] rounded-[4px] px-2 h-10">
-          <Phone size={20} className="text-[#6a717f] shrink-0" />
-          <span className="text-[14px] text-[#6a717f]">
-            {user.phone || "Chưa có số điện thoại"}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 border border-[#e5e7eb] rounded-[4px] px-2 min-h-10 py-2">
-          <MapPin size={20} className="text-[#6a717f] shrink-0" />
-          <span className="text-[14px] text-[#6a717f] line-clamp-2">
-            {addressLine ?? "Chưa có địa chỉ"}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <p className="text-[14px] text-[#9ca3af]">Tình trạng</p>
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${cfg.dotClass}`} />
-          <span className="text-[14px] font-medium" style={{ color: cfg.textColor }}>
-            {cfg.label}
-          </span>
-        </div>
-      </div>
-
-      <p className="text-[14px] text-[#9ca3af]">Tổng quan mua hàng</p>
-      {loading ? (
-        <div className="flex items-center justify-center py-4">
-          <Loader2 size={20} className="animate-spin text-gray-400" />
-        </div>
-      ) : (
+      {!hideContactInfo && (
         <>
-          <div className="flex items-center gap-2.5">
-            <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
-              <p className="text-[18px] font-bold text-[#023337] w-full text-center">{orderCount}</p>
-              <p className="text-[14px] text-[#6467f2] whitespace-nowrap">Đơn hàng</p>
+          <p className="text-[14px] text-[#9ca3af]">Thông tin khách hàng</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-1 border border-[#e5e7eb] rounded-[4px] px-2 h-10">
+              <Phone size={20} className="text-[#6a717f] shrink-0" />
+              <span className="text-[14px] text-[#6a717f]">
+                {user.phone || "Chưa có số điện thoại"}
+              </span>
             </div>
-            <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
-              <p className="text-[18px] font-bold text-[#023337] w-full text-center">{completedCount}</p>
-              <p className="text-[14px] text-[#21c45d] whitespace-nowrap">Hoàn thành</p>
-            </div>
-            <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
-              <p className="text-[18px] font-bold text-[#023337] w-full text-center">{cancelledCount}</p>
-              <p className="text-[14px] text-[#ef4343] whitespace-nowrap">Hủy</p>
+            <div className="flex items-center gap-1 border border-[#e5e7eb] rounded-[4px] px-2 min-h-10 py-2">
+              <MapPin size={20} className="text-[#6a717f] shrink-0" />
+              <span className="text-[14px] text-[#6a717f] line-clamp-2">
+                {addressLine ?? "Chưa có địa chỉ"}
+              </span>
             </div>
           </div>
-          {orderCount > 0 && (
-            <p className="text-[13px] text-[#6a717f] text-right">
-              Tổng chi:{" "}
-              <span className="font-semibold text-[#023337]">{VND.format(totalSpend)}</span>
-            </p>
+        </>
+      )}
+
+      {!hideStatus && (
+        <div className="flex flex-col gap-3">
+          <p className="text-[14px] text-[#9ca3af]">Tình trạng</p>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${cfg.dotClass}`} />
+            <span className="text-[14px] font-medium" style={{ color: cfg.textColor }}>
+              {cfg.label}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {!hideOrderStats && (
+        <>
+          <p className="text-[14px] text-[#9ca3af]">Tổng quan mua hàng</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 size={20} className="animate-spin text-gray-400" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2.5">
+                <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
+                  <p className="text-[18px] font-bold text-[#023337] w-full text-center">{orderCount}</p>
+                  <p className="text-[14px] text-[#6467f2] whitespace-nowrap">Đơn hàng</p>
+                </div>
+                <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
+                  <p className="text-[18px] font-bold text-[#023337] w-full text-center">{completedCount}</p>
+                  <p className="text-[14px] text-[#21c45d] whitespace-nowrap">Hoàn thành</p>
+                </div>
+                <div className="flex-1 border border-[#d1d5db] rounded-[4px] flex flex-col items-center justify-center px-2 py-[11px] gap-3 overflow-hidden">
+                  <p className="text-[18px] font-bold text-[#023337] w-full text-center">{cancelledCount}</p>
+                  <p className="text-[14px] text-[#ef4343] whitespace-nowrap">Hủy</p>
+                </div>
+              </div>
+              {orderCount > 0 && (
+                <p className="text-[13px] text-[#6a717f] text-right">
+                  Tổng chi:{" "}
+                  <span className="font-semibold text-[#023337]">{VND.format(totalSpend)}</span>
+                </p>
+              )}
+            </>
           )}
         </>
       )}

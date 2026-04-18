@@ -36,10 +36,12 @@ export const orderService = {
 
   async getUserOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/order-list`;
-    console.log("[OrderService] Fetching orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -51,10 +53,12 @@ export const orderService = {
 
   async getUserConfirmedOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/confirmed-order-list`;
-    console.log("[OrderService] Fetching confirmed orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/confirmed-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching confirmed orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -66,10 +70,12 @@ export const orderService = {
 
   async getUserShippedOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/shipped-order-list`;
-    console.log("[OrderService] Fetching shipped orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/shipped-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching shipped orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -81,10 +87,12 @@ export const orderService = {
 
   async getUserDeliveredOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/delivered-order-list`;
-    console.log("[OrderService] Fetching delivered orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/delivered-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching delivered orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -96,10 +104,12 @@ export const orderService = {
 
   async getUserCompletedOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/completed-order-list`;
-    console.log("[OrderService] Fetching completed orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/completed-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching completed orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -111,10 +121,12 @@ export const orderService = {
 
   async getUserCancelledOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/cancelled-order-list`;
-    console.log("[OrderService] Fetching cancelled orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/cancelled-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching cancelled orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
@@ -126,10 +138,12 @@ export const orderService = {
 
   async getUserReturnedOrders(
     userId: number,
-    accessToken: string
+    accessToken: string,
+    page = 1,
+    perPage = 20
   ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
-    const url = `${BACKEND_URL}/user/${userId}/returned-order-list`;
-    console.log("[OrderService] Fetching returned orders for user:", userId);
+    const url = `${BACKEND_URL}/user/${userId}/returned-order-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching returned orders for user:", userId, { page, perPage });
     const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
       url,
       method: "GET",
