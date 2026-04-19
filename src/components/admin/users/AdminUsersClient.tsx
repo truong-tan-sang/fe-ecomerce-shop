@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Loader2, MessageCircle, Pencil } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { userService, type UserDto } from "@/services/user";
-import { orderService } from "@/services/order";
-import type { OrderFullInformationEntity } from "@/dto/order";
+import { chatService } from "@/services/chat";
 import { toast } from "sonner";
 import UserDetailCard, { EmptyUserDetailCard } from "./UserDetailCard";
 
@@ -44,6 +44,7 @@ function getDisplayName(user: UserDto): string {
 export default function AdminUsersClient() {
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token || "";
+  const router = useRouter();
 
   // ── List state (mirrors coupons pattern exactly) ──
   const [users, setUsers]               = useState<UserDto[]>([]);
@@ -57,10 +58,8 @@ export default function AdminUsersClient() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Selected user + orders ──
-  const [selectedUser, setSelectedUser]   = useState<UserDto | null>(null);
-  const [userOrders, setUserOrders]       = useState<OrderFullInformationEntity[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
+  // ── Selected user ──
+  const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -131,6 +130,7 @@ export default function AdminUsersClient() {
     ? users.filter((u) => {
         const q = appliedSearch.toLowerCase();
         return (
+          `#${String(u.id).padStart(4, "0")}`.includes(q) ||
           getDisplayName(u).toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
           (u.phone ?? "").includes(q)
@@ -175,24 +175,28 @@ export default function AdminUsersClient() {
     loadNextPage,
   ]);
 
-  // ── Select user ──────────────────────────────────────────────────────────
-  const handleSelectUser = useCallback(async (user: UserDto) => {
-    setSelectedUser(user);
-    setUserOrders([]);
+  // ── Chat ─────────────────────────────────────────────────────────────────
+  const handleOpenChat = async (e: React.MouseEvent, user: UserDto) => {
+    e.stopPropagation();
     if (!accessToken) return;
-    setOrdersLoading(true);
+    const roomName = `support-${user.id}`;
     try {
-      console.log("[AdminUsers] Fetching orders for user:", user.id);
-      const res = await orderService.getUserOrders(user.id, accessToken, 1, 9999);
-      console.log("[AdminUsers] Orders:", res);
-      setUserOrders(res?.data ?? []);
-    } catch (err) {
-      console.error("[AdminUsers] Order fetch error:", err);
-      toast.error("Không thể tải đơn hàng của khách hàng này.");
-    } finally {
-      setOrdersLoading(false);
+      await chatService.createPublicRoom(
+        { name: roomName, description: getDisplayName(user) },
+        accessToken
+      );
+      // Room was just created — add the customer as a member too
+      await chatService.addUserToRoom({ roomName, userId: user.id }, accessToken);
+    } catch {
+      // Room already exists — navigate to it
     }
-  }, [accessToken]);
+    router.push(`/admin/chat?room=${roomName}`);
+  };
+
+  // ── Select user ──────────────────────────────────────────────────────────
+  const handleSelectUser = useCallback((user: UserDto) => {
+    setSelectedUser(user);
+  }, []);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -208,7 +212,7 @@ export default function AdminUsersClient() {
 
         <input
           type="text"
-          placeholder="Tìm theo tên, email, số điện thoại..."
+          placeholder="Tìm theo ID, tên, email, số điện thoại..."
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="w-full px-4 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--admin-green-mid)] placeholder:text-gray-400"
@@ -281,20 +285,13 @@ export default function AdminUsersClient() {
                             </span>
                           </div>
                         </div>
-                        <div className="w-[79px] flex items-center justify-center gap-2">
+                        <div className="w-[79px] flex items-center justify-center">
                           <button
                             className="p-1 hover:bg-[var(--admin-green-light)] rounded cursor-pointer text-gray-500 hover:text-[#023337] transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                            title="Chat"
+                            onClick={(e) => handleOpenChat(e, user)}
+                            title="Mở chat"
                           >
                             <MessageCircle size={18} />
-                          </button>
-                          <button
-                            className="p-1 hover:bg-[var(--admin-green-light)] rounded cursor-pointer text-gray-500 hover:text-[#023337] transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                            title="Chỉnh sửa"
-                          >
-                            <Pencil size={18} />
                           </button>
                         </div>
                       </div>
@@ -316,7 +313,7 @@ export default function AdminUsersClient() {
       {/* Right: detail card */}
       <div className="w-[306px] shrink-0 pt-[68px]">
         {selectedUser ? (
-          <UserDetailCard user={selectedUser} orders={userOrders} loading={ordersLoading} />
+          <UserDetailCard user={selectedUser} />
         ) : (
           <EmptyUserDetailCard />
         )}

@@ -6,6 +6,7 @@ import { Loader2, Phone, MapPin } from "lucide-react";
 import type { UserDto } from "@/services/user";
 import type { OrderFullInformationEntity } from "@/dto/order";
 import { addressService } from "@/services/address";
+import { orderService } from "@/services/order";
 
 type UserStatus = "ACTIVE" | "INACTIVE" | "VIP";
 
@@ -37,8 +38,6 @@ const VND = new Intl.NumberFormat("vi-VN", {
 
 export interface UserDetailCardProps {
   user: UserDto;
-  orders: OrderFullInformationEntity[];
-  loading: boolean;
   /** Skip the Phone + Address rows */
   hideContactInfo?: boolean;
   /** Skip the "Tổng quan mua hàng" section */
@@ -55,9 +54,11 @@ export function EmptyUserDetailCard() {
   );
 }
 
-export default function UserDetailCard({ user, orders, loading, hideContactInfo, hideOrderStats, hideStatus }: UserDetailCardProps) {
+export default function UserDetailCard({ user, hideContactInfo, hideOrderStats, hideStatus }: UserDetailCardProps) {
   const { data: session } = useSession();
   const [addressLine, setAddressLine] = useState<string | undefined>(undefined);
+  const [orders, setOrders] = useState<OrderFullInformationEntity[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = session?.user?.access_token;
@@ -72,6 +73,34 @@ export default function UserDetailCard({ user, orders, loading, hideContactInfo,
       }
     }).catch(() => {});
   }, [user.id, session?.user?.access_token]);
+
+  useEffect(() => {
+    const token = session?.user?.access_token;
+    if (!token || !user.id || hideOrderStats) return;
+    setOrders([]);
+    setLoading(true);
+    const PER_PAGE = 10;
+    async function fetchAll() {
+      const all: OrderFullInformationEntity[] = [];
+      let page = 1;
+      try {
+        while (true) {
+          const res = await orderService.getUserOrders(user.id, token!, page, PER_PAGE);
+          const batch = res?.data ?? [];
+          if (batch.length === 0) break;
+          all.push(...batch);
+          if (batch.length < PER_PAGE) break;
+          page++;
+        }
+        setOrders(all);
+      } catch {
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAll();
+  }, [user.id, session?.user?.access_token, hideOrderStats]);
 
   const name   = getDisplayName(user);
   const status = getStatus(user);

@@ -35,7 +35,7 @@ function GHNTrackingLink({ orderId, accessToken }: { orderId: number; accessToke
     try {
       const res = await shipmentService.getGHNTrackingUrl(orderId, accessToken);
       if (res.data) {
-        window.open(res.data, "_blank", "noopener,noreferrer");
+        window.open(res.data, "_blank", "noopener,noreferrer"); 
       }
     } finally {
       setLoading(false);
@@ -81,9 +81,6 @@ export default function OrderDetailSheet({
 
   const [submitting, setSubmitting] = useState(false);
 
-  // User orders state (for UserDetailCard stats)
-  const [userOrders, setUserOrders] = useState<OrderFullInformationEntity[]>([]);
-  const [loadingUserOrders, setLoadingUserOrders] = useState(false);
 
   // GHN shift state (for Step 1)
   const [ghnShifts, setGhnShifts] = useState<GhnPickShift[]>([]);
@@ -128,16 +125,6 @@ export default function OrderDetailSheet({
     }
   }, [open, step1State, fetchGhnShifts]);
 
-  // Fetch user's orders for UserDetailCard stats
-  useEffect(() => {
-    if (!open || !order || !accessToken) return;
-    setUserOrders([]);
-    setLoadingUserOrders(true);
-    orderService.getUserOrders(order.userId, accessToken, 1, 9999)
-      .then((res) => setUserOrders(Array.isArray(res?.data) ? res.data : []))
-      .catch(() => setUserOrders([]))
-      .finally(() => setLoadingUserOrders(false));
-  }, [open, order?.userId, accessToken]);
 
   if (!order) return null;
 
@@ -261,8 +248,6 @@ export default function OrderDetailSheet({
             {/* Customer profile card */}
             <UserDetailCard
               user={customerUser}
-              orders={userOrders}
-              loading={loadingUserOrders}
               hideStatus={true}
             />
 
