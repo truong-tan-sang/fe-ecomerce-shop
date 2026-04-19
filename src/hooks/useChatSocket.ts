@@ -13,18 +13,21 @@ export interface ChatMessage {
   text: string;
   isMine: boolean;
   timestamp: Date;
+  roomName?: string;
 }
 
 interface UseChatSocketOptions {
   accessToken: string | null;
   currentUserEmail: string | null;
   onMessage?: (msg: ChatMessage) => void;
+  onAddedToRoom?: (roomName: string) => void;
 }
 
 export function useChatSocket({
   accessToken,
   currentUserEmail,
   onMessage,
+  onAddedToRoom,
 }: UseChatSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
@@ -62,6 +65,7 @@ export function useChatSocket({
       text: payload.text,
       isMine: payload.name === currentUserEmail,
       timestamp: new Date(),
+      roomName: payload.room_name,
     });
 
     socket.on("msgPrivateToClient", (payload: WsChatMessagePayload) => {
@@ -70,6 +74,10 @@ export function useChatSocket({
 
     socket.on("msgToRoomClient", (payload: WsChatMessagePayload) => {
       onMessage?.(toMessage(payload));
+    });
+
+    socket.on("addedToRoom", (payload: { roomName: string }) => {
+      onAddedToRoom?.(payload.roomName);
     });
 
     socketRef.current = socket;

@@ -1,5 +1,6 @@
 import { sendRequest } from "@/utils/api";
 import {
+  AddUserToRoomDto,
   ChatMessageDto,
   ChatRoomDto,
   CreateMessageDto,
@@ -70,6 +71,16 @@ export const chatService = {
     console.log("[chatService] Request: POST /chat/messages/private", payload);
     return sendRequest<IBackendRes<ChatMessageDto>>({
       url: `${CHAT_BASE}/messages/private`,
+      method: "POST",
+      body: payload,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+
+  addUserToRoom(payload: AddUserToRoomDto, accessToken: string) {
+    console.log("[chatService] Request: POST /chat/public-rooms/add-user", payload);
+    return sendRequest<IBackendRes<{ joined: boolean; roomName: string }>>({
+      url: `${CHAT_BASE}/public-rooms/add-user`,
       method: "POST",
       body: payload,
       headers: { Authorization: `Bearer ${accessToken}` },

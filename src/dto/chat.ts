@@ -34,6 +34,11 @@ export interface JoinRoomDto {
   name: string;
 }
 
+export interface AddUserToRoomDto {
+  roomName: string;
+  userId: number;
+}
+
 export interface CreateMessageDto {
   text: string;
   room_name: string;
@@ -48,4 +53,5 @@ export interface CreatePrivateMessageDto {
 export interface WsChatMessagePayload {
   name: string; // sender email
   text: string;
+  room_name?: string;
 }
