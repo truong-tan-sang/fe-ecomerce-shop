@@ -14,6 +14,8 @@ interface ProductCardProps {
   productImageUrl: string;
   variants: ProductVariantWithMediaEntity[];
   colors: ColorEntity[];
+  /** Show the specific variant's color dot + size tag (used on search results page) */
+  showVariantInfo?: boolean;
 }
 
 /** Deduplicate colors present in this product's variants, matched to ColorEntity for hex */
@@ -49,6 +51,7 @@ export default function ProductCard({
   productImageUrl,
   variants,
   colors,
+  showVariantInfo = false,
 }: ProductCardProps) {
   const productColors = useProductColors(variants, colors);
   const [hoveredColorIndex, setHoveredColorIndex] = useState<number | null>(null);
@@ -86,8 +89,7 @@ export default function ProductCard({
           alt={name}
           fill
           className={`object-cover transition-all duration-500 group-hover:scale-[1.03] ${!inStock ? "grayscale-[30%]" : ""}`}
-          sizes="256px"
-          unoptimized
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 256px"
         />
 
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-[11px] font-medium z-10">
@@ -100,7 +102,7 @@ export default function ProductCard({
               Còn {stock}
             </span>
           )}
-          {variantCount > 0 && inStock && (
+          {variantCount > 1 && inStock && !showVariantInfo && (
             <span className="px-2 py-0.5 border bg-white/90 text-black border-gray-200 backdrop-blur-sm">
               {variantCount} phiên bản
             </span>
@@ -119,20 +121,49 @@ export default function ProductCard({
           {name}
         </div>
 
-        {/* Color swatches — between name and price */}
-        {productColors.length > 1 && (
-          <div className="flex items-center gap-0">
-            {productColors.map((pc, i) => (
-              <div
-                key={pc.colorEntity.id}
-                style={{ backgroundColor: pc.colorEntity.hexCode }}
-                className="h-5 w-5 cursor-pointer transition-all duration-150 hover:w-6"
-                onMouseEnter={() => setHoveredColorIndex(i)}
-                onMouseLeave={() => setHoveredColorIndex(null)}
-                onClick={(e) => e.preventDefault()}
-              />
-            ))}
+        {/* Variant indicator (search results) or multi-color swatches (homepage) */}
+        {showVariantInfo ? (
+          <div className="flex items-center gap-1.5">
+            {(() => {
+              const v = variants[0];
+              if (!v) return null;
+              const colorEntity = colors.find((c) => c.id === v.colorId);
+              return (
+                <>
+                  {colorEntity && (
+                    <div
+                      className="w-4 h-4 border border-gray-300 shrink-0"
+                      style={{ backgroundColor: colorEntity.hexCode }}
+                      title={colorEntity.name}
+                    />
+                  )}
+                  {v.variantSize && (
+                    <span className="text-[11px] font-medium border border-gray-300 px-1.5 py-0.5 text-gray-600 leading-none">
+                      {v.variantSize}
+                    </span>
+                  )}
+                  {colorEntity && (
+                    <span className="text-[11px] text-gray-400 truncate">{colorEntity.name}</span>
+                  )}
+                </>
+              );
+            })()}
           </div>
+        ) : (
+          productColors.length > 1 && (
+            <div className="flex items-center gap-0">
+              {productColors.map((pc, i) => (
+                <div
+                  key={pc.colorEntity.id}
+                  style={{ backgroundColor: pc.colorEntity.hexCode }}
+                  className="h-5 w-5 cursor-pointer transition-all duration-150 hover:w-6"
+                  onMouseEnter={() => setHoveredColorIndex(i)}
+                  onMouseLeave={() => setHoveredColorIndex(null)}
+                  onClick={(e) => e.preventDefault()}
+                />
+              ))}
+            </div>
+          )
         )}
 
         <div className="flex items-baseline gap-2">
