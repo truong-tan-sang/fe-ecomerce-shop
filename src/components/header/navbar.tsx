@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { ChevronDown } from "lucide-react";
 import { theme } from "@/lib/theme";
 import {
   DropdownMenu,
@@ -12,60 +14,42 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-
-type NavLinkProps = {
-  label: string;
-};
-
-function NavLinkPlaceholder({ label }: NavLinkProps) {
-  const onClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    // Placeholder action so it's easy to find later
-    // TODO: wire real navigation
-    console.log(`TODO: Navigate to ${label}`);
-  }, [label]);
-
-  return (
-    <a
-      href="#"
-      onClick={onClick}
-      title={`TODO: Điều hướng đến ${label}`}
-      className="px-3 py-2 text-sm md:text-base font-semibold text-white/90 hover:text-white transition-colors cursor-pointer select-none"
-    >
-      {label}
-    </a>
-  );
-}
+import { categoryService } from "@/services/category";
+import type { CategoryDto } from "@/dto/category";
 
 export default function Header() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+
+  useEffect(() => {
+    categoryService.getAllCategories().then((res) => {
+      if (Array.isArray(res?.data)) setCategories(res.data);
+    }).catch(() => {});
+  }, []);
+
   // Handle scroll to show/hide header
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-
       if (currentScrollY < lastScrollY || currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setIsVisible(false);
       }
-
       setLastScrollY(currentScrollY);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
   const onSearch = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const q = (formData.get("q") as string) ?? "";
-    // Placeholder search action
-    console.log("TODO: Search for", q);
-  }, []);
+    const q = ((new FormData(e.currentTarget)).get("q") as string ?? "").trim();
+    if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+  }, [router]);
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/auth/login' });
@@ -136,11 +120,24 @@ export default function Header() {
 
           {/* Primary nav */}
           <nav className="hidden lg:flex items-center gap-1">
-            <NavLinkPlaceholder label="Áo" />
-            <NavLinkPlaceholder label="Quần" />
-            <NavLinkPlaceholder label="Giày" />
-            <NavLinkPlaceholder label="Đồ Nam" />
-            <NavLinkPlaceholder label="Đồ Nữ" />
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 px-3 py-2 text-sm md:text-base font-semibold text-white/90 hover:text-white transition-colors cursor-pointer select-none">
+                  Danh mục <ChevronDown size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-40 max-h-80 overflow-y-auto">
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/search">Tất cả sản phẩm</Link>
+                </DropdownMenuItem>
+                {categories.length > 0 && <DropdownMenuSeparator />}
+                {categories.map((cat) => (
+                  <DropdownMenuItem key={cat.id} asChild className="cursor-pointer">
+                    <Link href={`/search?categoryId=${cat.id}`}>{cat.name}</Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
           {/* Search + cart */}
@@ -167,17 +164,25 @@ export default function Header() {
         </div>
 
         {/* Secondary nav for mobile */}
-        <nav className="mt-3 grid grid-cols-3 gap-2 lg:hidden">
-          {[
-            "Áo",
-            "Quần",
-            "Giày",
-            "Đồ Nam",
-            "Đồ Nữ",
-          ].map((label) => (
-            <NavLinkPlaceholder key={label} label={label} />
-          ))}
-        </nav>
+        {categories.length > 0 && (
+          <nav className="mt-3 flex flex-wrap gap-1 lg:hidden">
+            <Link
+              href="/search"
+              className="px-3 py-1.5 text-sm font-semibold text-white/90 hover:text-white transition-colors cursor-pointer"
+            >
+              Tất cả
+            </Link>
+            {categories.slice(0, 5).map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/search?categoryId=${cat.id}`}
+                className="px-3 py-1.5 text-sm font-semibold text-white/90 hover:text-white transition-colors cursor-pointer"
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </header>
   );
