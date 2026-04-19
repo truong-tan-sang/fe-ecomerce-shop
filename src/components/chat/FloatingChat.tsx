@@ -17,7 +17,9 @@ export default function FloatingChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const openRef = useRef(false);
 
   const accessToken = session?.user?.access_token ?? null;
   const currentUserEmail = session?.user?.email ?? null;
@@ -31,13 +33,30 @@ export default function FloatingChat() {
       if (prev.some((m) => m.id === msg.id)) return prev;
       return [...prev, msg];
     });
+    if (!openRef.current) setUnreadCount((c) => c + 1);
   }, []);
+
+  const handleAddedToRoom = useCallback((roomName: string) => {
+    if (roomName === supportRoomName) {
+      console.log("[FloatingChat] Admin added us to room:", roomName);
+      setHistoryLoaded(false);
+    }
+  }, [supportRoomName]);
 
   const { connected, sendRoomMessage, createRoom } = useChatSocket({
     accessToken,
     currentUserEmail,
     onMessage: handleIncoming,
+    onAddedToRoom: handleAddedToRoom,
   });
+
+  // Sync ref so handleIncoming can read open state without a stale closure
+  useEffect(() => { openRef.current = open; }, [open]);
+
+  // Clear unread count when chat panel opens
+  useEffect(() => {
+    if (open) setUnreadCount(0);
+  }, [open]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -242,13 +261,20 @@ export default function FloatingChat() {
       )}
 
       {/* Floating button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-black text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors cursor-pointer"
-        aria-label={open ? "Đóng chat" : "Mở hỗ trợ khách hàng"}
-      >
-        {open ? <X size={20} /> : <MessageSquare size={20} />}
-      </button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="relative w-12 h-12 bg-black text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-colors cursor-pointer"
+          aria-label={open ? "Đóng chat" : "Mở hỗ trợ khách hàng"}
+        >
+          {open ? <X size={20} /> : <MessageSquare size={20} />}
+          {!open && unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
     </>
   );
 }

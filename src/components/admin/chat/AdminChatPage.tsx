@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import {
@@ -53,6 +54,7 @@ type SenderKind = "mine" | "customer" | "colleague";
 interface SenderProfile {
   name: string;
   avatarUrl?: string;
+  email?: string;
 }
 
 export default function AdminChatPage() {
@@ -60,28 +62,45 @@ export default function AdminChatPage() {
   const accessToken = session?.user?.access_token ?? null;
   const currentUserEmail = session?.user?.email ?? null;
   const myUserId = session?.user?.id ? Number(session.user.id) : null;
+  const searchParams = useSearchParams();
+  const initialRoom = searchParams.get("room");
 
   const [joinedRooms, setJoinedRooms] = useState<ChatRoomDto[]>([]);
   const [queueRooms, setQueueRooms] = useState<ChatRoomDto[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState<ChatRoomDto | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [input, setInput] = useState("");
   const [senderProfiles, setSenderProfiles] = useState<Record<string, SenderProfile>>({});
-  // Customer's email — needed to classify real-time WS messages (which carry email, not numeric ID)
-  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   // Admin's own profile for the avatar shown on "mine" bubbles
   const [myProfile, setMyProfile] = useState<SenderProfile | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeRoomRef = useRef<ChatRoomDto | null>(null);
 
   const handleIncoming = useCallback((msg: ChatMessage) => {
     if (msg.isMine) return;
-    setMessages((prev) => {
-      if (prev.some((m) => m.id === msg.id)) return prev;
-      return [...prev, msg];
-    });
+
+    const isForActiveRoom = msg.roomName
+      ? msg.roomName === activeRoomRef.current?.name
+      : Boolean(activeRoomRef.current?.isPrivate);
+
+    if (isForActiveRoom) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    }
+
+    // Unread count for non-active rooms
+    if (msg.roomName && activeRoomRef.current?.name !== msg.roomName) {
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [msg.roomName!]: (prev[msg.roomName!] ?? 0) + 1,
+      }));
+    }
   }, []);
 
   const { connected, sendPrivateMessage, sendRoomMessage, joinRoom } =
@@ -90,6 +109,9 @@ export default function AdminChatPage() {
       currentUserEmail,
       onMessage: handleIncoming,
     });
+
+  // Sync ref so handleIncoming can read activeRoom without a stale closure
+  useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -144,13 +166,26 @@ export default function AdminChatPage() {
     return () => clearInterval(interval);
   }, [accessToken, loadRooms]);
 
+  // Auto-select room when navigated from users page via ?room= param
+  useEffect(() => {
+    if (!initialRoom || activeRoom || roomsLoading) return;
+    const found = [...joinedRooms, ...queueRooms].find((r) => r.name === initialRoom);
+    if (!found) return;
+    if (queueRooms.some((r) => r.id === found.id)) {
+      handlePickFromQueue(found);
+    } else {
+      selectRoom(found);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRoom, joinedRooms, queueRooms, roomsLoading]);
+
   // Classify message sender.
   // Historical messages carry senderEmail = String(senderId) — compare to numeric customerId.
-  // Real-time WS messages carry senderEmail = sender's email — compare to fetched customerEmail.
+  // Real-time WS messages carry senderEmail = sender's email — look up in senderProfiles cache.
   function classifyMessage(msg: ChatMessage, customerId: string | null): SenderKind {
     if (msg.isMine) return "mine";
-    if (customerId && msg.senderEmail === customerId) return "customer"; // history
-    if (customerEmail && msg.senderEmail === customerEmail) return "customer"; // real-time
+    if (customerId && msg.senderEmail === customerId) return "customer"; // history (numeric ID match)
+    if (customerId && senderProfiles[customerId]?.email === msg.senderEmail) return "customer"; // real-time (email match)
     return "colleague";
   }
 
@@ -160,12 +195,14 @@ export default function AdminChatPage() {
 
     const customerIdMatch = activeRoom.name.match(/^support-(\d+)$/);
     const customerId = customerIdMatch?.[1] ?? null;
-    setCustomerEmail(null); // reset on room switch
 
     async function loadMessages() {
       if (!activeRoom || !accessToken) return;
       setMessagesLoading(true);
       setMessages([]);
+      // Always load customer profile so real-time messages classify correctly,
+      // even when the room has no history yet (404 from getRoomMessages).
+      loadCustomerProfile();
       try {
         const res = await chatService.getRoomMessages(
           activeRoom.name,
@@ -185,10 +222,7 @@ export default function AdminChatPage() {
               timestamp: new Date(m.createdAt),
             }));
           setMessages(history);
-          await Promise.all([
-            loadCustomerProfile(),
-            loadColleagueProfiles(history),
-          ]);
+          await loadColleagueProfiles(history);
         }
       } catch (err) {
         console.error("[AdminChat] Failed to load messages:", err);
@@ -197,10 +231,9 @@ export default function AdminChatPage() {
       }
     }
 
-    // Fetch customer profile for avatar + name
+    // Fetch customer profile for avatar + name + email (email needed to classify real-time WS messages)
     async function loadCustomerProfile() {
       if (!customerId || !accessToken) return;
-      if (senderProfiles[customerId]) return; // already cached
       try {
         const res = await userService.getUserWithMedia(customerId, accessToken);
         if (res?.data) {
@@ -211,10 +244,9 @@ export default function AdminChatPage() {
             d.email ||
             `Khách hàng #${customerId}`;
           const profileAvatarUrl = getAvatarUrl(d.userMedia) ?? d.image;
-          setCustomerEmail(d.email || null);
           setSenderProfiles((prev) => ({
             ...prev,
-            [customerId]: { name, avatarUrl: profileAvatarUrl },
+            [customerId]: { name, avatarUrl: profileAvatarUrl, email: d.email ?? undefined },
           }));
         }
       } catch {
@@ -256,6 +288,16 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRoom, accessToken, myUserId]);
 
+  function selectRoom(room: ChatRoomDto) {
+    setActiveRoom(room);
+    setUnreadCounts((prev) => {
+      if (!prev[room.name]) return prev;
+      const next = { ...prev };
+      delete next[room.name];
+      return next;
+    });
+  }
+
   // Admin picks a room from the queue → join via WS + move to active
   function handlePickFromQueue(room: ChatRoomDto) {
     joinRoom(room.name);
@@ -265,7 +307,7 @@ export default function AdminChatPage() {
       if (prev.some((r) => r.id === room.id)) return prev;
       return [room, ...prev];
     });
-    setActiveRoom(room);
+    selectRoom(room);
   }
 
   function handleSend() {
@@ -349,6 +391,7 @@ export default function AdminChatPage() {
                       key={room.id}
                       room={room}
                       label={getRoomLabel(room)}
+                      unreadCount={unreadCounts[room.name] ?? 0}
                       onClick={() => handlePickFromQueue(room)}
                     />
                   ))}
@@ -367,7 +410,8 @@ export default function AdminChatPage() {
                       room={room}
                       label={getRoomLabel(room)}
                       active={activeRoom?.id === room.id}
-                      onClick={() => setActiveRoom(room)}
+                      unreadCount={unreadCounts[room.name] ?? 0}
+                      onClick={() => selectRoom(room)}
                     />
                   ))}
                 </div>
@@ -476,17 +520,26 @@ function MessageList({
   messages: ChatMessage[];
   myUserId: number | null;
   activeRoom: ChatRoomDto | null;
-  senderProfiles: Record<string, { name: string; avatarUrl?: string }>;
+  senderProfiles: Record<string, SenderProfile>;
   myProfile: SenderProfile | null;
   classifyMessage: (msg: ChatMessage, customerId: string | null) => SenderKind;
 }) {
   const customerIdMatch = activeRoom?.name.match(/^support-(\d+)$/);
   const customerId = customerIdMatch?.[1] ?? null;
 
+  // Normalize real-time messages: WS carries sender email, history carries numeric senderId.
+  // Map email → numeric ID so grouping and profile lookup are consistent.
+  const normalizedMessages = messages.map((msg) => {
+    if (customerId && !msg.isMine && senderProfiles[customerId]?.email === msg.senderEmail) {
+      return { ...msg, senderEmail: customerId };
+    }
+    return msg;
+  });
+
   // Group consecutive messages from the same sender
   type Group = { senderId: string; kind: SenderKind; msgs: ChatMessage[] };
   const groups: Group[] = [];
-  for (const msg of messages) {
+  for (const msg of normalizedMessages) {
     const kind = classifyMessage(msg, customerId);
     const senderId = msg.senderEmail;
     const last = groups[groups.length - 1];
@@ -589,10 +642,12 @@ function MessageList({
 function QueueRoomItem({
   room,
   label,
+  unreadCount,
   onClick,
 }: {
   room: ChatRoomDto;
   label: string;
+  unreadCount: number;
   onClick: () => void;
 }) {
   const isNew = minutesAgo(room.createdAt) < 10;
@@ -615,6 +670,11 @@ function QueueRoomItem({
           {minutesAgo(room.createdAt)} phút trước
         </p>
       </div>
+      {unreadCount > 0 && (
+        <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
     </button>
   );
 }
@@ -624,11 +684,13 @@ function ActiveRoomItem({
   room,
   label,
   active,
+  unreadCount,
   onClick,
 }: {
   room: ChatRoomDto;
   label: string;
   active: boolean;
+  unreadCount: number;
   onClick: () => void;
 }) {
   return (
@@ -660,6 +722,11 @@ function ActiveRoomItem({
           {label}
         </p>
       </div>
+      {!active && unreadCount > 0 && (
+        <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
     </button>
   );
 }
