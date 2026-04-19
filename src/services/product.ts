@@ -1,5 +1,5 @@
 import { sendRequest, sendRequestFile } from "@/utils/api";
-import type { ProductDto, PaginatedProductsResponse, GetProductsParams, CreateProductDto, UpdateProductDto } from "@/dto/product";
+import type { ProductDto, ProductVariantWithMediaEntity, PaginatedProductsResponse, GetProductsParams, GetFilterParams, CreateProductDto, UpdateProductDto } from "@/dto/product";
 import type { ProductDetailDto, ReviewDto, CreateReviewDto, UpdateReviewDto } from "@/dto/product-detail";
 import type { ProductVariantEntity } from "@/dto/product-variant";
 
@@ -161,6 +161,28 @@ export const productService = {
       },
     });
     console.log("[ProductService] Update product response:", response);
+    return response;
+  },
+
+  async filterProducts(params: GetFilterParams): Promise<IBackendRes<ProductVariantWithMediaEntity[]>> {
+    const { page = 1, perPage = 20, searchText, categories, colors, sizes, priceRange, conditions, features, accessToken } = params;
+    const url = `${BACKEND_URL}/products/filter`;
+    const queryParams: Record<string, string | number | boolean | string[] | number[]> = { page, perPage };
+    if (searchText) queryParams.searchText = searchText;
+    if (categories?.length) queryParams.categories = categories;
+    if (colors?.length) queryParams.colors = colors;
+    if (sizes?.length) queryParams.sizes = sizes;
+    if (priceRange) queryParams.priceRange = priceRange;
+    if (conditions?.length) queryParams.conditions = conditions;
+    if (features?.length) queryParams.features = features;
+    console.log("[ProductService] Filtering products:", queryParams);
+    const response = await sendRequest<IBackendRes<ProductVariantWithMediaEntity[]>>({
+      url,
+      method: "GET",
+      queryParams: queryParams as Record<string, string | number | boolean>,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+    console.log("[ProductService] Filter response:", response?.data?.length, "variants");
     return response;
   },
 

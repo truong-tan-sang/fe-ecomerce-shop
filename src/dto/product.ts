@@ -93,6 +93,22 @@ export interface GetProductsParams {
 }
 
 /**
+ * Parameters for the /products/filter endpoint
+ */
+export interface GetFilterParams {
+  page?: number;
+  perPage?: number;
+  searchText?: string;
+  categories?: string[];
+  colors?: string[];
+  sizes?: string[];
+  priceRange?: [number, number];
+  conditions?: string[];
+  features?: string[];
+  accessToken?: string;
+}
+
+/**
  * DTO for creating a new product (multipart/form-data)
  */
 export interface CreateProductDto {
