@@ -1,5 +1,27 @@
 export type DiscountType = "PERCENTAGE" | "FIXED_AMOUNT";
 
+export interface VoucherTargetProduct {
+  id: number;
+  name: string;
+}
+
+export interface VoucherTargetCategory {
+  id: number;
+  name: string;
+}
+
+export interface VoucherTargetVariant {
+  id: number;
+  variantName: string;
+  variantSize: string;
+  colorId: number;
+}
+
+export interface VoucherTargetUserVoucher {
+  userId: number;
+  voucherStatus: "AVAILABLE" | "SAVED" | "USED" | "EXPIRED";
+}
+
 export interface VoucherDto {
   id: number;
   code: string;
@@ -14,6 +36,10 @@ export interface VoucherDto {
   createdBy: number;
   createdAt: string;
   updatedAt: string;
+  voucherForProduct: VoucherTargetProduct[];
+  voucherForCategory: VoucherTargetCategory[];
+  voucherForSpecialProductVariant: VoucherTargetVariant[];
+  userVouchers: VoucherTargetUserVoucher[];
 }
 
 export interface CreateVoucherDto {
@@ -45,4 +71,12 @@ export interface UpdateVoucherDto {
   usageLimit?: number;
   timesUsed?: number;
   isActive?: boolean;
+}
+
+export type VoucherTargetType = "none" | "category" | "product" | "variant" | "user";
+
+export interface CreateUserVoucherDto {
+  userId: number;
+  voucherId: number;
+  voucherStatus: "AVAILABLE" | "SAVED";
 }
