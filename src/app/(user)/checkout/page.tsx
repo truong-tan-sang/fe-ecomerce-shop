@@ -1,6 +1,6 @@
 "use client";
 
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -15,7 +15,11 @@ import { paymentService } from "@/services/payment";
 import AddressModal from "@/components/profile/AddressModal";
 import type { CartItemWithDetails } from "@/dto/cart-api";
 import { mapCartItemToDetails } from "@/dto/cart-api";
-import type { AddressDto, CreateAddressDto, CreateAddressForOrderResponseDto } from "@/dto/address";
+import type {
+  AddressDto,
+  CreateAddressDto,
+  CreateAddressForOrderResponseDto,
+} from "@/dto/address";
 import type {
   CreateOrderDto,
   PaymentMethod,
@@ -27,7 +31,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const VND = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -35,12 +45,17 @@ const VND = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 0,
 });
 
-type CheckoutStep = "loading" | "ready" | "previewing" | "previewed" | "placing";
+type CheckoutStep =
+  | "loading"
+  | "ready"
+  | "previewing"
+  | "previewed"
+  | "placing";
 
 async function getClientIp(): Promise<string> {
   try {
     const res = await fetch("https://api.ipify.org?format=json");
-    const data = await res.json() as { ip: string };
+    const data = (await res.json()) as { ip: string };
     return data.ip;
   } catch {
     console.log("[CheckoutPage] Failed to fetch client IP, using fallback");
@@ -61,9 +76,12 @@ export default function CheckoutPage() {
 
   // Address state
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [validatedAddress, setValidatedAddress] = useState<CreateAddressForOrderResponseDto | null>(null);
+  const [validatedAddress, setValidatedAddress] =
+    useState<CreateAddressForOrderResponseDto | null>(null);
 
   // Shipping preview state
   const [packages, setPackages] = useState<PackagesForShipping | null>(null);
@@ -100,15 +118,19 @@ export default function CheckoutPage() {
       if (!session?.user?.id || !session?.user?.access_token) return;
       profileLoadedRef.current = true;
       try {
-        const res = await userService.getUser(session.user.id, session.user.access_token);
+        const res = await userService.getUser(
+          session.user.id,
+          session.user.access_token,
+        );
         if (res.data?.phone) {
           setPhone(res.data.phone);
         }
         const d = res.data;
         if (d) {
-          const name = (d.firstName || d.lastName)
-            ? [d.lastName, d.firstName].filter(Boolean).join(" ")
-            : (d.name || session.user.name || "");
+          const name =
+            d.firstName || d.lastName
+              ? [d.lastName, d.firstName].filter(Boolean).join(" ")
+              : d.name || session.user.name || "";
           setProfileName(name);
         }
       } catch (error) {
@@ -150,19 +172,21 @@ export default function CheckoutPage() {
           };
           sessionStorage.removeItem("buyNowItem");
           console.log("[CheckoutPage] Buy-now item:", buyNow);
-          setItems([{
-            id: 0, // synthetic — no real cart item
-            cartId: 0,
-            productVariantId: buyNow.productVariantId,
-            quantity: buyNow.quantity,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            productName: buyNow.productName,
-            variantSize: buyNow.variantSize,
-            variantColor: buyNow.variantColor,
-            price: buyNow.price,
-            imageUrl: buyNow.imageUrl,
-          }]);
+          setItems([
+            {
+              id: 0, // synthetic — no real cart item
+              cartId: 0,
+              productVariantId: buyNow.productVariantId,
+              quantity: buyNow.quantity,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              productName: buyNow.productName,
+              variantSize: buyNow.variantSize,
+              variantColor: buyNow.variantColor,
+              price: buyNow.price,
+              imageUrl: buyNow.imageUrl,
+            },
+          ]);
           setItemsReady(true);
           setStep("ready");
         } catch (error) {
@@ -181,7 +205,7 @@ export default function CheckoutPage() {
 
         const cartDetailsResponse = await cartService.getCartDetails(
           userId,
-          session.user.access_token
+          session.user.access_token,
         );
 
         const cartItems = cartDetailsResponse.data?.cartItems ?? [];
@@ -229,7 +253,7 @@ export default function CheckoutPage() {
         const userId = parseInt(session.user.id, 10);
         const response = await addressService.getUserAddresses(
           userId,
-          session.user.access_token
+          session.user.access_token,
         );
         const addressList = Array.isArray(response.data) ? response.data : [];
         setAddresses(addressList);
@@ -285,7 +309,7 @@ export default function CheckoutPage() {
 
         const orderAddressResponse = await addressService.createOrderAddress(
           addressData,
-          session.user.access_token
+          session.user.access_token,
         );
 
         if (abortController.signal.aborted) return;
@@ -305,10 +329,11 @@ export default function CheckoutPage() {
           quantity: i.quantity,
         }));
 
-        const previewResponse = await shipmentService.previewShippingFeeForOrder(
-          { orderItems, createNewAddressForOrderResponseDto: validated },
-          session.user.access_token
-        );
+        const previewResponse =
+          await shipmentService.previewShippingFeeForOrder(
+            { orderItems, createNewAddressForOrderResponseDto: validated },
+            session.user.access_token,
+          );
 
         if (abortController.signal.aborted) return;
 
@@ -323,7 +348,9 @@ export default function CheckoutPage() {
         if (abortController.signal.aborted) return;
         console.error("[CheckoutPage] Preview failed:", error);
         const msg =
-          error instanceof Error ? error.message : "Lỗi khi tính phí vận chuyển";
+          error instanceof Error
+            ? error.message
+            : "Lỗi khi tính phí vận chuyển";
         setPreviewError(msg);
         setStep("ready");
       }
@@ -402,7 +429,7 @@ export default function CheckoutPage() {
       console.log("[CheckoutPage] Creating order:", orderData);
       const orderResponse = await orderService.createOrder(
         orderData,
-        session.user.access_token
+        session.user.access_token,
       );
 
       if (!orderResponse.data?.id) {
@@ -416,12 +443,17 @@ export default function CheckoutPage() {
       await Promise.all(
         items
           .filter((item) => item.id > 0)
-          .map((item) => cartService.deleteCartItem(item.id, session.user.access_token!))
+          .map((item) =>
+            cartService.deleteCartItem(item.id, session.user.access_token!),
+          ),
       );
 
       if (paymentMethod === "VNPAY") {
         // VNPay: generate payment URL and redirect to gateway
-        console.log("[CheckoutPage] Generating VNPay payment URL for order:", orderId);
+        console.log(
+          "[CheckoutPage] Generating VNPay payment URL for order:",
+          orderId,
+        );
         const clientIp = await getClientIp();
         const vnpayResponse = await paymentService.createVNPayPaymentUrl(
           {
@@ -436,7 +468,7 @@ export default function CheckoutPage() {
               vnp_OrderType: "other",
             },
           },
-          session.user.access_token
+          session.user.access_token,
         );
 
         if (!vnpayResponse.data) {
@@ -453,7 +485,9 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("[CheckoutPage] Failed to place order:", error);
       const msg =
-        error instanceof Error ? error.message : "Đặt hàng thất bại. Vui lòng thử lại.";
+        error instanceof Error
+          ? error.message
+          : "Đặt hàng thất bại. Vui lòng thử lại.";
       setOrderError(msg);
       setStep("previewed");
     }
@@ -477,7 +511,7 @@ export default function CheckoutPage() {
       const userId = parseInt(session.user.id, 10);
       const response = await addressService.getUserAddresses(
         userId,
-        session.user.access_token
+        session.user.access_token,
       );
       const addressList = Array.isArray(response.data) ? response.data : [];
       setAddresses(addressList);
@@ -506,26 +540,31 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="container mx-auto px-4 py-8 pt-32 md:pt-36">
-        <Link href="/cart" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-black mb-4 cursor-pointer">
+        <Link
+          href="/cart"
+          className="mb-4 inline-flex cursor-pointer items-center gap-1 text-sm text-gray-600 hover:text-black"
+        >
           <i className="fa-solid fa-arrow-left text-xs" />
           Quay lại giỏ hàng
         </Link>
-        <h1 className="text-2xl font-bold mb-6">THANH TOÁN</h1>
+        <h1 className="mb-6 text-2xl font-bold">THANH TOÁN</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             {/* Shipping address */}
-            <div className="bg-white border p-6">
-              <h2 className="text-lg font-bold mb-4">THÔNG TIN GIAO HÀNG</h2>
+            <div className="border bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold">THÔNG TIN GIAO HÀNG</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="mb-1 block text-sm font-medium">
                     Chọn địa chỉ giao hàng{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <Select
-                    value={selectedAddressId ? String(selectedAddressId) : undefined}
+                    value={
+                      selectedAddressId ? String(selectedAddressId) : undefined
+                    }
                     onValueChange={handleAddressChange}
                   >
                     <SelectTrigger className="w-full">
@@ -549,22 +588,21 @@ export default function CheckoutPage() {
 
                 {/* Selected address card with recipient info */}
                 {selectedAddress && (
-                  <div className="bg-gray-50 border border-gray-200 p-4 text-sm">
-                    <div className="flex items-baseline justify-between mb-2">
+                  <div className="border border-gray-200 bg-gray-50 p-4 text-sm">
+                    <div className="mb-2 flex items-baseline justify-between">
                       <span className="font-semibold">{recipientName}</span>
-                      {phone && (
-                        <span className="text-gray-600">{phone}</span>
-                      )}
+                      {phone && <span className="text-gray-600">{phone}</span>}
                     </div>
                     <div className="text-gray-700">
                       {selectedAddress.street}, {selectedAddress.ward},{" "}
                       {selectedAddress.district}, {selectedAddress.province}
-                      {selectedAddress.zipCode && `, ${selectedAddress.zipCode}`}
+                      {selectedAddress.zipCode &&
+                        `, ${selectedAddress.zipCode}`}
                       <br />
                       {selectedAddress.country}
                     </div>
                     {step === "previewing" && (
-                      <div className="mt-3 bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700 flex items-center gap-2">
+                      <div className="mt-3 flex items-center gap-2 border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
                         <i className="fa-solid fa-spinner fa-spin" />
                         Đang xác thực địa chỉ và tính phí vận chuyển...
                       </div>
@@ -573,28 +611,29 @@ export default function CheckoutPage() {
                 )}
 
                 {addresses.length === 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
+                  <div className="border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
                     <i className="fa-solid fa-circle-info mr-2" />
-                    Bạn chưa có địa chỉ nào. Vui lòng thêm địa chỉ để tiếp
-                    tục.
+                    Bạn chưa có địa chỉ nào. Vui lòng thêm địa chỉ để tiếp tục.
                   </div>
                 )}
 
                 {previewError && (
-                  <div className="bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                  <div className="border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     {previewError}
                   </div>
                 )}
 
                 {/* Phone number (pre-filled from profile) */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="mb-1 block text-sm font-medium">
                     Số điện thoại người nhận{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <Input
                     type="tel"
-                    placeholder={phoneLoaded ? "Nhập số điện thoại" : "Đang tải..."}
+                    placeholder={
+                      phoneLoaded ? "Nhập số điện thoại" : "Đang tải..."
+                    }
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -602,7 +641,7 @@ export default function CheckoutPage() {
 
                 {/* Order description */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="mb-1 block text-sm font-medium">
                     Ghi chú đơn hàng
                   </label>
                   <Textarea
@@ -617,56 +656,56 @@ export default function CheckoutPage() {
             </div>
 
             {/* Payment method */}
-            <div className="bg-white border p-6">
-              <h2 className="text-lg font-bold mb-4">PHƯƠNG THỨC THANH TOÁN</h2>
+            <div className="border bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold">PHƯƠNG THỨC THANH TOÁN</h2>
               <RadioGroup
                 value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                onValueChange={(value) =>
+                  setPaymentMethod(value as PaymentMethod)
+                }
                 className="space-y-3"
               >
-                <Label className="flex items-center gap-3 cursor-pointer font-normal">
+                <Label className="flex cursor-pointer items-center gap-3 font-normal">
                   <RadioGroupItem value="COD" />
                   <span className="text-sm">
                     Thanh toán khi nhận hàng (COD)
                   </span>
                 </Label>
-                <Label className="flex items-center gap-3 cursor-pointer font-normal">
+                <Label className="flex cursor-pointer items-center gap-3 font-normal">
                   <RadioGroupItem value="VNPAY" />
-                  <span className="text-sm">
-                    Thanh toán qua VNPay
-                  </span>
+                  <span className="text-sm">Thanh toán qua VNPay</span>
                 </Label>
               </RadioGroup>
             </div>
 
             {/* Package items detail (shown after preview) */}
             {priceSummary && (
-              <div className="bg-white border p-6">
-                <h2 className="text-lg font-bold mb-4">CHI TIẾT SẢN PHẨM</h2>
+              <div className="border bg-white p-6">
+                <h2 className="mb-4 text-lg font-bold">CHI TIẾT SẢN PHẨM</h2>
                 <div className="space-y-3">
                   {priceSummary.allItems.map((item, idx) => (
                     <div
                       key={`${item.productVariantId}-${idx}`}
-                      className="flex items-start gap-3 pb-3 border-b last:border-b-0"
+                      className="flex items-start gap-3 border-b pb-3 last:border-b-0"
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium">
                           {item.productVariantName}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="mt-0.5 text-xs text-gray-500">
                           {[item.productVariantColor, item.productVariantSize]
                             .filter(Boolean)
                             .join(", ")}
                           {" | SKU: "}
                           {item.productVariantSKU}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="mt-1 flex items-center gap-2">
                           {item.totalDiscountAmount > 0 ? (
                             <>
                               <span className="text-xs text-gray-400 line-through">
                                 {VND.format(item.subTotalPrice)}
                               </span>
-                              <span className="text-xs text-black font-medium">
+                              <span className="text-xs font-medium text-black">
                                 {VND.format(item.totalPrice)}
                               </span>
                             </>
@@ -677,7 +716,7 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         {/* Discount detail — always show row */}
-                        <div className="text-xs mt-1">
+                        <div className="mt-1 text-xs">
                           {item.totalDiscountAmount > 0 ? (
                             <span className="text-green-600">
                               {item.discountType === "PERCENTAGE"
@@ -698,8 +737,9 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         {item.discountDescription &&
-                          item.discountDescription !== "No discount applied" && (
-                            <div className="text-xs text-gray-500 mt-0.5 italic">
+                          item.discountDescription !==
+                            "No discount applied" && (
+                            <div className="mt-0.5 text-xs text-gray-500 italic">
                               {item.discountDescription}
                             </div>
                           )}
@@ -721,19 +761,22 @@ export default function CheckoutPage() {
                     return (
                       <div key={pkgIdx}>
                         {detail.userVoucher ? (
-                          <div className="flex items-center justify-between text-xs bg-green-50 border border-green-200 px-3 py-2 mt-2">
+                          <div className="mt-2 flex items-center justify-between border border-green-200 bg-green-50 px-3 py-2 text-xs">
                             <span className="text-green-700">
                               Voucher giảm giá gói hàng:{" "}
-                              <span className="font-medium border border-green-300 px-1">
+                              <span className="border border-green-300 px-1 font-medium">
                                 {detail.userVoucher.voucher?.code}
                               </span>
                             </span>
-                            <span className="text-green-700 font-medium">
-                              -{VND.format(detail.specialUserDiscountAmountForPackage)}
+                            <span className="font-medium text-green-700">
+                              -
+                              {VND.format(
+                                detail.specialUserDiscountAmountForPackage,
+                              )}
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between text-xs text-gray-400 px-3 py-2 mt-2 border border-dashed">
+                          <div className="mt-2 flex items-center justify-between border border-dashed px-3 py-2 text-xs text-gray-400">
                             <span>Voucher gói hàng</span>
                             <span>Không có voucher áp dụng</span>
                           </div>
@@ -748,16 +791,16 @@ export default function CheckoutPage() {
 
           {/* Right column — Order summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white border p-6 sticky top-36">
-              <h2 className="text-lg font-bold mb-4">ĐƠN HÀNG</h2>
+            <div className="sticky top-36 border bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold">ĐƠN HÀNG</h2>
 
               {/* Cart items preview (before shipping preview) */}
               {!priceSummary && (
-                <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                <div className="mb-4 max-h-64 space-y-3 overflow-y-auto">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-3 pb-3 border-b">
+                    <div key={item.id} className="flex gap-3 border-b pb-3">
                       {item.imageUrl && (
-                        <div className="relative w-16 h-16 border flex-shrink-0">
+                        <div className="relative h-16 w-16 flex-shrink-0 border">
                           <Image
                             src={item.imageUrl}
                             alt={item.productName || "Product"}
@@ -766,8 +809,8 @@ export default function CheckoutPage() {
                           />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">
                           {item.productName}
                         </div>
                         {(item.variantSize || item.variantColor) && (
@@ -787,7 +830,7 @@ export default function CheckoutPage() {
               )}
 
               {/* Price breakdown */}
-              <div className="space-y-2 text-sm border-t pt-4">
+              <div className="space-y-2 border-t pt-4 text-sm">
                 {priceSummary ? (
                   <>
                     <div className="flex justify-between">
@@ -798,7 +841,9 @@ export default function CheckoutPage() {
                       <span className="text-gray-600">Phí vận chuyển</span>
                       <span>{VND.format(priceSummary.totalShippingFee)}</span>
                     </div>
-                    <div className={`flex justify-between ${priceSummary.totalItemDiscount > 0 ? "text-green-600" : "text-gray-400"}`}>
+                    <div
+                      className={`flex justify-between ${priceSummary.totalItemDiscount > 0 ? "text-green-600" : "text-gray-400"}`}
+                    >
                       <span>Giảm giá sản phẩm</span>
                       <span>
                         {priceSummary.totalItemDiscount > 0
@@ -806,7 +851,9 @@ export default function CheckoutPage() {
                           : VND.format(0)}
                       </span>
                     </div>
-                    <div className={`flex justify-between ${priceSummary.totalPackageDiscount > 0 ? "text-green-600" : "text-gray-400"}`}>
+                    <div
+                      className={`flex justify-between ${priceSummary.totalPackageDiscount > 0 ? "text-green-600" : "text-gray-400"}`}
+                    >
                       <span>Voucher giảm giá</span>
                       <span>
                         {priceSummary.totalPackageDiscount > 0
@@ -814,7 +861,7 @@ export default function CheckoutPage() {
                           : VND.format(0)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <div className="flex justify-between border-t pt-2 text-lg font-bold">
                       <span>Tổng cộng</span>
                       <span>{VND.format(priceSummary.totalAmount)}</span>
                     </div>
@@ -827,8 +874,8 @@ export default function CheckoutPage() {
                         {VND.format(
                           items.reduce(
                             (sum, i) => sum + (i.price || 0) * i.quantity,
-                            0
-                          )
+                            0,
+                          ),
                         )}
                       </span>
                     </div>
@@ -854,20 +901,20 @@ export default function CheckoutPage() {
 
               {/* Shipping info from preview */}
               {packages && (
-                <div className="mt-4 pt-4 border-t">
-                  <h3 className="text-sm font-semibold mb-2">VẬN CHUYỂN</h3>
+                <div className="mt-4 border-t pt-4">
+                  <h3 className="mb-2 text-sm font-semibold">VẬN CHUYỂN</h3>
                   {Object.entries(packages).map(([shopId, pkg]) => {
                     const detail = pkg.PackageDetail;
                     const eta = detail.expectedDeliveryTime;
                     const etaDate = eta?.leadtime
                       ? new Date(eta.leadtime * 1000).toLocaleDateString(
-                          "vi-VN"
+                          "vi-VN",
                         )
                       : null;
                     return (
                       <div
                         key={shopId}
-                        className="text-xs text-gray-600 space-y-1"
+                        className="space-y-1 text-xs text-gray-600"
                       >
                         <div>
                           <span className="font-medium">
@@ -878,8 +925,7 @@ export default function CheckoutPage() {
                         </div>
                         {etaDate && <div>Dự kiến giao: {etaDate}</div>}
                         <div>
-                          Từ: {detail.ghnProvinceName},{" "}
-                          {detail.ghnDistrictName}
+                          Từ: {detail.ghnProvinceName}, {detail.ghnDistrictName}
                         </div>
                       </div>
                     );
@@ -889,7 +935,7 @@ export default function CheckoutPage() {
 
               {/* Order error */}
               {orderError && (
-                <div className="mt-4 bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                <div className="mt-4 border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {orderError}
                 </div>
               )}
@@ -898,18 +944,20 @@ export default function CheckoutPage() {
               <Button
                 onClick={() => setShowConfirm(true)}
                 disabled={step !== "previewed" || !phone.trim()}
-                className="w-full mt-4 bg-[var(--bg-button)] text-[var(--text-inverse)] py-3 h-auto hover:bg-[var(--bg-button-hover)] disabled:bg-gray-400"
+                className="mt-4 h-auto w-full bg-[var(--bg-button)] py-3 text-[var(--text-inverse)] hover:bg-[var(--bg-button-hover)] disabled:bg-gray-400"
               >
                 {step === "placing" ? (
                   <>
                     <i className="fa-solid fa-spinner fa-spin mr-2" />
                     Đang xử lý...
                   </>
-                ) : "ĐẶT HÀNG"}
+                ) : (
+                  "ĐẶT HÀNG"
+                )}
               </Button>
 
               {step !== "previewed" && step !== "placing" && (
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="mt-2 text-center text-xs text-gray-500">
                   {step === "previewing"
                     ? "Đang tính phí vận chuyển..."
                     : "Chọn địa chỉ giao hàng để tiếp tục"}
@@ -922,18 +970,20 @@ export default function CheckoutPage() {
         {/* Order Confirmation Overlay */}
         {showConfirm && priceSummary && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white border p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-bold mb-4">XÁC NHẬN ĐẶT HÀNG</h3>
+            <div className="mx-4 w-full max-w-md border bg-white p-6">
+              <h3 className="mb-4 text-lg font-bold">XÁC NHẬN ĐẶT HÀNG</h3>
 
               <div className="space-y-3 text-sm">
                 {selectedAddress && (
                   <div>
                     <span className="text-gray-600">Giao đến:</span>
-                    <p className="font-medium mt-1">
-                      {recipientName}{phone ? ` — ${phone}` : ""}
+                    <p className="mt-1 font-medium">
+                      {recipientName}
+                      {phone ? ` — ${phone}` : ""}
                     </p>
-                    <p className="text-gray-600 mt-0.5">
-                      {selectedAddress.street}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.province}
+                    <p className="mt-0.5 text-gray-600">
+                      {selectedAddress.street}, {selectedAddress.ward},{" "}
+                      {selectedAddress.district}, {selectedAddress.province}
                     </p>
                   </div>
                 )}
@@ -941,21 +991,23 @@ export default function CheckoutPage() {
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-gray-600">Phương thức thanh toán</span>
                   <span className="font-medium">
-                    {paymentMethod === "COD" ? "Thanh toán khi nhận hàng" : "VNPay"}
+                    {paymentMethod === "COD"
+                      ? "Thanh toán khi nhận hàng"
+                      : "VNPay"}
                   </span>
                 </div>
 
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <div className="flex justify-between border-t pt-2 text-lg font-bold">
                   <span>Tổng cộng</span>
                   <span>{VND.format(priceSummary.totalAmount)}</span>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6">
+              <div className="mt-6 flex gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setShowConfirm(false)}
-                  className="flex-1 border-[var(--border-primary)] py-3 h-auto"
+                  className="h-auto flex-1 border-[var(--border-primary)] py-3"
                 >
                   Hủy
                 </Button>
@@ -964,7 +1016,7 @@ export default function CheckoutPage() {
                     setShowConfirm(false);
                     handlePlaceOrder();
                   }}
-                  className="flex-1 bg-[var(--bg-button)] text-[var(--text-inverse)] py-3 h-auto hover:bg-[var(--bg-button-hover)]"
+                  className="h-auto flex-1 bg-[var(--bg-button)] py-3 text-[var(--text-inverse)] hover:bg-[var(--bg-button-hover)]"
                 >
                   Xác nhận đặt hàng
                 </Button>

@@ -1,4 +1,4 @@
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import SearchPageClient from "@/components/search/SearchPageClient";
 import { categoryService } from "@/services/category";
 import { colorService } from "@/services/color";
@@ -21,9 +21,9 @@ export default async function SearchPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
+      <main className="mx-auto w-full max-w-7xl px-3 py-6 pt-32 md:px-6 md:pt-36">
         <SearchPageClient categories={categories} colors={colors} />
       </main>
     </div>

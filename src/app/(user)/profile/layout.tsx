@@ -1,4 +1,4 @@
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import ProfileSidebar from "@/components/profile/ProfileSidebar";
 import ProfileDataProvider from "@/components/profile/ProfileDataProvider";
 
@@ -8,10 +8,10 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
       <ProfileDataProvider>
-        <main className="flex flex-1 px-20 gap-2 pt-32 md:pt-36">
+        <main className="flex flex-1 gap-2 px-20 pt-32 md:pt-36">
           <ProfileSidebar />
           <div className="flex-1 py-6">{children}</div>
         </main>

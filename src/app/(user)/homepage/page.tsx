@@ -1,4 +1,4 @@
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import HeroBanner from "@/components/home/HeroBanner";
 import ProductGrid from "@/components/product/ProductGrid";
 import { productService } from "@/services/product";
@@ -32,7 +32,12 @@ export default async function HomePage() {
       initialProducts = productsRes.data;
       initialPage = 1;
       initialHasMore = initialProducts.length === 20;
-      console.log("[HomePage] Loaded", initialProducts.length, "products; hasMore:", initialHasMore);
+      console.log(
+        "[HomePage] Loaded",
+        initialProducts.length,
+        "products; hasMore:",
+        initialHasMore,
+      );
     }
 
     if (colorsRes?.data && Array.isArray(colorsRes.data)) {
@@ -44,9 +49,9 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
+      <main className="mx-auto w-full max-w-7xl px-3 py-6 pt-32 md:px-6 md:pt-36">
         {/* Hero Banner */}
         <HeroBanner />
 
@@ -56,7 +61,7 @@ export default async function HomePage() {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-white px-6 text-sm font-medium text-gray-700 uppercase tracking-wider">
+            <span className="bg-white px-6 text-sm font-medium tracking-wider text-gray-700 uppercase">
               GỢI Ý HÔM NAY
             </span>
           </div>

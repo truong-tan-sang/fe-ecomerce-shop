@@ -1,12 +1,15 @@
 "use client";
 
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { paymentService } from "@/services/payment";
-import type { ReturnQueryFromVNPayDto, VNPayVerifyReturnUrlResponseDto } from "@/dto/payment";
+import type {
+  ReturnQueryFromVNPayDto,
+  VNPayVerifyReturnUrlResponseDto,
+} from "@/dto/payment";
 
 const VND = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -18,7 +21,9 @@ type PageState = "verifying" | "success" | "failure";
 
 export default function VNPayReturnPage() {
   const [state, setState] = useState<PageState>("verifying");
-  const [result, setResult] = useState<VNPayVerifyReturnUrlResponseDto | null>(null);
+  const [result, setResult] = useState<VNPayVerifyReturnUrlResponseDto | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const verifiedRef = useRef(false);
 
@@ -41,20 +46,22 @@ export default function VNPayReturnPage() {
           vnp_OrderInfo: searchParams.get("vnp_OrderInfo") || "",
           vnp_TransactionNo: searchParams.get("vnp_TransactionNo") || "",
           vnp_ResponseCode: searchParams.get("vnp_ResponseCode") || "",
-          vnp_TransactionStatus: searchParams.get("vnp_TransactionStatus") || "",
+          vnp_TransactionStatus:
+            searchParams.get("vnp_TransactionStatus") || "",
           vnp_TxnRef: searchParams.get("vnp_TxnRef") || "",
           vnp_SecureHash: searchParams.get("vnp_SecureHash") || "",
           vnp_BankTranNo: searchParams.get("vnp_BankTranNo") || undefined,
           vnp_CardType: searchParams.get("vnp_CardType") || undefined,
           vnp_PayDate: searchParams.get("vnp_PayDate") || undefined,
-          vnp_SecureHashType: searchParams.get("vnp_SecureHashType") || undefined,
+          vnp_SecureHashType:
+            searchParams.get("vnp_SecureHashType") || undefined,
         };
 
         console.log("[VNPayReturn] Verifying payment:", vnpData);
 
         const response = await paymentService.verifyVNPayReturn(
           { data: vnpData },
-          session.user.access_token!
+          session.user.access_token!,
         );
 
         console.log("[VNPayReturn] Verification response:", response);
@@ -65,7 +72,9 @@ export default function VNPayReturnPage() {
             setState("success");
           } else {
             setState("failure");
-            setErrorMessage(response.data.message || "Thanh toán không thành công");
+            setErrorMessage(
+              response.data.message || "Thanh toán không thành công",
+            );
           }
         } else {
           setState("failure");
@@ -75,7 +84,7 @@ export default function VNPayReturnPage() {
         console.error("[VNPayReturn] Verification failed:", error);
         setState("failure");
         setErrorMessage(
-          error instanceof Error ? error.message : "Lỗi xác minh thanh toán"
+          error instanceof Error ? error.message : "Lỗi xác minh thanh toán",
         );
       }
     };
@@ -90,14 +99,16 @@ export default function VNPayReturnPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="container mx-auto px-4 py-8 pt-32 md:pt-36">
-        <div className="max-w-lg mx-auto">
+        <div className="mx-auto max-w-lg">
           {/* Verifying */}
           {state === "verifying" && (
-            <div className="bg-white border p-8 text-center">
-              <div className="text-4xl mb-4">
+            <div className="border bg-white p-8 text-center">
+              <div className="mb-4 text-4xl">
                 <i className="fa-solid fa-spinner fa-spin text-gray-400" />
               </div>
-              <h1 className="text-xl font-bold mb-2">ĐANG XÁC MINH THANH TOÁN</h1>
+              <h1 className="mb-2 text-xl font-bold">
+                ĐANG XÁC MINH THANH TOÁN
+              </h1>
               <p className="text-sm text-gray-600">
                 Vui lòng đợi trong giây lát...
               </p>
@@ -106,16 +117,16 @@ export default function VNPayReturnPage() {
 
           {/* Success */}
           {state === "success" && (
-            <div className="bg-white border p-8 text-center">
-              <div className="text-5xl mb-4">
+            <div className="border bg-white p-8 text-center">
+              <div className="mb-4 text-5xl">
                 <i className="fa-solid fa-circle-check text-green-500" />
               </div>
-              <h1 className="text-xl font-bold mb-2">THANH TOÁN THÀNH CÔNG</h1>
-              <p className="text-sm text-gray-600 mb-6">
+              <h1 className="mb-2 text-xl font-bold">THANH TOÁN THÀNH CÔNG</h1>
+              <p className="mb-6 text-sm text-gray-600">
                 Đơn hàng của bạn đã được thanh toán thành công qua VNPay.
               </p>
 
-              <div className="bg-gray-50 border p-4 text-sm text-left space-y-2 mb-6">
+              <div className="mb-6 space-y-2 border bg-gray-50 p-4 text-left text-sm">
                 {orderId && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Mã đơn hàng</span>
@@ -144,16 +155,18 @@ export default function VNPayReturnPage() {
                 )}
               </div>
 
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 <Link
-                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
-                  className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
+                  href={
+                    orderId ? `/profile/orders/${orderId}` : "/profile/orders"
+                  }
+                  className="inline-block cursor-pointer bg-[var(--bg-button)] px-6 py-3 text-[var(--text-inverse)] transition-colors hover:bg-[var(--bg-button-hover)]"
                 >
                   XEM ĐƠN HÀNG
                 </Link>
                 <Link
                   href="/homepage"
-                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block cursor-pointer border border-[var(--border-primary)] px-6 py-3 transition-colors hover:bg-gray-100"
                 >
                   TRANG CHỦ
                 </Link>
@@ -163,15 +176,15 @@ export default function VNPayReturnPage() {
 
           {/* Failure */}
           {state === "failure" && (
-            <div className="bg-white border p-8 text-center">
-              <div className="text-5xl mb-4">
+            <div className="border bg-white p-8 text-center">
+              <div className="mb-4 text-5xl">
                 <i className="fa-solid fa-circle-xmark text-red-500" />
               </div>
-              <h1 className="text-xl font-bold mb-2">THANH TOÁN THẤT BẠI</h1>
-              <p className="text-sm text-red-600 mb-6">{errorMessage}</p>
+              <h1 className="mb-2 text-xl font-bold">THANH TOÁN THẤT BẠI</h1>
+              <p className="mb-6 text-sm text-red-600">{errorMessage}</p>
 
               {orderId && (
-                <div className="bg-gray-50 border p-4 text-sm text-left space-y-2 mb-6">
+                <div className="mb-6 space-y-2 border bg-gray-50 p-4 text-left text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Mã đơn hàng</span>
                     <span className="font-semibold">{orderId}</span>
@@ -185,22 +198,24 @@ export default function VNPayReturnPage() {
                 </div>
               )}
 
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 <Link
-                  href={orderId ? `/profile/orders/${orderId}` : "/profile/orders"}
-                  className="inline-block bg-[var(--bg-button)] text-[var(--text-inverse)] px-6 py-3 hover:bg-[var(--bg-button-hover)] transition-colors cursor-pointer"
+                  href={
+                    orderId ? `/profile/orders/${orderId}` : "/profile/orders"
+                  }
+                  className="inline-block cursor-pointer bg-[var(--bg-button)] px-6 py-3 text-[var(--text-inverse)] transition-colors hover:bg-[var(--bg-button-hover)]"
                 >
                   XEM ĐƠN HÀNG
                 </Link>
                 <Link
                   href="/cart"
-                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block cursor-pointer border border-[var(--border-primary)] px-6 py-3 transition-colors hover:bg-gray-100"
                 >
                   VỀ GIỎ HÀNG
                 </Link>
                 <Link
                   href="/homepage"
-                  className="inline-block border border-[var(--border-primary)] px-6 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="inline-block cursor-pointer border border-[var(--border-primary)] px-6 py-3 transition-colors hover:bg-gray-100"
                 >
                   TRANG CHỦ
                 </Link>

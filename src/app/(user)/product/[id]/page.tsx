@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import Header from "@/components/header/Navbar";
+import Header from "@/components/header/navbar";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
 import ReviewSection from "@/components/product/ReviewSection";
 import { productService } from "@/services/product";
@@ -23,9 +23,11 @@ interface ProductDetailPageProps {
   };
 }
 
-export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+export default async function ProductDetailPage({
+  params,
+}: ProductDetailPageProps) {
   const { id } = params;
-  
+
   // Get session for access token
   const session = await auth();
   const accessToken = session?.user?.access_token;
@@ -69,11 +71,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const reviewCount = reviews.length;
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-3 md:px-6 py-6 pt-32 md:pt-36">
+      <main className="mx-auto w-full max-w-7xl px-3 py-6 pt-32 md:px-6 md:pt-36">
         <ProductDetailClient
-          brand={product.name.split(' ')[0] || 'Brand'}
+          brand={product.name.split(" ")[0] || "Brand"}
           name={product.name}
           rating={averageRating}
           reviewCount={reviewCount}
