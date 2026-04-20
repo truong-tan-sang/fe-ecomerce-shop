@@ -1,5 +1,5 @@
-import { sendRequest } from "@/utils/api";
-import type { VoucherDto, CreateVoucherDto, UpdateVoucherDto, SearchVoucherParams } from "@/dto/voucher";
+import { sendRequest, sendRequestFile } from "@/utils/api";
+import type { VoucherDto, CreateVoucherDto, UpdateVoucherDto, SearchVoucherParams, CreateUserVoucherDto } from "@/dto/voucher";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -60,6 +60,63 @@ export const voucherService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[VoucherService] Delete response:", response);
+    return response;
+  },
+
+  async assignToCategory(categoryId: number, voucherId: number, accessToken: string): Promise<IBackendRes<unknown>> {
+    const url = `${BACKEND_URL}/category/${categoryId}`;
+    console.log("[VoucherService] Assigning voucher to category:", { categoryId, voucherId });
+    const response = await sendRequest<IBackendRes<unknown>>({
+      url,
+      method: "PATCH",
+      body: { voucherId },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[VoucherService] Assign to category response:", response);
+    return response;
+  },
+
+  async assignToProduct(productId: number, voucherId: number, accessToken: string): Promise<IBackendRes<unknown>> {
+    const url = `${BACKEND_URL}/products/${productId}`;
+    console.log("[VoucherService] Assigning voucher to product:", { productId, voucherId });
+    const formData = new FormData();
+    formData.append("voucherId", String(voucherId));
+    const response = await sendRequestFile<IBackendRes<unknown>>({
+      url,
+      method: "PATCH",
+      body: formData,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[VoucherService] Assign to product response:", response);
+    return response;
+  },
+
+  async assignToVariant(variantId: number, voucherId: number, accessToken: string): Promise<IBackendRes<unknown>> {
+    const url = `${BACKEND_URL}/product-variants/${variantId}`;
+    console.log("[VoucherService] Assigning voucher to variant:", { variantId, voucherId });
+    const formData = new FormData();
+    formData.append("voucherId", String(voucherId));
+    const response = await sendRequestFile<IBackendRes<unknown>>({
+      url,
+      method: "PATCH",
+      body: formData,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[VoucherService] Assign to variant response:", response);
+    return response;
+  },
+
+  async assignToUser(userId: number, voucherId: number, accessToken: string): Promise<IBackendRes<unknown>> {
+    const url = `${BACKEND_URL}/user-vouchers`;
+    const payload: CreateUserVoucherDto = { userId, voucherId, voucherStatus: "SAVED" };
+    console.log("[VoucherService] Assigning voucher to user:", payload);
+    const response = await sendRequest<IBackendRes<unknown>>({
+      url,
+      method: "POST",
+      body: payload,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[VoucherService] Assign to user response:", response);
     return response;
   },
 };

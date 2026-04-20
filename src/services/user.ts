@@ -68,8 +68,9 @@ export const userService = {
 
   getUsers: (page: number, perPage: number, accessToken: string) =>
     sendRequest<IBackendRes<UserDto[]>>({
-      url: `${BASE_URL}/user?page=${page}&perPage=${perPage}`,
+      url: `${BASE_URL}/user`,
       method: "GET",
+      queryParams: { page, perPage },
       headers: { Authorization: `Bearer ${accessToken}` },
     }),
 
