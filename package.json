@@ -6,7 +6,8 @@
     "node": "20.x"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node scripts/use-env.mjs dev && next dev --turbopack",
+    "dev:prod-be": "node scripts/use-env.mjs prod-be && next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
