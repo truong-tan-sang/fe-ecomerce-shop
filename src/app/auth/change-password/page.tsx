@@ -1,4 +1,6 @@
-"use client";
+﻿"use client";
+
+export const dynamic = "force-dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle } from "lucide-react";
@@ -270,4 +272,11 @@ function ChangePassword() {
   );
 }
 
-export default ChangePassword;
+import { Suspense } from "react";
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChangePassword />
+    </Suspense>
+  );
+}

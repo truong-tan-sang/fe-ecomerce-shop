@@ -1,4 +1,7 @@
-"use client";
+﻿"use client";
+
+export const dynamic = "force-dynamic";
+
 
 import Header from "@/components/header/Navbar";
 import Image from "next/image";
@@ -63,7 +66,7 @@ async function getClientIp(): Promise<string> {
   }
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   // Cart state
   const [items, setItems] = useState<CartItemWithDetails[]>([]);
   const [itemsReady, setItemsReady] = useState(false);
@@ -1034,5 +1037,14 @@ export default function CheckoutPage() {
         />
       </div>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-	// Thêm cấu hình ESLint để bỏ qua lỗi khi build
 	eslint: {
 		ignoreDuringBuilds: true,
 	},

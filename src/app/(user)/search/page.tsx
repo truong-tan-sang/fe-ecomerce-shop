@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Header from "@/components/header/Navbar";
 import SearchPageClient from "@/components/search/SearchPageClient";
 import { categoryService } from "@/services/category";
@@ -24,7 +25,9 @@ export default async function SearchPage() {
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="mx-auto w-full max-w-7xl px-3 py-6 pt-32 md:px-6 md:pt-36">
-        <SearchPageClient categories={categories} colors={colors} />
+        <Suspense fallback={null}>
+          <SearchPageClient categories={categories} colors={colors} />
+        </Suspense>
       </main>
     </div>
   );

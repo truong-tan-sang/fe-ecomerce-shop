@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
@@ -37,7 +38,7 @@ type FilterTab = "all" | "on_sale" | "out_of_stock";
 const ROW_HEIGHT = 57; // px per table row
 const PER_PAGE = 20;
 
-export default function AdminProductsListPage() {
+function AdminProductsListContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const accessToken = session?.user?.access_token || "";
@@ -631,5 +632,14 @@ export default function AdminProductsListPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function AdminProductsListPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminProductsListContent />
+    </Suspense>
   );
 }

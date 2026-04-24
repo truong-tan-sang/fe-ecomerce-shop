@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+
 
 import Header from "@/components/header/Navbar";
 import Link from "next/link";
@@ -19,7 +20,7 @@ const VND = new Intl.NumberFormat("vi-VN", {
 
 type PageState = "verifying" | "success" | "failure";
 
-export default function VNPayReturnPage() {
+function VNPayReturnContent() {
   const [state, setState] = useState<PageState>("verifying");
   const [result, setResult] = useState<VNPayVerifyReturnUrlResponseDto | null>(
     null,
@@ -225,5 +226,14 @@ export default function VNPayReturnPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function VNPayReturnPage() {
+  return (
+    <Suspense fallback={null}>
+      <VNPayReturnContent />
+    </Suspense>
   );
 }
