@@ -1,4 +1,4 @@
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import SearchPageClient from "@/components/search/SearchPageClient";
 import { categoryService } from "@/services/category";
 import { colorService } from "@/services/color";

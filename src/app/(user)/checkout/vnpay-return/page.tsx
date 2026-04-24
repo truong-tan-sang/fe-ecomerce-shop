@@ -1,6 +1,6 @@
 "use client";
 
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";

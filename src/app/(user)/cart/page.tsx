@@ -1,6 +1,6 @@
 "use client";
 
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";

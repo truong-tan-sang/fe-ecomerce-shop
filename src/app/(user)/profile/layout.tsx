@@ -1,4 +1,4 @@
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import ProfileSidebar from "@/components/profile/ProfileSidebar";
 import ProfileDataProvider from "@/components/profile/ProfileDataProvider";
 

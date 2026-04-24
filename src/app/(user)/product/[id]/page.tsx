@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import Header from "@/components/header/navbar";
+import Header from "@/components/header/Navbar";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
 import ReviewSection from "@/components/product/ReviewSection";
 import { productService } from "@/services/product";
