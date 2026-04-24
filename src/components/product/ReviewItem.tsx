@@ -10,7 +10,7 @@ interface ReviewItemProps {
 }
 
 export default function ReviewItem({ review, variant }: ReviewItemProps) {
-  const reviewDate = new Date(review.createdAt).toLocaleDateString("en-US", {
+  const reviewDate = new Date(review.createdAt).toLocaleDateString("vi-VN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -20,7 +20,7 @@ export default function ReviewItem({ review, variant }: ReviewItemProps) {
     <div className="border border-gray-300 p-4 hover:border-black transition-colors">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <div className="font-semibold text-sm">User #{review.userId}</div>
+          <div className="font-semibold text-sm">Người dùng #{review.userId}</div>
           <div className="text-xs text-gray-500">{reviewDate}</div>
         </div>
       </div>
@@ -41,7 +41,7 @@ export default function ReviewItem({ review, variant }: ReviewItemProps) {
 
       {variant && (
         <div className="mb-3 text-sm">
-          <span className="font-medium">Purchased:</span>{" "}
+          <span className="font-medium">Đã mua:</span>{" "}
           <span className="inline-block border border-gray-300 px-2 py-1 text-xs">
             {variant.variantSize}
           </span>

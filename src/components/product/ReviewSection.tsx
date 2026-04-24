@@ -35,8 +35,8 @@ export default function ReviewSection({
   // Display-only: no create/edit/delete handlers
 
   return (
-    <section className="mt-12 border-t border-gray-300 pt-12">
-      <h2 className="text-2xl font-bold mb-8">Customer Reviews</h2>
+    <section id="reviews" className="mt-12 border-t border-gray-300 pt-12 scroll-mt-20">
+      <h2 className="text-2xl font-bold mb-8">Đánh giá sản phẩm</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Rating Summary */}
@@ -60,7 +60,7 @@ export default function ReviewSection({
                 ))}
               </div>
               <div className="text-sm text-gray-600">
-                Based on {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+                Dựa trên {reviews.length} đánh giá
               </div>
             </div>
 
@@ -89,7 +89,7 @@ export default function ReviewSection({
           {/* Reviews List */}
           {reviews.length === 0 ? (
             <div className="border border-gray-300 p-12 text-center text-gray-500">
-              No reviews yet. Be the first to review this product!
+              Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
             </div>
           ) : (
             <div className="space-y-4">
