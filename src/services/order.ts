@@ -11,6 +11,7 @@ import type {
   UpdateOrderToWaitingPickupDto,
   UpdateOrderStatusWithStaffDto,
 } from "@/dto/order";
+import type { ReviewDto } from "@/dto/product-detail";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -443,6 +444,51 @@ export const orderService = {
       method: "GET",
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    return response;
+  },
+
+  async getShopOrdersWithPendingReturn(
+    page: number,
+    perPage: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity[]>> {
+    const url = `${BACKEND_URL}/orders/shop/pending-return-request-list?page=${page}&perPage=${perPage}`;
+    console.log("[OrderService] Fetching orders with pending return page:", page);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
+  async getMyReviewsForOrder(
+    orderId: number,
+    accessToken: string
+  ): Promise<IBackendRes<ReviewDto[]>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/my-reviews`;
+    console.log("[OrderService] Fetching my reviews for order:", orderId);
+    const response = await sendRequest<IBackendRes<ReviewDto[]>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] My reviews response:", response);
+    return response;
+  },
+
+  async confirmReceived(
+    orderId: number,
+    accessToken: string
+  ): Promise<IBackendRes<OrderFullInformationEntity>> {
+    const url = `${BACKEND_URL}/orders/${orderId}/user-confirm-received`;
+    console.log("[OrderService] Confirming order received:", orderId);
+    const response = await sendRequest<IBackendRes<OrderFullInformationEntity>>({
+      url,
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[OrderService] Confirm received response:", response);
     return response;
   },
 

@@ -7,11 +7,14 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { orderService } from "@/services/order";
 import type { OrderFullInformationEntity, OrderStatus } from "@/dto/order";
+import type { ReviewDto } from "@/dto/product-detail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import BuyAgainButton from "@/components/profile/BuyAgainButton";
+import ReturnRequestDialog from "@/components/profile/ReturnRequestDialog";
+import ReviewOrderDialog from "@/components/profile/ReviewOrderDialog";
 
 const PER_PAGE = 10; // backend default page size
 
@@ -49,20 +52,42 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 
 function OrderActions({
-  status,
-  orderId,
-  orderItems,
+  order,
   onCancelled,
+  onChanged,
 }: {
-  status: OrderStatus;
-  orderId: number;
-  orderItems: { productVariantId: number }[];
+  order: OrderFullInformationEntity;
   onCancelled: (orderId: number) => void;
+  onChanged: () => void;
 }) {
   const [cancelling, setCancelling] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [localOrder, setLocalOrder] = useState(order);
+  const [myReviews, setMyReviews] = useState<ReviewDto[] | null>(null);
   const { data: session } = useSession();
 
-  // Only cancellable before WAITING_FOR_PICKUP — backend enforces this too
+  const status = localOrder.status;
+  const orderId = localOrder.id;
+
+  const loadMyReviews = async () => {
+    if (!session?.user?.access_token) return;
+    try {
+      const res = await orderService.getMyReviewsForOrder(orderId, session.user.access_token);
+      setMyReviews(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setMyReviews([]);
+    }
+  };
+
+  useEffect(() => {
+    if ((status === "COMPLETED" || status === "DELIVERED") && session?.user?.access_token && myReviews === null) {
+      loadMyReviews();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, session?.user?.access_token, orderId]);
+
   const cancellable = new Set<OrderStatus>([
     "PENDING", "PAYMENT_PROCESSING", "PAYMENT_CONFIRMED",
   ]);
@@ -81,6 +106,29 @@ function OrderActions({
     }
   };
 
+  const handleConfirmReceived = async () => {
+    if (!session?.user?.access_token) return;
+    setConfirming(true);
+    try {
+      const res = await orderService.confirmReceived(orderId, session.user.access_token);
+      const updated = res.data ?? { ...localOrder, status: "COMPLETED" as OrderStatus };
+      setLocalOrder(updated as OrderFullInformationEntity);
+      onChanged();
+      await loadMyReviews();
+      setShowReviewDialog(true);
+    } catch {
+      toast.error("Không thể xác nhận đã nhận hàng. Vui lòng thử lại.");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const itemCount = localOrder.orderItems?.length ?? 0;
+  const reviewCount = myReviews?.length ?? 0;
+  const allReviewed = myReviews !== null && reviewCount >= itemCount && itemCount > 0;
+  const reviewButtonLabel =
+    myReviews === null ? "Đánh giá" : allReviewed ? "Xem đánh giá của bạn" : "Viết đánh giá";
+
   if (cancellable.has(status)) {
     return (
       <Button
@@ -93,31 +141,88 @@ function OrderActions({
       </Button>
     );
   }
+
   if (status === "DELIVERED") {
+    const existingReturnRequest = localOrder.requests?.find(
+      (r) => r.subject === "RETURN_REQUEST",
+    );
+    const shipment = localOrder.shipments?.[0];
+    const deliveredAt = shipment?.deliveredAt ? new Date(shipment.deliveredAt) : null;
+    const withinReturnWindow = deliveredAt
+      ? Date.now() - deliveredAt.getTime() < 7 * 24 * 60 * 60 * 1000
+      : false;
+    const showReturnButton = existingReturnRequest || withinReturnWindow;
+
     return (
       <>
-        <Button variant="outline" className="px-4 py-2 h-auto border-black text-sm font-semibold cursor-pointer">
-          Đánh giá
+        <Button
+          variant="outline"
+          disabled={confirming}
+          onClick={handleConfirmReceived}
+          className="px-4 py-2 h-auto border-black text-sm font-semibold cursor-pointer"
+        >
+          {confirming ? "Đang xử lý..." : "Đã nhận được hàng"}
         </Button>
-        <Button variant="outline" className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer">
-          Yêu cầu trả hàng/hoàn tiền
-        </Button>
-        <BuyAgainButton orderItems={orderItems} />
+        {showReturnButton && (
+          <Button
+            variant="outline"
+            onClick={() => setShowReturnDialog(true)}
+            className="px-4 py-2 h-auto border-gray-300 text-sm cursor-pointer"
+          >
+            {existingReturnRequest ? "Xem yêu cầu trả hàng" : "Yêu cầu trả hàng/hoàn tiền"}
+          </Button>
+        )}
+        <BuyAgainButton orderItems={localOrder.orderItems ?? []} />
+        <ReturnRequestDialog
+          order={localOrder}
+          open={showReturnDialog}
+          onClose={() => setShowReturnDialog(false)}
+          existingRequest={existingReturnRequest}
+          onSubmitted={onChanged}
+        />
+        {showReviewDialog && session?.user?.access_token && session?.user?.id && (
+          <ReviewOrderDialog
+            order={localOrder}
+            open={showReviewDialog}
+            onClose={() => setShowReviewDialog(false)}
+            onSubmitted={loadMyReviews}
+            accessToken={session.user.access_token}
+            userId={parseInt(session.user.id, 10)}
+            existingReviews={myReviews ?? []}
+          />
+        )}
       </>
     );
   }
+
   if (status === "COMPLETED") {
     return (
       <>
-        <Button variant="outline" className="px-4 py-2 h-auto border-black text-sm font-semibold cursor-pointer">
-          Đánh giá
+        <Button
+          variant="outline"
+          onClick={() => setShowReviewDialog(true)}
+          className="px-4 py-2 h-auto border-black text-sm font-semibold cursor-pointer"
+        >
+          {reviewButtonLabel}
         </Button>
-        <BuyAgainButton orderItems={orderItems} />
+        <BuyAgainButton orderItems={localOrder.orderItems ?? []} />
+        {showReviewDialog && session?.user?.access_token && session?.user?.id && (
+          <ReviewOrderDialog
+            order={localOrder}
+            open={showReviewDialog}
+            onClose={() => setShowReviewDialog(false)}
+            onSubmitted={loadMyReviews}
+            accessToken={session.user.access_token}
+            userId={parseInt(session.user.id, 10)}
+            existingReviews={myReviews ?? []}
+          />
+        )}
       </>
     );
   }
+
   if (status === "CANCELLED" || status === "RETURNED") {
-    return <BuyAgainButton orderItems={orderItems} />;
+    return <BuyAgainButton orderItems={localOrder.orderItems ?? []} />;
   }
   // SHIPPED, DELIVERED_FAILED — no actions
   return null;
@@ -181,11 +286,30 @@ export default function OrdersContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, session?.user?.access_token, activeTab]);
 
-  const handleLoadMore = () => {
-    const next = pageRef.current + 1;
-    pageRef.current = next;
-    fetchPage(next, true);
-  };
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // Latest values for the observer callback — it captures once and must read fresh state.
+  const loadMoreStateRef = useRef({ loadingMore, hasMore, isLoading });
+  loadMoreStateRef.current = { loadingMore, hasMore, isLoading };
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        const state = loadMoreStateRef.current;
+        if (entry.isIntersecting && state.hasMore && !state.loadingMore && !state.isLoading) {
+          const next = pageRef.current + 1;
+          pageRef.current = next;
+          fetchPage(next, true);
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, hasMore]);
 
   if (isLoading) {
     return (
@@ -338,7 +462,11 @@ export default function OrdersContent() {
                         Xem chi tiết
                       </Button>
                     </Link>
-                    <OrderActions status={order.status} orderId={order.id} orderItems={order.orderItems ?? []} onCancelled={handleOrderCancelled} />
+                    <OrderActions
+                      order={order}
+                      onCancelled={handleOrderCancelled}
+                      onChanged={() => fetchPage(1, false)}
+                    />
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600 mb-1">Tổng tiền:</p>
@@ -350,22 +478,20 @@ export default function OrdersContent() {
               </div>
             );
           })}
-          {hasMore && (
-            <div className="flex justify-center pt-2 pb-4">
-              <Button
-                variant="outline"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="px-8 py-2 h-auto border-gray-300 text-sm cursor-pointer"
-              >
-                {loadingMore ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang tải...</>
-                ) : (
-                  "Xem thêm"
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Infinite-scroll sentinel — always rendered so the observer ref always attaches.
+              Height collapses to 0 when there are no more pages; no visible UI either way. */}
+          <div
+            ref={sentinelRef}
+            className="flex justify-center text-sm text-gray-400"
+            style={{ minHeight: hasMore ? 24 : 0, paddingTop: hasMore ? 16 : 0, paddingBottom: hasMore ? 16 : 0 }}
+          >
+            {loadingMore ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Đang tải thêm...
+              </>
+            ) : null}
+          </div>
           </>
         )}
       </div>
