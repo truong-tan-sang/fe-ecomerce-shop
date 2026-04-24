@@ -177,6 +177,39 @@ export interface UserInOrderDto {
   userMedia?: Array<{ id: number; url: string; isAvatarFile: boolean; type: string }>;
 }
 
+export type RequestInOrderStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "APPROVED"
+  | "REJECTED";
+
+export interface ReturnRequestRowInOrder {
+  id: number;
+  requestId: number;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
+}
+
+export interface RequestInOrderDto {
+  id: number;
+  orderId: number;
+  userId: number;
+  subject: "RETURN_REQUEST" | string;
+  status: RequestInOrderStatus;
+  description: string | null;
+  processByStaffId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  processByStaff?: {
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  } | null;
+  returnRequest?: ReturnRequestRowInOrder[];
+}
+
 export interface OrderFullInformationEntity {
   id: number;
   userId: number;
@@ -198,6 +231,7 @@ export interface OrderFullInformationEntity {
   orderItems: OrderItemEntity[];
   shipments: ShipmentEntity[];
   payment: PaymentEntity[];
+  requests?: RequestInOrderDto[];
 }
 
 interface DatabaseAddressFields {

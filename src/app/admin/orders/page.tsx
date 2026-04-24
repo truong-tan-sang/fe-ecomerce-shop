@@ -15,7 +15,13 @@ const ROW_HEIGHT = 56;
 const PER_PAGE = 50;
 const COLS = "48px 2fr 160px 140px 120px 120px 160px 130px";
 
-type FilterTab = "all" | "waiting" | "shipping" | "delivered" | "returned";
+type FilterTab =
+  | "all"
+  | "waiting"
+  | "shipping"
+  | "delivered"
+  | "pending_return"
+  | "returned";
 
 const TAB_FETCHER: Record<
   FilterTab,
@@ -29,6 +35,7 @@ const TAB_FETCHER: Record<
   waiting: (p, pp, t) => orderService.getShopConfirmedOrders(p, pp, t),
   shipping: (p, pp, t) => orderService.getShopShippedOrders(p, pp, t),
   delivered: (p, pp, t) => orderService.getShopDeliveredOrders(p, pp, t),
+  pending_return: (p, pp, t) => orderService.getShopOrdersWithPendingReturn(p, pp, t),
   returned: (p, pp, t) => orderService.getShopReturnedOrders(p, pp, t),
 };
 
@@ -170,6 +177,9 @@ export default function AdminOrdersPage() {
           </TabsTrigger>
           <TabsTrigger value="delivered" className="cursor-pointer">
             Đã giao
+          </TabsTrigger>
+          <TabsTrigger value="pending_return" className="cursor-pointer">
+            Yêu cầu trả hàng
           </TabsTrigger>
           <TabsTrigger value="returned" className="cursor-pointer">
             Hoàn tiền

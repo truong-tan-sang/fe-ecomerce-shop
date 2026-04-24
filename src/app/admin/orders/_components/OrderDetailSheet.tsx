@@ -19,13 +19,26 @@ import {
 } from "@/components/ui/select";
 import { orderService } from "@/services/order";
 import { shipmentService } from "@/services/shipment";
+import { returnRequestService } from "@/services/returnRequest";
 import type {
   OrderFullInformationEntity,
   GhnPickShift,
+  RequestInOrderStatus,
 } from "@/dto/order";
 import { STATUS_CONFIG, STATUS_RANK } from "./orderStatusConfig";
 import UserDetailCard from "@/components/admin/users/UserDetailCard";
 import type { UserDto } from "@/services/user";
+import { toast } from "sonner";
+
+const RETURN_STATUS_BADGE: Record<
+  RequestInOrderStatus,
+  { label: string; className: string }
+> = {
+  PENDING:     { label: "Đang chờ",   className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  IN_PROGRESS: { label: "Đang xử lý", className: "bg-blue-100 text-blue-800 border-blue-300" },
+  APPROVED:    { label: "Đã duyệt",   className: "bg-green-100 text-green-800 border-green-300" },
+  REJECTED:    { label: "Đã từ chối", className: "bg-red-100 text-red-800 border-red-300" },
+};
 
 function GHNTrackingLink({ orderId, accessToken }: { orderId: number; accessToken: string }) {
   const [loading, setLoading] = useState(false);
@@ -211,6 +224,61 @@ export default function OrderDetailSheet({
     runAction(() => orderService.cancelOrder(order.id, accessToken));
   };
 
+  // ── Return-request review handlers ────────────────────────────────────────
+  const refetchOrder = async () => {
+    if (!accessToken) return;
+    try {
+      const fresh = await orderService.getOrderDetail(order.id, accessToken);
+      if (fresh.data) onOrderUpdated(fresh.data);
+    } catch (err) {
+      console.error("[OrderDetailSheet] Refetch failed:", err);
+    }
+  };
+
+  const patchReturnStatus = async (
+    rrId: number,
+    status: "IN_PROGRESS" | "APPROVED" | "REJECTED",
+    successMsg: string,
+  ) => {
+    if (!accessToken) return;
+    setSubmitting(true);
+    try {
+      await returnRequestService.updateStatus(
+        rrId,
+        { processByStaffId: staffId, status },
+        accessToken,
+      );
+      toast.success(successMsg);
+      await refetchOrder();
+    } catch (err) {
+      console.error("[OrderDetailSheet] updateStatus failed:", err);
+      toast.error("Không thể cập nhật yêu cầu trả hàng.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleStartReviewReturn = (rrId: number) =>
+    patchReturnStatus(rrId, "IN_PROGRESS", "Đã bắt đầu xử lý yêu cầu.");
+
+  const handleApproveReturn = (rrId: number) => {
+    if (!confirm("Duyệt yêu cầu trả hàng? Đơn hàng sẽ được đánh dấu là đã hoàn tiền và tồn kho sẽ được hoàn trả.")) return;
+    patchReturnStatus(rrId, "APPROVED", "Đã duyệt yêu cầu trả hàng.");
+  };
+
+  const handleRejectReturn = (rrId: number) => {
+    if (!confirm("Từ chối yêu cầu trả hàng? Hành động này không thể hoàn tác.")) return;
+    patchReturnStatus(rrId, "REJECTED", "Đã từ chối yêu cầu trả hàng.");
+  };
+
+  const returnRequest = order.requests?.find(
+    (r) => r.subject === "RETURN_REQUEST",
+  );
+  const returnBank = returnRequest?.returnRequest?.[0];
+  const returnBadge = returnRequest
+    ? RETURN_STATUS_BADGE[returnRequest.status]
+    : null;
+
   const canCancel =
     order.status === "PENDING" ||
     order.status === "PAYMENT_PROCESSING" ||
@@ -326,6 +394,94 @@ export default function OrderDetailSheet({
                 })
               )}
             </div>
+
+            {/* ── Return request section ── */}
+            {returnRequest && returnBadge && returnBank && (
+              <div className="border rounded-lg p-4 flex flex-col gap-3 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                    Yêu cầu trả hàng
+                  </p>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 border text-xs font-medium ${returnBadge.className}`}
+                  >
+                    {returnBadge.label}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 shrink-0 w-28">Lý do:</span>
+                    <span className="font-medium">{returnRequest.description || "—"}</span>
+                  </div>
+                  {returnBank && (
+                    <>
+                      <div className="flex gap-2">
+                        <span className="text-gray-400 shrink-0 w-28">Ngân hàng:</span>
+                        <span>{returnBank.bankName}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="text-gray-400 shrink-0 w-28">Số tài khoản:</span>
+                        <span>{returnBank.bankAccountNumber}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="text-gray-400 shrink-0 w-28">Chủ tài khoản:</span>
+                        <span>{returnBank.bankAccountName}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 shrink-0 w-28">Ngày gửi:</span>
+                    <span>{formatDate(returnRequest.createdAt)}</span>
+                  </div>
+                  {returnRequest.processByStaff && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 shrink-0 w-28">Xử lý bởi:</span>
+                      <span>
+                        {returnRequest.processByStaff.firstName ?? ""}{" "}
+                        {returnRequest.processByStaff.lastName ?? ""}
+                        <span className="text-gray-400"> ({returnRequest.processByStaff.email})</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t">
+                  {returnRequest.status === "PENDING" && (
+                    <Button
+                      onClick={() => handleStartReviewReturn(Number(returnBank!.id))}
+                      disabled={submitting}
+                      className="bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)] hover:bg-[var(--admin-green-mid)] cursor-pointer"
+                    >
+                      Bắt đầu xử lý
+                    </Button>
+                  )}
+                  {returnRequest.status === "IN_PROGRESS" && (
+                    <>
+                      <Button
+                        onClick={() => handleApproveReturn(Number(returnBank!.id))}
+                        disabled={submitting}
+                        className="bg-[var(--admin-green-dark)] text-white hover:bg-[var(--admin-green-dark)] cursor-pointer"
+                      >
+                        Duyệt (hoàn tiền)
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleRejectReturn(Number(returnBank!.id))}
+                        disabled={submitting}
+                        className="cursor-pointer"
+                      >
+                        Từ chối
+                      </Button>
+                    </>
+                  )}
+                  {(returnRequest.status === "APPROVED" ||
+                    returnRequest.status === "REJECTED") && (
+                    <p className="text-sm text-gray-500 italic">Đã xử lý xong.</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="border-t" />
 
