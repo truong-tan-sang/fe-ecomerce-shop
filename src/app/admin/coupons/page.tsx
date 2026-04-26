@@ -706,9 +706,6 @@ export default function AdminCouponsPage() {
             </div>
           )}
 
-          <span className="ml-auto text-xs text-gray-400 flex-shrink-0">
-            {loading ? "..." : `${vouchers.length} voucher${hasMore ? "+" : ""}`}
-          </span>
         </div>
 
         {/* Table Header */}
