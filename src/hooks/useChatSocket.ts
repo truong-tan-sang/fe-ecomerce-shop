@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { WsChatMessagePayload } from "@/dto/chat";
+import { parseProductCard, type ProductAttachment } from "@/utils/chat-product";
 
 const WS_URL =
   process.env.NEXT_PUBLIC_WS_URL || "http://localhost:80";
@@ -14,6 +15,7 @@ export interface ChatMessage {
   isMine: boolean;
   timestamp: Date;
   roomName?: string;
+  productAttachment?: ProductAttachment;
 }
 
 interface UseChatSocketOptions {
@@ -59,14 +61,18 @@ export function useChatSocket({
       setConnected(false);
     });
 
-    const toMessage = (payload: WsChatMessagePayload): ChatMessage => ({
-      id: `ws-${Date.now()}-${Math.random()}`,
-      senderEmail: payload.name,
-      text: payload.text,
-      isMine: payload.name === currentUserEmail,
-      timestamp: new Date(),
-      roomName: payload.room_name,
-    });
+    const toMessage = (payload: WsChatMessagePayload): ChatMessage => {
+      const productAttachment = parseProductCard(payload.text) ?? undefined;
+      return {
+        id: `ws-${Date.now()}-${Math.random()}`,
+        senderEmail: payload.name,
+        text: payload.text,
+        isMine: payload.name === currentUserEmail,
+        timestamp: new Date(),
+        roomName: payload.room_name,
+        productAttachment,
+      };
+    };
 
     socket.on("msgPrivateToClient", (payload: WsChatMessagePayload) => {
       onMessage?.(toMessage(payload));

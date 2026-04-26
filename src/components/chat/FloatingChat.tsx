@@ -8,6 +8,8 @@ import { useChatSocket, ChatMessage } from "@/hooks/useChatSocket";
 import { chatService } from "@/services/chat";
 import { ChatMessageDto, ChatRoomDto } from "@/dto/chat";
 import { ApiError } from "@/utils/api-error";
+import { parseProductCard, serializeProductCard, type ProductAttachment } from "@/utils/chat-product";
+import ProductMessageCard from "@/components/chat/ProductMessageCard";
 
 export default function FloatingChat() {
   const { data: session } = useSession();
@@ -18,6 +20,7 @@ export default function FloatingChat() {
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingProduct, setPendingProduct] = useState<ProductAttachment | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
 
@@ -27,7 +30,6 @@ export default function FloatingChat() {
   const supportRoomName = userId ? `support-${userId}` : null;
 
   const handleIncoming = useCallback((msg: ChatMessage) => {
-    // Ignore echo of own messages — already shown via optimistic update
     if (msg.isMine) return;
     setMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) return prev;
@@ -43,29 +45,45 @@ export default function FloatingChat() {
     }
   }, [supportRoomName]);
 
-  const { connected, sendRoomMessage, createRoom } = useChatSocket({
+  const { connected, sendRoomMessage, createRoom, joinRoom } = useChatSocket({
     accessToken,
     currentUserEmail,
     onMessage: handleIncoming,
     onAddedToRoom: handleAddedToRoom,
   });
 
-  // Sync ref so handleIncoming can read open state without a stale closure
   useEffect(() => { openRef.current = open; }, [open]);
 
-  // Clear unread count when chat panel opens
+  // Rejoin support room on WS (re)connect — room membership isn't persisted across socket connections
+  useEffect(() => {
+    if (!connected || !supportRoomName || !historyLoaded) return;
+    joinRoom(supportRoomName);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected]);
+
   useEffect(() => {
     if (open) setUnreadCount(0);
   }, [open]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (open) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, open]);
 
-  // Load message history and ensure room exists when chat opens
+  // Listen for product attach events dispatched by ProductInfo
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const att = (e as CustomEvent<ProductAttachment>).detail;
+      if (att) {
+        setPendingProduct(att);
+        setOpen(true);
+      }
+    };
+    window.addEventListener("chatAttachProduct", handler);
+    return () => window.removeEventListener("chatAttachProduct", handler);
+  }, []);
+
   useEffect(() => {
     if (!open || !accessToken || !userId || !supportRoomName || historyLoaded) return;
 
@@ -79,27 +97,19 @@ export default function FloatingChat() {
         const alreadyInRoom = rooms.some((r) => r.name === supportRoomName);
 
         if (!alreadyInRoom) {
-          // First time: create the room via WebSocket (creates membership + joins socket)
           const displayName =
             (session?.user as { name?: string } | undefined)?.name ??
             currentUserEmail ??
             "Khách hàng";
           console.log("[FloatingChat] Creating support room:", supportRoomName);
           createRoom(supportRoomName, displayName);
-          // Room is new — no history to load
           setHistoryLoaded(true);
           return;
         }
 
-        // Room exists — socket already joined via initJoin on connect
         console.log("[FloatingChat] Found support room:", supportRoomName);
         try {
-          const msgRes = await chatService.getRoomMessages(
-            supportRoomName,
-            accessToken,
-            1,
-            30
-          );
+          const msgRes = await chatService.getRoomMessages(supportRoomName, accessToken, 1, 30);
           if (msgRes?.data) {
             const history = (msgRes.data as ChatMessageDto[])
               .slice()
@@ -110,12 +120,12 @@ export default function FloatingChat() {
                 text: m.content,
                 isMine: m.senderId === Number(userId),
                 timestamp: new Date(m.createdAt),
+                productAttachment: parseProductCard(m.content) ?? undefined,
               }));
             setMessages(history);
           }
         } catch (err) {
           if (err instanceof ApiError && err.statusCode === 404) {
-            // Room exists in membership but no messages yet
             console.log("[FloatingChat] No messages yet in support room");
           } else {
             throw err;
@@ -133,12 +143,29 @@ export default function FloatingChat() {
   }, [open, accessToken, userId, supportRoomName, historyLoaded, session, currentUserEmail, createRoom]);
 
   function handleSend() {
-    const text = input.trim();
-    if (!text || !connected || !supportRoomName) return;
+    if (!connected || !supportRoomName) return;
 
+    if (pendingProduct) {
+      const text = serializeProductCard(pendingProduct);
+      const sent = sendRoomMessage(supportRoomName, text);
+      if (!sent) return;
+      const optimisticMsg: ChatMessage = {
+        id: `opt-${Date.now()}`,
+        senderEmail: currentUserEmail ?? "me",
+        text,
+        isMine: true,
+        timestamp: new Date(),
+        productAttachment: pendingProduct,
+      };
+      setMessages((prev) => [...prev, optimisticMsg]);
+      setPendingProduct(null);
+      return;
+    }
+
+    const text = input.trim();
+    if (!text) return;
     const sent = sendRoomMessage(supportRoomName, text);
     if (!sent) return;
-
     const optimisticMsg: ChatMessage = {
       id: `opt-${Date.now()}`,
       senderEmail: currentUserEmail ?? "me",
@@ -157,13 +184,11 @@ export default function FloatingChat() {
     }
   }
 
-  // All hooks are above — safe to return early now
   if (pathname?.startsWith("/admin")) return null;
   if (!session) return null;
 
   return (
     <>
-      {/* Chat panel */}
       {open && (
         <div
           className="fixed bottom-20 right-6 z-50 w-80 flex flex-col bg-white border border-black shadow-2xl"
@@ -210,47 +235,68 @@ export default function FloatingChat() {
                 key={msg.id}
                 className={`flex ${msg.isMine ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`max-w-[75%] px-3 py-2 text-sm ${
-                    msg.isMine
-                      ? "bg-black text-white"
-                      : "bg-white border border-gray-200 text-black"
-                  }`}
-                >
-                  {!msg.isMine && (
-                    <p className="text-[10px] font-medium mb-1 opacity-60">
-                      Hỗ trợ
-                    </p>
-                  )}
-                  <p className="leading-snug">{msg.text}</p>
-                  <p
-                    className={`text-[10px] mt-1 ${msg.isMine ? "text-gray-300" : "text-gray-400"} text-right`}
+                {msg.productAttachment ? (
+                  <ProductMessageCard
+                    attachment={msg.productAttachment}
+                    isMine={msg.isMine}
+                    timestamp={msg.timestamp}
+                    senderLabel={!msg.isMine ? "Hỗ trợ" : undefined}
+                  />
+                ) : (
+                  <div
+                    className={`max-w-[75%] px-3 py-2 text-sm ${
+                      msg.isMine
+                        ? "bg-black text-white"
+                        : "bg-white border border-gray-200 text-black"
+                    }`}
                   >
-                    {msg.timestamp.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
+                    {!msg.isMine && (
+                      <p className="text-[10px] font-medium mb-1 opacity-60">Hỗ trợ</p>
+                    )}
+                    <p className="leading-snug">{msg.text}</p>
+                    <p className={`text-[10px] mt-1 ${msg.isMine ? "text-gray-300" : "text-gray-400"} text-right`}>
+                      {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Pending product preview */}
+          {pendingProduct && (
+            <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <div className="flex-1 min-w-0">
+                <ProductMessageCard attachment={pendingProduct} isMine={false} />
+              </div>
+              <button
+                onClick={() => setPendingProduct(null)}
+                className="text-gray-400 hover:text-black cursor-pointer shrink-0"
+                aria-label="Huỷ đính kèm sản phẩm"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Input */}
           <div className="flex items-center border-t border-gray-200 bg-white flex-shrink-0">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
-              disabled={!connected}
-              className="flex-1 px-4 py-3 text-sm outline-none bg-transparent disabled:opacity-50 placeholder:text-gray-400"
-            />
+            {!pendingProduct && (
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
+                disabled={!connected}
+                className="flex-1 px-4 py-3 text-sm outline-none bg-transparent disabled:opacity-50 placeholder:text-gray-400"
+              />
+            )}
+            {pendingProduct && <div className="flex-1" />}
             <button
               onClick={handleSend}
-              disabled={!connected || !input.trim()}
+              disabled={!connected || (!pendingProduct && !input.trim())}
               className="cursor-pointer p-3 text-black hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Gửi tin nhắn"
             >

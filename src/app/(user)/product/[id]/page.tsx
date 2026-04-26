@@ -75,6 +75,7 @@ export default async function ProductDetailPage({
       <Header />
       <main className="mx-auto w-full max-w-7xl px-3 py-6 pt-32 md:px-6 md:pt-36">
         <ProductDetailClient
+          productId={product.id}
           brand={product.name.split(" ")[0] || "Brand"}
           name={product.name}
           rating={averageRating}
@@ -87,11 +88,13 @@ export default async function ProductDetailPage({
           colors={colors}
         />
 
-        {/* Review Section (display-only) */}
+        {/* Review Section */}
         <ReviewSection
           productId={product.id}
           initialReviews={reviews}
           variants={variants}
+          currentUserId={session?.user?.id ? parseInt(session.user.id, 10) : undefined}
+          accessToken={accessToken}
         />
       </main>
     </div>

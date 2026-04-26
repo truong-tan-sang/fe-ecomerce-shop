@@ -12,7 +12,14 @@ import {
   Loader2,
   Users,
   Clock,
+  Package,
+  X,
 } from "lucide-react";
+import { parseProductCard, serializeProductCard, type ProductAttachment } from "@/utils/chat-product";
+import ProductMessageCard from "@/components/chat/ProductMessageCard";
+import ProductPicker from "@/components/chat/ProductPicker";
+import ProductForm from "@/app/admin/products/_components/ProductForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useChatSocket, ChatMessage } from "@/hooks/useChatSocket";
 import { chatService } from "@/services/chat";
 import { ChatMessageDto, ChatRoomDto } from "@/dto/chat";
@@ -73,6 +80,9 @@ export default function AdminChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [input, setInput] = useState("");
+  const [pendingProduct, setPendingProduct] = useState<ProductAttachment | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [productDetailId, setProductDetailId] = useState<number | null>(null);
   const [senderProfiles, setSenderProfiles] = useState<Record<string, SenderProfile>>({});
   // Admin's own profile for the avatar shown on "mine" bubbles
   const [myProfile, setMyProfile] = useState<SenderProfile | null>(null);
@@ -112,6 +122,14 @@ export default function AdminChatPage() {
 
   // Sync ref so handleIncoming can read activeRoom without a stale closure
   useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
+
+  // Rejoin all rooms on WS (re)connect — socket doesn't persist room membership across connections
+  useEffect(() => {
+    if (!connected) return;
+    joinedRooms.forEach((r) => joinRoom(r.name));
+  // joinRoom is stable (useCallback with no deps); joinedRooms triggers re-run on load
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -220,6 +238,7 @@ export default function AdminChatPage() {
               text: m.content,
               isMine: m.senderId === myUserId,
               timestamp: new Date(m.createdAt),
+              productAttachment: parseProductCard(m.content) ?? undefined,
             }));
           setMessages(history);
           await loadColleagueProfiles(history);
@@ -311,12 +330,32 @@ export default function AdminChatPage() {
   }
 
   function handleSend() {
+    if (!connected || !activeRoom || myUserId === null) return;
+
+    if (pendingProduct) {
+      const text = serializeProductCard(pendingProduct);
+      const sent = activeRoom.isPrivate
+        ? sendPrivateMessage(getPeerUserId(activeRoom, myUserId) ?? "", text)
+        : sendRoomMessage(activeRoom.name, text);
+      if (!sent) return;
+      const optimistic: ChatMessage = {
+        id: `opt-${Date.now()}`,
+        senderEmail: currentUserEmail ?? "admin",
+        text,
+        isMine: true,
+        timestamp: new Date(),
+        productAttachment: pendingProduct,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      setPendingProduct(null);
+      return;
+    }
+
     const text = input.trim();
-    if (!text || !connected || !activeRoom || myUserId === null) return;
+    if (!text) return;
 
     let sent = false;
     if (activeRoom.isPrivate) {
-      // Backward compat for any old private rooms
       const peerId = getPeerUserId(activeRoom, myUserId);
       if (!peerId) return;
       sent = sendPrivateMessage(peerId, text);
@@ -473,30 +512,68 @@ export default function AdminChatPage() {
                 senderProfiles={senderProfiles}
                 myProfile={myProfile}
                 classifyMessage={classifyMessage}
+                onProductCardClick={(id) => setProductDetailId(id)}
               />
             )}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Pending product preview */}
+          {pendingProduct && (
+            <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <div className="flex-1 min-w-0">
+                <ProductMessageCard attachment={pendingProduct} isMine={false} />
+              </div>
+              <button
+                onClick={() => setPendingProduct(null)}
+                className="text-gray-400 hover:text-black cursor-pointer shrink-0"
+                aria-label="Huỷ đính kèm sản phẩm"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Input */}
           <div className="border-t border-gray-200 bg-white flex items-center px-2 flex-shrink-0">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={connected ? "Nhập tin nhắn…" : "Đang kết nối…"}
+            <button
+              onClick={() => setPickerOpen(true)}
               disabled={!connected}
-              className="flex-1 px-4 py-3.5 text-sm outline-none bg-transparent disabled:opacity-50 placeholder:text-gray-400"
-            />
+              className="cursor-pointer p-2.5 text-gray-500 hover:text-black hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Đính kèm sản phẩm"
+              title="Đính kèm sản phẩm"
+            >
+              <Package size={18} />
+            </button>
+            {!pendingProduct && (
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={connected ? "Nhập tin nhắn…" : "Đang kết nối…"}
+                disabled={!connected}
+                className="flex-1 px-2 py-3.5 text-sm outline-none bg-transparent disabled:opacity-50 placeholder:text-gray-400"
+              />
+            )}
+            {pendingProduct && <div className="flex-1" />}
             <button
               onClick={handleSend}
-              disabled={!connected || !input.trim()}
+              disabled={!connected || (!pendingProduct && !input.trim())}
               className="cursor-pointer p-3 text-black hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Send size={18} />
             </button>
           </div>
+
+          {accessToken && (
+            <ProductPicker
+              open={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              onSelect={(att) => { setPendingProduct(att); setPickerOpen(false); }}
+              accessToken={accessToken}
+            />
+          )}
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-400">
@@ -504,6 +581,22 @@ export default function AdminChatPage() {
           <p className="text-sm">Chọn cuộc trò chuyện để bắt đầu</p>
         </div>
       )}
+
+      {/* Product detail modal — opened when admin clicks a product card bubble */}
+      <Dialog open={productDetailId !== null} onOpenChange={(open) => { if (!open) setProductDetailId(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto p-0" style={{ maxWidth: "95vw", width: "1400px" }}>
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>Chi tiết sản phẩm</DialogTitle>
+          </DialogHeader>
+          {productDetailId !== null && (
+            <ProductForm
+              productId={productDetailId}
+              onSuccess={() => setProductDetailId(null)}
+              onCancel={() => setProductDetailId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -516,6 +609,7 @@ function MessageList({
   senderProfiles,
   myProfile,
   classifyMessage,
+  onProductCardClick,
 }: {
   messages: ChatMessage[];
   myUserId: number | null;
@@ -523,6 +617,7 @@ function MessageList({
   senderProfiles: Record<string, SenderProfile>;
   myProfile: SenderProfile | null;
   classifyMessage: (msg: ChatMessage, customerId: string | null) => SenderKind;
+  onProductCardClick?: (productId: number) => void;
 }) {
   const customerIdMatch = activeRoom?.name.match(/^support-(\d+)$/);
   const customerId = customerIdMatch?.[1] ?? null;
@@ -611,23 +706,33 @@ function MessageList({
                   </div>
 
                   {/* Bubble */}
-                  <div
-                    className={`max-w-[70%] px-4 py-2.5 text-sm rounded-2xl ${
-                      group.kind === "mine"
-                        ? "bg-[var(--admin-green-dark)] text-white"
-                        : group.kind === "colleague"
-                        ? "bg-indigo-500 text-white"
-                        : "bg-white border border-gray-200 text-black"
-                    }`}
-                  >
-                    <p className="leading-snug">{msg.text}</p>
-                    <p className="text-[10px] mt-1 text-right opacity-50">
-                      {msg.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
+                  {msg.productAttachment ? (
+                    <ProductMessageCard
+                      attachment={msg.productAttachment}
+                      isMine={isRight}
+                      colleague={group.kind === "colleague"}
+                      timestamp={msg.timestamp}
+                      onCardClick={onProductCardClick ? () => onProductCardClick(msg.productAttachment!.productId) : undefined}
+                    />
+                  ) : (
+                    <div
+                      className={`max-w-[70%] px-4 py-2.5 text-sm rounded-lg ${
+                        group.kind === "mine"
+                          ? "bg-[var(--admin-green-dark)] text-white"
+                          : group.kind === "colleague"
+                          ? "bg-indigo-500 text-white"
+                          : "bg-white border border-gray-200 text-black"
+                      }`}
+                    >
+                      <p className="leading-snug">{msg.text}</p>
+                      <p className="text-[10px] mt-1 text-right opacity-50">
+                        {msg.timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}

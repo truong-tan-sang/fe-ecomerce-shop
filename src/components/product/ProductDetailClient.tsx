@@ -10,6 +10,7 @@ import type { ColorEntity } from "@/dto/color";
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80";
 
 interface ProductDetailClientProps {
+  productId: number;
   brand: string;
   name: string;
   rating: number;
@@ -25,6 +26,7 @@ interface ProductDetailClientProps {
 }
 
 export default function ProductDetailClient({
+  productId,
   brand,
   name,
   rating,
@@ -75,6 +77,8 @@ export default function ProductDetailClient({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
       <ProductGallery images={allImages} forcedIndex={galleryIndex} />
       <ProductInfo
+        productId={productId}
+        productImageUrl={productImageUrl}
         brand={brand}
         name={name}
         rating={rating}

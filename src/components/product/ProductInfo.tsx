@@ -11,8 +11,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/utils/api-error";
+import { MessageSquare } from "lucide-react";
+import { serializeProductCard, type ProductAttachment } from "@/utils/chat-product";
 
 interface ProductInfoProps {
+    productId: number;
+    productImageUrl: string;
     brand: string;
     name: string;
     rating: number;
@@ -26,6 +30,8 @@ interface ProductInfoProps {
 }
 
 export default function ProductInfo({
+    productId,
+    productImageUrl,
     brand,
     name,
     rating,
@@ -219,6 +225,23 @@ export default function ProductInfo({
         router.push("/checkout?buyNow=1");
     };
 
+    const handleSendToChat = () => {
+        const variantImageUrl = selectedVariant
+            ? (variants.find((v) => v.id === selectedVariant.id) as (typeof variants[0] & { media?: { url: string }[] }) | undefined)?.media?.[0]?.url
+            : undefined;
+        const att: ProductAttachment = {
+            productId,
+            productName: name,
+            price: selectedVariant?.price ?? basePrice,
+            imageUrl: variantImageUrl ?? productImageUrl,
+            variantId: selectedVariant?.id,
+            variantSize: selectedVariant?.variantSize,
+            variantColor: selectedVariant?.variantColor,
+        };
+        console.log("[ProductInfo] Sending to chat:", serializeProductCard(att));
+        window.dispatchEvent(new CustomEvent("chatAttachProduct", { detail: att }));
+    };
+
     // Handle size selection - color will auto-adjust via useEffect
     const handleSizeSelect = (size: string) => {
         if (availableSizes.has(size)) {
@@ -410,9 +433,9 @@ export default function ProductInfo({
                     <i className="fas fa-balance-scale" />
                     So sánh
                 </Button>
-                <Button variant="outline" className="py-3 h-auto border-gray-300">
-                    <i className="far fa-question-circle" />
-                    Ask a question
+                <Button variant="outline" className="py-3 h-auto border-gray-300 cursor-pointer" onClick={handleSendToChat}>
+                    <MessageSquare size={15} />
+                    Gửi qua chat
                 </Button>
                 <Button variant="outline" className="col-span-2 py-3 h-auto border-gray-300">
                     <i className="fas fa-share-alt" />
