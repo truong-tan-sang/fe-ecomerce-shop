@@ -267,9 +267,18 @@ function AdminProductsListContent() {
     return `${day}-${month}-${year}`;
   };
 
+  const isVoucherActive = (p: (typeof products)[0]): boolean => {
+    if (!p.voucherId || !p.voucher) return false;
+    if (!p.voucher.isActive) return false;
+    const now = Date.now();
+    const from = new Date(p.voucher.validFrom).getTime();
+    const to = new Date(p.voucher.validTo).getTime();
+    return now >= from && now <= to;
+  };
+
   const filteredProducts = products.filter((p) => {
     if (activeTab === "out_of_stock") return p.stock === 0;
-    if (activeTab === "on_sale") return p.voucherId !== null;
+    if (activeTab === "on_sale") return isVoucherActive(p);
     return true;
   });
 
@@ -395,8 +404,7 @@ function AdminProductsListContent() {
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
             <TabsList className="bg-[var(--admin-green-light)]">
               <TabsTrigger value="all" className="cursor-pointer">
-                Tất cả sản phẩm{" "}
-                <span className="ml-1 text-[var(--admin-green-dark)] font-semibold">({products.length})</span>
+                Tất cả sản phẩm
               </TabsTrigger>
               <TabsTrigger value="on_sale" className="cursor-pointer">Đang giảm giá</TabsTrigger>
               <TabsTrigger value="out_of_stock" className="cursor-pointer">Hết hàng</TabsTrigger>

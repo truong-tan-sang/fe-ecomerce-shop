@@ -10,14 +10,22 @@ interface ReviewSectionProps {
   productId: number;
   initialReviews: ReviewDto[];
   variants: ProductVariantEntity[];
+  currentUserId?: number;
+  accessToken?: string;
 }
 
 export default function ReviewSection({
   productId,
   initialReviews,
   variants,
+  currentUserId,
+  accessToken,
 }: ReviewSectionProps) {
-  const [reviews] = useState<ReviewDto[]>(initialReviews);
+  const [reviews, setReviews] = useState<ReviewDto[]>(initialReviews);
+
+  const handleUpdated = (updated: ReviewDto) => {
+    setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  };
 
   // Calculate statistics
   const averageRating = reviews.length > 0
@@ -102,6 +110,9 @@ export default function ReviewSection({
                     key={review.id}
                     review={review}
                     variant={variant || null}
+                    currentUserId={currentUserId}
+                    accessToken={accessToken}
+                    onUpdated={handleUpdated}
                   />
                 );
               })}

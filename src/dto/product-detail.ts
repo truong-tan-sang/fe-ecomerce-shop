@@ -25,10 +25,7 @@ export interface ReviewDto {
   comment: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ReviewWithMedia extends ReviewDto {
-  medias?: MediaEntity[];
+  media?: MediaEntity[];
 }
 
 export interface CreateReviewDto {

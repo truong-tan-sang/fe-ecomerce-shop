@@ -47,6 +47,13 @@ export interface ProductVariantWithMediaEntity {
  * Product DTO with full details from GET /products endpoint
  * Matches ProductWithVariantsAndMediaEntity schema
  */
+export interface ProductVoucherSummary {
+  id: number;
+  isActive: boolean;
+  validFrom: string;
+  validTo: string;
+}
+
 export interface ProductDto {
   id: number;
   name: string;
@@ -58,6 +65,7 @@ export interface ProductDto {
   categoryId: number | null;
   createByUserId: number;
   voucherId: number | null;
+  voucher?: ProductVoucherSummary | null;
   createdAt: string;
   updatedAt: string;
   media: MediaEntity[];

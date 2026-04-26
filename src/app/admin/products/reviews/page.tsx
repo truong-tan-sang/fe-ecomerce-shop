@@ -1,4 +1,368 @@
+"use client";
+
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Search, Loader2, Star, ImageIcon } from "lucide-react";
+import { reviewService } from "@/services/review";
+import type { AdminReviewDto } from "@/dto/review";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import ReviewDetailSheet from "./_components/ReviewDetailSheet";
+
+const ROW_HEIGHT = 64;
+const PER_PAGE = 50;
+const COLS = "48px 80px 2fr 1.5fr 130px 2fr 60px 130px";
+
+type FilterTab = "all" | "5" | "4" | "3" | "2" | "1";
+
+const TAB_TO_RATING: Record<FilterTab, number | undefined> = {
+  all: undefined,
+  "5": 5,
+  "4": 4,
+  "3": 3,
+  "2": 2,
+  "1": 1,
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
 export default function AdminProductsReviewsPage() {
-  // TODO: Implement product reviews moderation
-  return <div>TODO: Product Reviews</div>;
+  const { data: session } = useSession();
+  const accessToken = session?.user?.access_token || "";
+
+  const [reviews, setReviews] = useState<AdminReviewDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const pageRef = useRef(1);
+
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedReview, setSelectedReview] = useState<AdminReviewDto | null>(null);
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const fetchReviews = useCallback(
+    async (page: number, append: boolean, tab: FilterTab) => {
+      if (!accessToken) return;
+      if (page === 1) setLoading(true);
+      else setLoadingMore(true);
+
+      try {
+        const ratingFilter = TAB_TO_RATING[tab];
+        console.log("[ReviewsPage] Fetching tab:", tab, "page:", page);
+        const res = await reviewService.getAllReviews(
+          page,
+          PER_PAGE,
+          ratingFilter,
+          accessToken
+        );
+        const data = Array.isArray(res.data) ? res.data : [];
+
+        if (append) setReviews((prev) => [...prev, ...data]);
+        else setReviews(data);
+        setHasMore(data.length === PER_PAGE);
+      } catch (err) {
+        console.error("[ReviewsPage] Error:", err);
+        if (!append) setReviews([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [accessToken]
+  );
+
+  useEffect(() => {
+    pageRef.current = 1;
+    fetchReviews(1, false, activeTab);
+  }, [fetchReviews, activeTab]);
+
+  const loadNextPage = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    const nextPage = pageRef.current + 1;
+    pageRef.current = nextPage;
+    fetchReviews(nextPage, true, activeTab);
+  }, [loadingMore, hasMore, fetchReviews, activeTab]);
+
+  // Client-side search across product/user/comment
+  const filteredReviews = useMemo(() => {
+    if (!searchQuery.trim()) return reviews;
+    const q = searchQuery.trim().toLowerCase();
+    return reviews.filter((r) => {
+      const productName = r.product?.name?.toLowerCase() ?? "";
+      const userName = [r.user?.firstName, r.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const userEmail = r.user?.email?.toLowerCase() ?? "";
+      const comment = r.comment?.toLowerCase() ?? "";
+      return (
+        productName.includes(q) ||
+        userName.includes(q) ||
+        userEmail.includes(q) ||
+        comment.includes(q) ||
+        String(r.id).includes(q)
+      );
+    });
+  }, [reviews, searchQuery]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredReviews.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+  });
+
+  // Infinite scroll
+  useEffect(() => {
+    if (!hasMore || loadingMore || loading) return;
+    const virtualItems = rowVirtualizer.getVirtualItems();
+    const lastVisible = virtualItems[virtualItems.length - 1];
+    const nearEnd = lastVisible
+      ? lastVisible.index >= filteredReviews.length - 5
+      : filteredReviews.length > 0;
+    if (nearEnd) loadNextPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    rowVirtualizer.getVirtualItems(),
+    filteredReviews.length,
+    hasMore,
+    loadingMore,
+    loading,
+    loadNextPage,
+  ]);
+
+  const handleDeleted = (reviewId: number) => {
+    setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+  };
+
+  // Aggregate counters for tab labels (just from currently-loaded data)
+  const ratingCounts = useMemo(() => {
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviews.forEach((r) => {
+      if (r.rating >= 1 && r.rating <= 5) {
+        counts[r.rating as 1 | 2 | 3 | 4 | 5]++;
+      }
+    });
+    return counts;
+  }, [reviews]);
+
+  return (
+    <div className="p-6 flex flex-col gap-4 h-full min-h-0">
+      <h1 className="text-2xl font-bold text-[var(--admin-green-dark)]">
+        Đánh giá sản phẩm
+      </h1>
+
+      {/* Filter tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as FilterTab)}
+      >
+        <TabsList className="bg-[var(--admin-green-light)]">
+          <TabsTrigger value="all" className="cursor-pointer">
+            Tất cả
+          </TabsTrigger>
+          <TabsTrigger value="5" className="cursor-pointer">
+            5★ {activeTab === "all" && ratingCounts[5] > 0 && `(${ratingCounts[5]})`}
+          </TabsTrigger>
+          <TabsTrigger value="4" className="cursor-pointer">
+            4★ {activeTab === "all" && ratingCounts[4] > 0 && `(${ratingCounts[4]})`}
+          </TabsTrigger>
+          <TabsTrigger value="3" className="cursor-pointer">
+            3★ {activeTab === "all" && ratingCounts[3] > 0 && `(${ratingCounts[3]})`}
+          </TabsTrigger>
+          <TabsTrigger value="2" className="cursor-pointer">
+            2★ {activeTab === "all" && ratingCounts[2] > 0 && `(${ratingCounts[2]})`}
+          </TabsTrigger>
+          <TabsTrigger value="1" className="cursor-pointer">
+            1★ {activeTab === "all" && ratingCounts[1] > 0 && `(${ratingCounts[1]})`}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          type="text"
+          placeholder="Tìm theo tên sản phẩm, người dùng, email hoặc nội dung..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 max-w-2xl"
+        />
+      </div>
+
+      {/* Table header */}
+      <div
+        style={{ display: "grid", gridTemplateColumns: COLS }}
+        className="bg-[var(--admin-green-light)] rounded-lg px-4 py-2 text-sm font-semibold text-[var(--admin-green-dark)] flex-shrink-0"
+      >
+        <div className="flex items-center">#</div>
+        <div className="flex items-center">Ảnh</div>
+        <div className="flex items-center">Sản phẩm</div>
+        <div className="flex items-center">Người dùng</div>
+        <div className="flex items-center">Đánh giá</div>
+        <div className="flex items-center">Nội dung</div>
+        <div className="flex items-center">Hình</div>
+        <div className="flex items-center">Ngày</div>
+      </div>
+
+      {/* Body */}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-[var(--admin-green-dark)] w-8 h-8" />
+        </div>
+      ) : filteredReviews.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-gray-500">
+          {searchQuery
+            ? "Không tìm thấy đánh giá phù hợp."
+            : "Chưa có đánh giá nào trong mục này."}
+        </div>
+      ) : (
+        <div
+          ref={tableContainerRef}
+          className="overflow-auto flex-1 relative border border-gray-200 rounded-lg min-h-0"
+        >
+          <div
+            style={{
+              height: rowVirtualizer.getTotalSize(),
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((vi) => {
+              const review = filteredReviews[vi.index];
+              const thumbUrl = review.media?.[0]?.url;
+              const productName = review.product?.name ?? `Product #${review.productId}`;
+              const variantLabel = review.productVariant
+                ? `${review.productVariant.variantSize} • ${review.productVariant.variantColor}`
+                : "";
+              const userName =
+                [review.user?.firstName, review.user?.lastName]
+                  .filter(Boolean)
+                  .join(" ") || review.user?.email || `User #${review.userId}`;
+              const userEmail = review.user?.email ?? "";
+              const photoCount = review.media?.length ?? 0;
+
+              return (
+                <div
+                  key={review.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${vi.start}px)`,
+                    display: "grid",
+                    gridTemplateColumns: COLS,
+                    width: "100%",
+                    height: ROW_HEIGHT,
+                  }}
+                  onClick={() => setSelectedReview(review)}
+                  className="cursor-pointer hover:bg-gray-50 border-b border-gray-100 px-4 items-center text-sm"
+                >
+                  {/* # */}
+                  <div className="text-gray-400 text-xs">{vi.index + 1}</div>
+
+                  {/* First photo */}
+                  <div className="flex items-center justify-center">
+                    {thumbUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={thumbUrl}
+                        alt=""
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-300">
+                        <ImageIcon size={18} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product */}
+                  <div className="flex flex-col overflow-hidden pr-2">
+                    <span className="truncate text-gray-800 font-medium">
+                      {productName}
+                    </span>
+                    {variantLabel && (
+                      <span className="truncate text-xs text-gray-500">
+                        {variantLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* User */}
+                  <div className="flex flex-col overflow-hidden pr-2">
+                    <span className="truncate text-gray-800">{userName}</span>
+                    {userEmail && (
+                      <span className="truncate text-xs text-gray-500">
+                        {userEmail}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-1">
+                    <Star
+                      size={14}
+                      className="fill-yellow-400 stroke-yellow-400"
+                    />
+                    <span className="font-medium text-gray-800">
+                      {review.rating}
+                    </span>
+                    <span className="text-xs text-gray-500">/5</span>
+                  </div>
+
+                  {/* Comment */}
+                  <div className="text-gray-600 truncate pr-2">
+                    {review.comment || (
+                      <span className="text-gray-400 italic">— Không có nội dung —</span>
+                    )}
+                  </div>
+
+                  {/* Photo count */}
+                  <div className="text-gray-600 text-xs flex items-center gap-1">
+                    {photoCount > 0 ? (
+                      <>
+                        <ImageIcon size={12} className="text-gray-500" />
+                        {photoCount}
+                      </>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </div>
+
+                  {/* Date */}
+                  <div className="text-gray-600 text-xs">
+                    {formatDate(review.createdAt)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {loadingMore && (
+            <div className="sticky bottom-0 bg-white py-2 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Đang tải thêm...
+            </div>
+          )}
+        </div>
+      )}
+
+      <ReviewDetailSheet
+        review={selectedReview}
+        open={selectedReview !== null}
+        onClose={() => setSelectedReview(null)}
+        onDeleted={handleDeleted}
+        accessToken={accessToken}
+      />
+    </div>
+  );
 }

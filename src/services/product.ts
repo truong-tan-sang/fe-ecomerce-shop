@@ -91,31 +91,54 @@ export const productService = {
     return response;
   },
 
-  async createReview(data: CreateReviewDto, accessToken: string): Promise<IBackendRes<ReviewDto>> {
+  async createReview(
+    data: CreateReviewDto,
+    files: File[],
+    accessToken: string
+  ): Promise<IBackendRes<ReviewDto>> {
     const url = `${BACKEND_URL}/reviews`;
-    console.log("[ProductService] Creating review:", data);
-    const response = await sendRequest<IBackendRes<ReviewDto>>({
+    console.log("[ProductService] Creating review with", files.length, "file(s):", data);
+
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+    Object.entries(data).forEach(([k, v]) => {
+      if (v == null) return;
+      formData.append(k, String(v));
+    });
+
+    const response = await sendRequestFile<IBackendRes<ReviewDto>>({
       url,
       method: "POST",
-      body: data,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      body: formData,
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[ProductService] Create review response:", response);
     return response;
   },
 
-  async updateReview(reviewId: number, data: UpdateReviewDto, accessToken: string): Promise<IBackendRes<ReviewDto>> {
+  async updateReview(
+    reviewId: number,
+    data: UpdateReviewDto,
+    files: File[],
+    mediaIdsToDelete: string[],
+    accessToken: string
+  ): Promise<IBackendRes<ReviewDto>> {
     const url = `${BACKEND_URL}/reviews/${reviewId}`;
-    console.log("[ProductService] Updating review:", { reviewId, data });
-    const response = await sendRequest<IBackendRes<ReviewDto>>({
+    console.log("[ProductService] Updating review:", { reviewId, data, files: files.length, mediaIdsToDelete });
+
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+    mediaIdsToDelete.forEach((id) => formData.append("mediaIdsToDelete", id));
+    Object.entries(data).forEach(([k, v]) => {
+      if (v == null) return;
+      formData.append(k, String(v));
+    });
+
+    const response = await sendRequestFile<IBackendRes<ReviewDto>>({
       url,
       method: "PATCH",
-      body: data,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      body: formData,
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[ProductService] Update review response:", response);
     return response;

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, Plus, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,6 +17,11 @@ import { toast } from "sonner";
 import { productService } from "@/services/product";
 import type { OrderFullInformationEntity, OrderItemEntity } from "@/dto/order";
 import type { ReviewDto } from "@/dto/product-detail";
+import type { MediaEntity } from "@/dto/product";
+import ImageLightbox from "@/components/common/ImageLightbox";
+import ReviewEditDialog from "@/components/profile/ReviewEditDialog";
+
+const MAX_IMAGES = 5;
 
 interface ItemReviewState {
   rating: number;
@@ -24,6 +29,11 @@ interface ItemReviewState {
   comment: string;
   status: "idle" | "submitting" | "done" | "already_reviewed";
   productId: number | null;
+  productVariantId: number;
+  images: File[];
+  previews: string[];
+  existingMedia: MediaEntity[];
+  reviewId: number | null;
 }
 
 interface ReviewOrderDialogProps {
@@ -107,6 +117,11 @@ export default function ReviewOrderDialog({
               comment: existing.comment ?? "",
               status: "already_reviewed" as const,
               productId: item.productVariant?.productId ?? existing.productId ?? null,
+              productVariantId: item.productVariantId,
+              images: [],
+              previews: [],
+              existingMedia: existing.media ?? [],
+              reviewId: existing.id,
             },
           ];
         }
@@ -118,17 +133,71 @@ export default function ReviewOrderDialog({
             comment: "",
             status: "idle" as const,
             productId: item.productVariant?.productId ?? null,
+            productVariantId: item.productVariantId,
+            images: [],
+            previews: [],
+            existingMedia: [],
+            reviewId: null,
           },
         ];
       })
     );
   });
 
+  const [lightbox, setLightbox] = useState<{ itemId: number; idx: number } | null>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+
+  // Track preview URLs in a ref so the unmount cleanup sees the latest set
+  // without re-running the effect on every state change.
+  const previewsRef = useRef<string[]>([]);
+  useEffect(() => {
+    previewsRef.current = Object.values(states).flatMap((s) => s.previews);
+  }, [states]);
+  useEffect(() => {
+    return () => {
+      previewsRef.current.forEach((p) => URL.revokeObjectURL(p));
+    };
+  }, []);
+
   const update = (itemId: number, patch: Partial<ItemReviewState>) =>
     setStates((prev) => ({
       ...prev,
       [itemId]: { ...prev[itemId], ...patch },
     }));
+
+  const addImages = (itemId: number, files: File[]) => {
+    setStates((prev) => {
+      const cur = prev[itemId];
+      const room = MAX_IMAGES - cur.images.length;
+      if (room <= 0) return prev;
+      const accepted = files.slice(0, room);
+      const newPreviews = accepted.map((f) => URL.createObjectURL(f));
+      return {
+        ...prev,
+        [itemId]: {
+          ...cur,
+          images: [...cur.images, ...accepted],
+          previews: [...cur.previews, ...newPreviews],
+        },
+      };
+    });
+  };
+
+  const removeImage = (itemId: number, idx: number) => {
+    setStates((prev) => {
+      const cur = prev[itemId];
+      const url = cur.previews[idx];
+      if (url) URL.revokeObjectURL(url);
+      return {
+        ...prev,
+        [itemId]: {
+          ...cur,
+          images: cur.images.filter((_, i) => i !== idx),
+          previews: cur.previews.filter((_, i) => i !== idx),
+        },
+      };
+    });
+  };
 
   const allReadOnly = items.every(
     (item) => states[item.id]?.status === "already_reviewed"
@@ -171,6 +240,7 @@ export default function ReviewOrderDialog({
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               },
+              snapshot.images,
               accessToken
             );
             update(item.id, { status: "done" });
@@ -189,7 +259,6 @@ export default function ReviewOrderDialog({
         toast.success("Cảm ơn bạn đã đánh giá!");
       }
 
-      // Close immediately if every submitted item succeeded AND no other items still need writing
       const anyIdleLeft = items.some(
         (item) =>
           states[item.id]?.status === "idle" &&
@@ -212,12 +281,18 @@ export default function ReviewOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent
+        className="max-w-xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]"
+        onInteractOutside={(e) => {
+          if (lightbox !== null || editingItemId !== null) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable item list */}
         <div className="overflow-y-auto flex-1 divide-y">
           {items.map((item) => {
             const state = states[item.id];
@@ -230,7 +305,6 @@ export default function ReviewOrderDialog({
 
             return (
               <div key={item.id} className="px-6 py-5">
-                {/* Product info row */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-14 h-14 border bg-gray-50 flex-shrink-0 overflow-hidden">
                     {imageUrl ? (
@@ -264,19 +338,31 @@ export default function ReviewOrderDialog({
 
                 {readOnly ? (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <StarRow
-                        rating={state.rating}
-                        hovered={0}
-                        onChange={() => {}}
-                        onHover={() => {}}
-                        onLeave={() => {}}
-                        disabled={true}
-                      />
-                      {isDone && (
-                        <span className="text-xs text-green-600 font-medium">
-                          Vừa gửi
-                        </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <StarRow
+                          rating={state.rating}
+                          hovered={0}
+                          onChange={() => {}}
+                          onHover={() => {}}
+                          onLeave={() => {}}
+                          disabled={true}
+                        />
+                        {isDone && (
+                          <span className="text-xs text-green-600 font-medium">
+                            Vừa gửi
+                          </span>
+                        )}
+                      </div>
+                      {state.reviewId && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingItemId(item.id)}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-black hover:underline cursor-pointer"
+                        >
+                          <Pencil size={12} />
+                          Sửa
+                        </button>
                       )}
                     </div>
                     {state.comment && (
@@ -284,10 +370,31 @@ export default function ReviewOrderDialog({
                         {state.comment}
                       </p>
                     )}
+                    {state.existingMedia.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {state.existingMedia.map((m, idx) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setLightbox({ itemId: item.id, idx })}
+                            className="relative w-16 h-16 border overflow-hidden cursor-pointer hover:border-black transition-colors"
+                            aria-label="Xem ảnh"
+                          >
+                            <Image
+                              src={m.url}
+                              alt=""
+                              fill
+                              sizes="64px"
+                              className="object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {state.productId && (
                       <Link
                         href={`/product/${state.productId}#reviews`}
-                        className="inline-block text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        className="inline-block text-xs text-gray-500 hover:text-black hover:underline cursor-pointer"
                       >
                         Xem trên trang sản phẩm →
                       </Link>
@@ -314,6 +421,53 @@ export default function ReviewOrderDialog({
                       disabled={disabled}
                       className="resize-none text-sm border-gray-300 focus-visible:border-black focus-visible:ring-0"
                     />
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500 mb-1.5">
+                        Hình ảnh ({state.images.length}/{MAX_IMAGES})
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {state.previews.map((src, i) => (
+                          <div
+                            key={`${item.id}-${i}`}
+                            className="relative w-16 h-16 border overflow-hidden group"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setLightbox({ itemId: item.id, idx: i })}
+                              className="absolute inset-0 w-full h-full cursor-pointer"
+                              aria-label="Xem ảnh"
+                            >
+                              <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(item.id, i)}
+                              disabled={disabled}
+                              className="absolute top-0 right-0 w-5 h-5 bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black disabled:cursor-default disabled:opacity-50 z-10"
+                              aria-label="Xoá ảnh"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        {state.images.length < MAX_IMAGES && !disabled && (
+                          <label className="w-16 h-16 border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-gray-500 hover:bg-gray-50 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files ?? []);
+                                addImages(item.id, files);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Plus size={20} className="text-gray-400" />
+                          </label>
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -352,6 +506,64 @@ export default function ReviewOrderDialog({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {lightbox &&
+        (() => {
+          const itemState = states[lightbox.itemId];
+          if (!itemState) return null;
+          const lightboxImages =
+            itemState.status === "idle"
+              ? itemState.previews.map((url, i) => ({ id: `preview-${i}`, url }))
+              : itemState.existingMedia.map((m) => ({ id: m.id, url: m.url }));
+          if (lightboxImages.length === 0) return null;
+          return (
+            <ImageLightbox
+              images={lightboxImages}
+              initialIndex={lightbox.idx}
+              open={true}
+              onClose={() => setLightbox(null)}
+            />
+          );
+        })()}
+
+      {editingItemId !== null &&
+        (() => {
+          const s = states[editingItemId];
+          if (!s || !s.reviewId) return null;
+          const review: ReviewDto = {
+            id: s.reviewId,
+            userId,
+            productId: s.productId,
+            productVariantId: s.productVariantId,
+            rating: s.rating,
+            comment: s.comment,
+            media: s.existingMedia,
+            createdAt: "",
+            updatedAt: "",
+          };
+          const item = items.find((i) => i.id === editingItemId);
+          const variantLabel = item?.productVariant
+            ? `${item.productVariant.variantName ?? ""} — ${item.productVariant.variantSize ?? ""} / ${item.productVariant.variantColor ?? ""}`
+            : undefined;
+          return (
+            <ReviewEditDialog
+              review={review}
+              open={true}
+              onClose={() => setEditingItemId(null)}
+              onUpdated={(updated) => {
+                update(editingItemId, {
+                  rating: updated.rating,
+                  comment: updated.comment ?? "",
+                  existingMedia: updated.media ?? [],
+                });
+                setEditingItemId(null);
+                onSubmitted?.();
+              }}
+              accessToken={accessToken}
+              productLabel={variantLabel}
+            />
+          );
+        })()}
     </Dialog>
   );
 }
