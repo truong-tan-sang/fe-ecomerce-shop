@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { categoryService } from "@/services/category";
 import type { CategoryDto } from "@/dto/category";
+import { useNotifications } from "@/components/notification/NotificationContext";
+import { getNotificationRoute } from "@/utils/notification-route";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/vi";
+
+dayjs.extend(relativeTime);
+dayjs.locale("vi");
 
 export default function Header() {
   const { data: session } = useSession();
@@ -23,6 +31,8 @@ export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const { notifications, unreadCount, markRead } = useNotifications();
+  const previewNotifications = notifications.slice(0, 5);
 
   useEffect(() => {
     categoryService.getAllCategories().then((res) => {
@@ -67,7 +77,73 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-3 md:px-6">
         <div className="flex items-center justify-end gap-5 py-2 text-xs text-white/70">
           <span className="hidden sm:inline-flex items-center gap-2"><i className="fa-regular fa-circle-question" aria-hidden /> Hỗ trợ</span>
-          <span className="hidden sm:inline-flex items-center gap-2"><i className="fa-regular fa-bell" aria-hidden /> Thông báo</span>
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button className="hidden sm:inline-flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer relative">
+                <span className="relative">
+                  <i className="fa-regular fa-bell" aria-hidden />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5 rounded-full">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+                Thông báo
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-0">
+              <div className="px-4 py-3 border-b font-semibold text-sm">Thông báo</div>
+              {previewNotifications.length === 0 ? (
+                <div className="py-8 text-center text-sm text-gray-500">Chưa có thông báo nào</div>
+              ) : (
+                <div>
+                  {previewNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`flex items-start gap-3 px-4 py-3 border-b last:border-0 transition-colors ${
+                        !n.isRead && n.type === "PERSONAL_NOTIFICATION"
+                          ? "bg-blue-50 hover:bg-blue-100"
+                          : "hover:bg-gray-50"
+                      } ${getNotificationRoute(n) ? "cursor-pointer" : ""}`}
+                      onClick={() => {
+                        if (n.type === "PERSONAL_NOTIFICATION" && !n.isRead) markRead(n.id);
+                        const route = getNotificationRoute(n);
+                        if (route) router.push(route);
+                      }}
+                    >
+                      <div
+                        className={`w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-full text-xs ${
+                          n.type === "PERSONAL_NOTIFICATION"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        <i className={`fa-solid ${n.type === "PERSONAL_NOTIFICATION" ? "fa-box" : "fa-tag"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs leading-snug mb-0.5 line-clamp-1 ${!n.isRead && n.type === "PERSONAL_NOTIFICATION" ? "font-bold" : "font-medium"}`}>
+                          {n.title}
+                        </p>
+                        <p className="text-xs text-gray-500 line-clamp-2">{n.content}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{dayjs(n.createdAt).fromNow()}</p>
+                      </div>
+                      {!n.isRead && n.type === "PERSONAL_NOTIFICATION" && (
+                        <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="border-t">
+                <Link
+                  href="/profile/notifications"
+                  className="block w-full text-center text-xs font-medium text-blue-600 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  Xem tất cả thông báo
+                </Link>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <span className="hidden md:inline-flex items-center gap-2"><i className="fa-solid fa-globe" aria-hidden /> Tiếng Việt</span>
 
           <DropdownMenu modal={false}>
