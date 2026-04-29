@@ -138,11 +138,23 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
                 }
               }
             }
-            const colorImages = selectedColors.map((c) => ({
-              color: c.name,
-              file: null as File | null,
-              previewUrl: colorImagesMap.get(c.name) ?? null,
-            }));
+            // Pre-fetch color images via server-side proxy (avoids S3 CORS restriction)
+            const colorImages = await Promise.all(
+              selectedColors.map(async (c) => {
+                const previewUrl = colorImagesMap.get(c.name) ?? null;
+                let file: File | null = null;
+                if (previewUrl) {
+                  try {
+                    const resp = await fetch(`/api/proxy-image?url=${encodeURIComponent(previewUrl)}`);
+                    const blob = await resp.blob();
+                    file = new File([blob], `${c.name}.jpg`, { type: blob.type || "image/jpeg" });
+                  } catch {
+                    // keep null — save-time fallback will retry via proxy
+                  }
+                }
+                return { color: c.name, file, previewUrl, isPrefetched: file !== null };
+              })
+            );
 
             setFormState({
               name: product.name,
@@ -224,7 +236,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
         ...prev,
         colorImages: prev.colorImages.map((ci) =>
           ci.color === colorName
-            ? { ...ci, file, previewUrl: file ? URL.createObjectURL(file) : ci.previewUrl }
+            ? { ...ci, file, previewUrl: file ? URL.createObjectURL(file) : ci.previewUrl, isPrefetched: false }
             : ci
         ),
       }));
@@ -311,8 +323,8 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
       return;
     }
 
-    const { name, description, stockKeepingUnit, categoryId } = formState;
-    if (!name || !description || !stockKeepingUnit || !categoryId) {
+    const { name, description, categoryId } = formState;
+    if (!name || !description || !categoryId) {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
@@ -344,6 +356,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
 
     try {
       let resolvedProductId = productId;
+      let skuCode = formState.stockKeepingUnit.replace(/^SKU-/, "");
       const productFiles: File[] = productImageFile ? [productImageFile] : [];
 
       // Total stock = sum of all variant cells in the matrix
@@ -363,7 +376,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
           description,
           price: minVariantPrice,
           stock: totalVariantStock,
-          stockKeepingUnit,
+          stockKeepingUnit: formState.stockKeepingUnit,
           currencyUnit: formState.currencyUnit,
           categoryId: categoryId ?? undefined,
           voucherId: formState.voucherId ?? undefined,
@@ -378,13 +391,19 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
         await productService.updateProduct(resolvedProductId, updateData, productFiles, token);
       } else {
         // --- CREATE PRODUCT ---
+        // Fetch a collision-safe 4-digit code from BE before creating
+        const skuRes = await productService.generateSku(token);
+        const productSku = skuRes?.data?.sku ?? `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+        skuCode = productSku.replace(/^SKU-/, "");
+        setFormState((prev) => ({ ...prev, stockKeepingUnit: productSku }));
+
         const now = new Date().toISOString();
         const createData: CreateProductDto = {
           name,
           description,
           price: minVariantPrice,
           currencyUnit: formState.currencyUnit,
-          stockKeepingUnit,
+          stockKeepingUnit: productSku,
           stock: totalVariantStock,
           createByUserId: userId,
           categoryId,
@@ -403,16 +422,10 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
         console.log("[ProductForm] Product created with ID:", resolvedProductId);
       }
 
-      // --- GENERATE UNIQUE SKU SUFFIXES ---
-      // Skip suffixes already used by existing variants to avoid collisions
-      const existingVariantCount = Object.keys(variantIdMap).length;
-      let nextSuffix = 100 + existingVariantCount;
-      const usedSuffixes = new Set<number>();
-      const getNextSku = (): string => {
-        while (usedSuffixes.has(nextSuffix)) nextSuffix++;
-        usedSuffixes.add(nextSuffix);
-        return `PV-${resolvedProductId}-V${nextSuffix}`;
-      };
+      // Variant SKU: SKU-{4-digit code}-{SIZE}-C{colorId}
+      // skuCode is set above: edit → from existing product SKU, create → from generateSku() response
+      const makeSku = (size: string, colorId: number): string =>
+        `SKU-${skuCode}-${size.toUpperCase().replace(/\s+/g, "-")}-C${colorId}`;
 
       // --- HANDLE VARIANTS ---
       const deletePromises: Promise<unknown>[] = [];
@@ -446,7 +459,8 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
           if (!cell) continue;
 
           const colorImage = colorImages.find((ci) => ci.color === color.name);
-          const files: File[] = colorImage?.file ? [colorImage.file] : [];
+          // Only include file in UPDATE if the admin explicitly uploaded a new one (not pre-fetched)
+          const files: File[] = (colorImage?.file && !colorImage.isPrefetched) ? [colorImage.file] : [];
 
           if (isEditMode && originalVariantKeys.has(key) && variantIdMap[key]) {
             // --- UPDATE existing variant ---
@@ -474,11 +488,11 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
             let variantFiles = files;
             if (variantFiles.length === 0 && colorImage?.previewUrl) {
               try {
-                const resp = await fetch(colorImage.previewUrl);
+                const resp = await fetch(`/api/proxy-image?url=${encodeURIComponent(colorImage.previewUrl)}`);
                 const blob = await resp.blob();
-                variantFiles = [new File([blob], `${color.name}.jpg`, { type: blob.type })];
+                variantFiles = [new File([blob], `${color.name}.jpg`, { type: blob.type || "image/jpeg" })];
               } catch (err) {
-                console.error("[ProductForm] Failed to fetch existing image for new variant:", err);
+                console.error("[ProductForm] Failed to fetch image via proxy for new variant:", err);
               }
             }
             const now = new Date().toISOString();
@@ -496,7 +510,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
               colorId: color.id ?? 0,
               price: cell.price,
               stock: cell.stock,
-              stockKeepingUnit: getNextSku(),
+              stockKeepingUnit: makeSku(size, color.id ?? 0),
               createdAt: now,
             };
             const createPromise = productVariantService.createProductVariant(variantData, variantFiles, token);
@@ -506,7 +520,15 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
       }
 
       // Execute all operations
-      await Promise.all(deletePromises);
+      const deleteSettled = await Promise.allSettled(deletePromises);
+      const deleteErrors = deleteSettled
+        .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+        .map((r) => String(r.reason));
+      if (deleteErrors.length > 0) {
+        alert(`Không thể xoá một số biến thể (đã có trong đơn hàng):\n${deleteErrors.join("\n")}`);
+        setLoading(false);
+        return;
+      }
       await Promise.all(updatePromises);
       const createSettled = await Promise.allSettled(createEntries.map((e) => e.promise));
 

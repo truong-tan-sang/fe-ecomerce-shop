@@ -209,6 +209,16 @@ export const productService = {
     return response;
   },
 
+  async generateSku(accessToken: string): Promise<IBackendRes<{ sku: string }>> {
+    const url = `${BACKEND_URL}/products/generate-sku`;
+    const response = await sendRequest<IBackendRes<{ sku: string }>>({
+      url,
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response;
+  },
+
   async deleteProduct(id: number, accessToken: string): Promise<IBackendRes<void>> {
     const url = `${BACKEND_URL}/products/${id}`;
     console.log("[ProductService] Deleting product:", id);

@@ -49,14 +49,13 @@ export default function ProductBasicInfoCard({
           </div>
           <div>
             <Label htmlFor="sku" className="text-sm text-gray-600">
-              SKU
+              SKU <span className="text-xs text-gray-400">(tự động)</span>
             </Label>
             <Input
               id="sku"
               value={formState.stockKeepingUnit}
-              onChange={(e) => onFieldChange("stockKeepingUnit", e.target.value)}
-              placeholder="VD: PROD-12345"
-              className="mt-1"
+              readOnly
+              className="mt-1 bg-gray-50 text-gray-500 cursor-default font-mono text-xs"
             />
           </div>
         </div>

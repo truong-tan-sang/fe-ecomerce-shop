@@ -17,6 +17,8 @@ export interface ColorImage {
   color: string;
   file: File | null;
   previewUrl: string | null;
+  /** True when file was auto-fetched from the existing S3 URL; false when admin uploaded a new file */
+  isPrefetched?: boolean;
 }
 
 export interface ProductFormState {

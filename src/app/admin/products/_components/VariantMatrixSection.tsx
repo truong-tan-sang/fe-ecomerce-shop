@@ -20,6 +20,15 @@ import {
 import type { ColorEntity } from "@/dto/color";
 import type { ProductFormState, ColorEntry, VariantMatrix } from "../_types";
 import { PRESET_SIZES } from "../_constants";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface VariantMatrixSectionProps {
   formState: ProductFormState;
@@ -45,6 +54,11 @@ export default function VariantMatrixSection({
   const [activeTab, setActiveTab] = useState<"stock" | "price">("stock");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showSizePicker, setShowSizePicker] = useState(false);
+
+  // Batch price state — keyed by size (row) and color (column)
+  const [rowBatch, setRowBatch] = useState<Record<string, string>>({});
+  const [colBatch, setColBatch] = useState<Record<string, string>>({});
+  const [allBatch, setAllBatch] = useState("");
 
   // Color management dialog state
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
@@ -112,6 +126,41 @@ export default function VariantMatrixSection({
     });
     onFieldChange("variantMatrix", newMatrix);
   };
+
+  const applyRowBatch = (size: string) => {
+    const value = Number(rowBatch[size]) || 0;
+    const newMatrix = { ...variantMatrix };
+    selectedColors.forEach((color) => {
+      const key = `${size}__${color.name}`;
+      newMatrix[key] = { ...(newMatrix[key] ?? { stock: 0, price: 0 }), [activeTab]: value };
+    });
+    onFieldChange("variantMatrix", newMatrix);
+    setRowBatch((prev) => ({ ...prev, [size]: "" }));
+  };
+
+  const applyColBatch = (colorName: string) => {
+    const value = Number(colBatch[colorName]) || 0;
+    const newMatrix = { ...variantMatrix };
+    selectedSizes.forEach((size) => {
+      const key = `${size}__${colorName}`;
+      newMatrix[key] = { ...(newMatrix[key] ?? { stock: 0, price: 0 }), [activeTab]: value };
+    });
+    onFieldChange("variantMatrix", newMatrix);
+    setColBatch((prev) => ({ ...prev, [colorName]: "" }));
+  };
+
+  const applyAllBatch = () => {
+    const value = Number(allBatch) || 0;
+    const newMatrix: VariantMatrix = {};
+    Object.entries(variantMatrix).forEach(([key, cell]) => {
+      newMatrix[key] = { ...cell, [activeTab]: value };
+    });
+    onFieldChange("variantMatrix", newMatrix);
+    setAllBatch("");
+  };
+
+  const batchLabel = activeTab === "price" ? "Đặt giá" : "Đặt SL";
+  const batchPlaceholder = activeTab === "price" ? "Giá..." : "SL...";
 
   // Available colors = API colors not yet selected
   const availableColors = apiColors.filter(
@@ -252,171 +301,189 @@ export default function VariantMatrixSection({
 
       {/* Matrix table */}
       {selectedSizes.length > 0 && selectedColors.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="p-2 text-left text-sm text-gray-500 w-20">
-                  Size / Màu
-                </th>
-                {selectedColors.map((color) => (
-                  <th key={color.name} className="p-2 text-center min-w-[100px]">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1">
-                        <span
-                          className="w-4 h-4 rounded-full inline-block border border-gray-300"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <span className="text-sm text-gray-700">{color.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeColor(color.name)}
-                          className="text-gray-400 hover:text-red-500 text-xs ml-1 cursor-pointer"
-                        >
-                          x
-                        </button>
-                      </div>
-                    </div>
-                  </th>
-                ))}
-                <th className="p-2 w-24">
-                  <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-xs cursor-pointer border-dashed"
-                      >
-                        + Thêm màu
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-56 p-2">
-                      {renderColorPickerContent(false)}
-                    </PopoverContent>
-                  </Popover>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedSizes.map((size) => (
-                <tr key={size} className="border-t border-gray-100">
-                  <td className="p-2">
-                    <div className="flex items-center gap-1">
-                      <span className="bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] px-3 py-1 rounded-md text-sm font-medium">
-                        {size}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeSize(size)}
-                        className="text-gray-400 hover:text-red-500 text-xs cursor-pointer"
-                      >
-                        x
-                      </button>
-                    </div>
-                  </td>
-                  {selectedColors.map((color) => {
-                    const key = `${size}__${color.name}`;
-                    const cell = variantMatrix[key] ?? { stock: 0, price: 0 };
-                    return (
-                      <td key={color.name} className="p-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={activeTab === "stock" ? cell.stock : cell.price}
-                          onChange={(e) =>
-                            onMatrixCellChange(
-                              key,
-                              activeTab,
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          className="text-center text-sm h-9"
-                        />
-                      </td>
-                    );
-                  })}
-                  <td />
-                </tr>
-              ))}
-              {/* Add size row */}
-              <tr className="border-t border-gray-100">
-                <td className="p-2" colSpan={selectedColors.length + 2}>
-                  <Popover open={showSizePicker} onOpenChange={setShowSizePicker}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-xs cursor-pointer border-dashed"
-                      >
-                        + Thêm kích cỡ
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-36 p-2">
-                      {availableSizes.length === 0 ? (
-                        <p className="text-xs text-gray-500 p-2">Đã chọn hết size</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {availableSizes.map((size) => (
-                            <button
-                              key={size}
-                              type="button"
-                              onClick={() => addSize(size)}
-                              className="w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm cursor-pointer"
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-center py-8 text-gray-400">
-          <p className="text-sm">
-            Thêm màu sắc và kích cỡ để tạo ma trận sản phẩm con
-          </p>
-          <div className="flex justify-center gap-3 mt-4">
-            <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="cursor-pointer border-dashed">
-                  + Thêm màu
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-2">
-                {renderColorPickerContent(true)}
-              </PopoverContent>
-            </Popover>
-            <Popover open={showSizePicker} onOpenChange={setShowSizePicker}>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="cursor-pointer border-dashed">
-                  + Thêm kích cỡ
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-36 p-2">
-                <div className="space-y-1">
-                  {PRESET_SIZES.map((size) => (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20 text-gray-500">Size / Màu</TableHead>
+              {selectedColors.map((color) => (
+                <TableHead key={color.name} className="text-center min-w-[110px]">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <span className="text-sm font-medium">{color.label}</span>
                     <button
-                      key={size}
                       type="button"
-                      onClick={() => addSize(size)}
-                      className="w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm cursor-pointer"
+                      onClick={() => removeColor(color.name)}
+                      className="text-muted-foreground hover:text-destructive text-xs cursor-pointer ml-0.5"
                     >
-                      {size}
+                      ✕
                     </button>
-                  ))}
+                  </div>
+                </TableHead>
+              ))}
+              <TableHead className="text-center text-xs text-amber-600 font-medium w-36 bg-amber-50 border-l border-amber-200">
+                {batchLabel} hàng →
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {selectedSizes.map((size) => (
+              <TableRow key={size}>
+                <TableCell>
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] px-3 py-1 rounded-md text-sm font-semibold">
+                      {size}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeSize(size)}
+                      className="text-muted-foreground hover:text-destructive text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </TableCell>
+                {selectedColors.map((color) => {
+                  const key = `${size}__${color.name}`;
+                  const cell = variantMatrix[key] ?? { stock: 0, price: 0 };
+                  return (
+                    <TableCell key={color.name}>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={activeTab === "stock" ? cell.stock : cell.price}
+                        onChange={(e) =>
+                          onMatrixCellChange(key, activeTab, parseInt(e.target.value) || 0)
+                        }
+                        className="text-center text-sm h-9 min-w-[80px]"
+                      />
+                    </TableCell>
+                  );
+                })}
+                <TableCell className="bg-amber-50 border-l border-amber-200">
+                  <div className="flex gap-1 items-center">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder={batchPlaceholder}
+                      value={rowBatch[size] ?? ""}
+                      onChange={(e) => setRowBatch((prev) => ({ ...prev, [size]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyRowBatch(size); } }}
+                      className="text-center text-xs h-8 w-20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => applyRowBatch(size)}
+                      className="text-amber-600 hover:text-amber-800 text-base font-bold cursor-pointer shrink-0"
+                      title="Áp dụng cho hàng này"
+                    >
+                      →
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+
+          <TableFooter>
+            <TableRow className="bg-amber-50 hover:bg-amber-50 border-t border-amber-200">
+              <TableCell className="text-xs text-amber-600 font-medium">
+                ↓ {batchLabel} cột
+              </TableCell>
+              {selectedColors.map((color) => (
+                <TableCell key={color.name}>
+                  <div className="flex gap-1 items-center">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder={batchPlaceholder}
+                      value={colBatch[color.name] ?? ""}
+                      onChange={(e) => setColBatch((prev) => ({ ...prev, [color.name]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyColBatch(color.name); } }}
+                      className="text-center text-xs h-8"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => applyColBatch(color.name)}
+                      className="text-amber-600 hover:text-amber-800 text-base font-bold cursor-pointer shrink-0"
+                      title="Áp dụng cho cột này"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </TableCell>
+              ))}
+              <TableCell className="border-l border-amber-200">
+                <div className="flex gap-1 items-center">
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Tất cả..."
+                    value={allBatch}
+                    onChange={(e) => setAllBatch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyAllBatch(); } }}
+                    className="text-center text-xs h-8 w-24"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyAllBatch}
+                    className="text-amber-600 hover:text-amber-800 text-base font-bold cursor-pointer shrink-0"
+                    title="Áp dụng cho toàn bảng"
+                  >
+                    ✓
+                  </button>
                 </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      ) : (
+        <p className="text-center text-sm text-gray-400 py-8">
+          Thêm màu sắc và kích cỡ để tạo ma trận sản phẩm con
+        </p>
       )}
+
+      {/* Add color / Add size buttons — always below the table, centered */}
+      <div className="flex items-center justify-center gap-3 pt-4">
+        <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="cursor-pointer border-dashed">
+              + Thêm màu
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2">
+            {renderColorPickerContent(!selectedColors.length)}
+          </PopoverContent>
+        </Popover>
+        <Popover open={showSizePicker} onOpenChange={setShowSizePicker}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="cursor-pointer border-dashed">
+              + Thêm kích cỡ
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-2">
+            {availableSizes.length === 0 ? (
+              <p className="text-xs text-gray-500 p-2">Đã chọn hết size</p>
+            ) : (
+              <div className="space-y-1">
+                {availableSizes.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => addSize(size)}
+                    className="w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm cursor-pointer"
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* Color create/edit dialog */}
       <Dialog open={colorDialogOpen} onOpenChange={setColorDialogOpen}>
