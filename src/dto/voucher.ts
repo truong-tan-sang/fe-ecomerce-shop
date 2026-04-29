@@ -75,6 +75,16 @@ export interface UpdateVoucherDto {
 
 export type VoucherTargetType = "none" | "category" | "product" | "variant" | "user";
 
+export interface UserVoucherDto {
+  id: string;
+  userId: string;
+  voucherId: string;
+  voucherStatus: "AVAILABLE" | "SAVED" | "USED" | "EXPIRED";
+  saveVoucherAt: string;
+  useVoucherAt: string | null;
+  voucher: VoucherDto;
+}
+
 export interface CreateUserVoucherDto {
   userId: number;
   voucherId: number;

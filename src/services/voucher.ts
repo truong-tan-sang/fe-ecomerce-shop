@@ -1,5 +1,5 @@
 import { sendRequest, sendRequestFile } from "@/utils/api";
-import type { VoucherDto, CreateVoucherDto, UpdateVoucherDto, SearchVoucherParams, CreateUserVoucherDto } from "@/dto/voucher";
+import type { VoucherDto, UserVoucherDto, CreateVoucherDto, UpdateVoucherDto, SearchVoucherParams, CreateUserVoucherDto } from "@/dto/voucher";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -103,6 +103,23 @@ export const voucherService = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log("[VoucherService] Assign to variant response:", response);
+    return response;
+  },
+
+  async getMyVouchers(
+    accessToken: string,
+    page = 1,
+    perPage = 50,
+  ): Promise<IBackendRes<UserVoucherDto[]>> {
+    const url = `${BACKEND_URL}/user-vouchers/me`;
+    console.log("[VoucherService] Fetching my vouchers");
+    const response = await sendRequest<IBackendRes<UserVoucherDto[]>>({
+      url,
+      method: "GET",
+      queryParams: { page, perPage },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log("[VoucherService] My vouchers response:", response);
     return response;
   },
 
