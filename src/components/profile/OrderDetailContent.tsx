@@ -23,6 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Undo2 } from "lucide-react";
+import { getReturnRequestOverlay } from "@/utils/returnRequestStatus";
 import ReturnRequestDialog from "@/components/profile/ReturnRequestDialog";
 import BuyAgainButton from "@/components/profile/BuyAgainButton";
 import ReviewOrderDialog from "@/components/profile/ReviewOrderDialog";
@@ -607,6 +609,17 @@ export default function OrderDetailContent({ orderId }: { orderId: number }) {
           <span className={`font-semibold ${STATUS_COLOR[order.status]}`}>
             {STATUS_LABEL[order.status]}
           </span>
+          {(() => {
+            const overlay = getReturnRequestOverlay(order);
+            return overlay ? (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 border text-xs font-semibold ${overlay.className}`}
+              >
+                <Undo2 className="w-3 h-3" />
+                {overlay.label}
+              </span>
+            ) : null;
+          })()}
         </div>
       </div>
 

@@ -10,7 +10,8 @@ import type { OrderFullInformationEntity, OrderStatus } from "@/dto/order";
 import type { ReviewDto } from "@/dto/product-detail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Undo2 } from "lucide-react";
+import { getReturnRequestOverlay } from "@/utils/returnRequestStatus";
 import { toast } from "sonner";
 import BuyAgainButton from "@/components/profile/BuyAgainButton";
 import ReturnRequestDialog from "@/components/profile/ReturnRequestDialog";
@@ -390,9 +391,22 @@ export default function OrdersContent() {
                       </span>
                     )}
                   </div>
-                  <span className={`text-sm font-semibold whitespace-nowrap ${statusInfo.color}`}>
-                    {statusInfo.text}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`text-sm font-semibold whitespace-nowrap ${statusInfo.color}`}>
+                      {statusInfo.text}
+                    </span>
+                    {(() => {
+                      const overlay = getReturnRequestOverlay(order);
+                      return overlay ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 border text-[11px] font-semibold ${overlay.className}`}
+                        >
+                          <Undo2 className="w-3 h-3" />
+                          {overlay.label}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                 </div>
 
                 {/* Order items */}

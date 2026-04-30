@@ -242,6 +242,15 @@ export default function ProductInfo({
         window.dispatchEvent(new CustomEvent("chatAttachProduct", { detail: att }));
     };
 
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast.success("Đã sao chép liên kết vào clipboard");
+        } catch {
+            toast.error("Không thể sao chép liên kết");
+        }
+    };
+
     // Handle size selection - color will auto-adjust via useEffect
     const handleSizeSelect = (size: string) => {
         if (availableSizes.has(size)) {
@@ -288,7 +297,7 @@ export default function ProductInfo({
                         <div className="text-lg text-gray-400 line-through">{originalPrice.toLocaleString('vi-VN')} ₫</div>
                         {discount && (
                             <div className="px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded">
-                                Save {discount}%
+                                Giảm {discount}%
                             </div>
                         )}
                     </>
@@ -306,9 +315,9 @@ export default function ProductInfo({
             {/* Stock */}
             <div className="text-sm text-gray-600">
                 {displayStock > 0 ? (
-                    <>Only <span className="text-red-600 font-semibold">{displayStock}</span> item(s) left in stock!</>
+                    <>Chỉ còn <span className="text-red-600 font-semibold">{displayStock}</span> sản phẩm trong kho!</>
                 ) : (
-                    <span className="text-red-600 font-semibold">Out of stock</span>
+                    <span className="text-red-600 font-semibold">Hết hàng</span>
                 )}
             </div>
 
@@ -316,7 +325,7 @@ export default function ProductInfo({
             {allSizes.length > 0 && (
             <div>
                 <div className="text-sm font-semibold text-black mb-2">
-                    Size: {selectedSize || "Select a size"}
+                    Size: {selectedSize || "Chọn size"}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {allSizes.map((size) => {
@@ -349,7 +358,7 @@ export default function ProductInfo({
             {allColorIds.length > 0 && (
             <div>
                 <div className="text-sm font-semibold text-black mb-2">
-                    Màu: {selectedColorId ? colorMap.get(selectedColorId)?.name ?? "Unknown" : "Select a color"}
+                    Màu: {selectedColorId ? colorMap.get(selectedColorId)?.name ?? "Không rõ" : "Chọn màu"}
                 </div>
                 <div className="flex flex-wrap gap-3">
                     {allColorIds.map((cId) => {
@@ -437,41 +446,10 @@ export default function ProductInfo({
                     <MessageSquare size={15} />
                     Gửi qua chat
                 </Button>
-                <Button variant="outline" className="col-span-2 py-3 h-auto border-gray-300">
+                <Button variant="outline" className="col-span-2 py-3 h-auto border-gray-300 cursor-pointer" onClick={handleShare}>
                     <i className="fas fa-share-alt" />
-                    Share
+                    Chia sẻ
                 </Button>
-            </div>
-
-            {/* Shipping info */}
-            <div className="space-y-2 text-sm border-t pt-4 mt-2">
-                <div className="flex items-start gap-3">
-                    <i className="fas fa-truck text-gray-600 mt-1" />
-                    <div>
-                        <div className="font-semibold text-black">Estimated Delivery:</div>
-                        <div className="text-gray-600">Jul 30 - Aug 03</div>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <i className="fas fa-box text-gray-600 mt-1" />
-                    <div>
-                        <div className="font-semibold text-black">Free Shipping & Returns:</div>
-                        <div className="text-gray-600">On all orders over $75</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Payment methods */}
-            <div className="border-t pt-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <i className="fab fa-cc-visa text-2xl text-gray-400" />
-                    <i className="fab fa-cc-mastercard text-2xl text-gray-400" />
-                    <i className="fab fa-cc-amex text-2xl text-gray-400" />
-                    <i className="fab fa-cc-jcb text-2xl text-gray-400" />
-                    <i className="fab fa-cc-discover text-2xl text-gray-400" />
-                    <i className="fab fa-cc-diners-club text-2xl text-gray-400" />
-                </div>
-                <div className="text-xs text-gray-500">Guarantee safe & secure checkout</div>
             </div>
 
         </div>

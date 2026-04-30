@@ -18,7 +18,7 @@ import { productService } from "@/services/product";
 import type { OrderFullInformationEntity, OrderItemEntity } from "@/dto/order";
 import type { ReviewDto } from "@/dto/product-detail";
 import type { MediaEntity } from "@/dto/product";
-import ImageLightbox from "@/components/common/ImageLightbox";
+import MediaGallery from "@/components/common/MediaGallery";
 import ReviewEditDialog from "@/components/profile/ReviewEditDialog";
 
 const MAX_IMAGES = 5;
@@ -144,7 +144,6 @@ export default function ReviewOrderDialog({
     );
   });
 
-  const [lightbox, setLightbox] = useState<{ itemId: number; idx: number } | null>(null);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
 
   // Track preview URLs in a ref so the unmount cleanup sees the latest set
@@ -284,7 +283,7 @@ export default function ReviewOrderDialog({
       <DialogContent
         className="max-w-xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]"
         onInteractOutside={(e) => {
-          if (lightbox !== null || editingItemId !== null) {
+          if (editingItemId !== null) {
             e.preventDefault();
           }
         }}
@@ -371,24 +370,8 @@ export default function ReviewOrderDialog({
                       </p>
                     )}
                     {state.existingMedia.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {state.existingMedia.map((m, idx) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => setLightbox({ itemId: item.id, idx })}
-                            className="relative w-16 h-16 border overflow-hidden cursor-pointer hover:border-black transition-colors"
-                            aria-label="Xem ảnh"
-                          >
-                            <Image
-                              src={m.url}
-                              alt=""
-                              fill
-                              sizes="64px"
-                              className="object-cover"
-                            />
-                          </button>
-                        ))}
+                      <div className="mt-2">
+                        <MediaGallery media={state.existingMedia} layout="wrap" thumbSize="w-16 h-16" />
                       </div>
                     )}
                     {state.productId && (
@@ -431,14 +414,9 @@ export default function ReviewOrderDialog({
                             key={`${item.id}-${i}`}
                             className="relative w-16 h-16 border overflow-hidden group"
                           >
-                            <button
-                              type="button"
-                              onClick={() => setLightbox({ itemId: item.id, idx: i })}
-                              className="absolute inset-0 w-full h-full cursor-pointer"
-                              aria-label="Xem ảnh"
-                            >
+                            <div className="absolute inset-0 w-full h-full">
                               <Image src={src} alt="" fill sizes="64px" className="object-cover" />
-                            </button>
+                            </div>
                             <button
                               type="button"
                               onClick={() => removeImage(item.id, i)}
@@ -506,25 +484,6 @@ export default function ReviewOrderDialog({
           )}
         </DialogFooter>
       </DialogContent>
-
-      {lightbox &&
-        (() => {
-          const itemState = states[lightbox.itemId];
-          if (!itemState) return null;
-          const lightboxImages =
-            itemState.status === "idle"
-              ? itemState.previews.map((url, i) => ({ id: `preview-${i}`, url }))
-              : itemState.existingMedia.map((m) => ({ id: m.id, url: m.url }));
-          if (lightboxImages.length === 0) return null;
-          return (
-            <ImageLightbox
-              images={lightboxImages}
-              initialIndex={lightbox.idx}
-              open={true}
-              onClose={() => setLightbox(null)}
-            />
-          );
-        })()}
 
       {editingItemId !== null &&
         (() => {

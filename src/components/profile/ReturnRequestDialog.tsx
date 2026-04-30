@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { returnRequestService } from "@/services/returnRequest";
+import { awsS3Service } from "@/services/awsS3";
+import MediaGallery from "@/components/common/MediaGallery";
 import {
   VIETNAM_BANK_OPTIONS,
   type VietnamBankName,
@@ -37,10 +40,10 @@ export const REQUEST_STATUS_BADGE: Record<
   RequestInOrderStatus,
   { label: string; className: string }
 > = {
-  PENDING:     { label: "Đang chờ",   className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
-  IN_PROGRESS: { label: "Đang xử lý", className: "bg-blue-100 text-blue-800 border-blue-300" },
-  APPROVED:    { label: "Đã duyệt",   className: "bg-green-100 text-green-800 border-green-300" },
-  REJECTED:    { label: "Đã từ chối", className: "bg-red-100 text-red-800 border-red-300" },
+  PENDING:     { label: "Đang chờ",   className: "bg-[var(--status-warning-bg)] border-[var(--status-warning-border)] text-[var(--status-warning)]" },
+  IN_PROGRESS: { label: "Đang xử lý", className: "bg-[var(--status-info-bg)] border-[var(--status-info-border)] text-[var(--status-info)]" },
+  APPROVED:    { label: "Đã duyệt",   className: "bg-[var(--status-success-bg)] border-[var(--status-success-border)] text-[var(--status-success)]" },
+  REJECTED:    { label: "Đã từ chối", className: "bg-[var(--status-error-bg)] border-[var(--status-error-border)] text-[var(--status-error)]" },
 };
 
 export interface ReturnRequestDialogProps {
@@ -65,6 +68,10 @@ export default function ReturnRequestDialog({
   const [bankName, setBankName] = useState<VietnamBankName | "">("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; isVideo: boolean }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const MAX_FILES = 10;
 
   useEffect(() => {
     if (!open) return;
@@ -79,8 +86,46 @@ export default function ReturnRequestDialog({
       setBankName("");
       setBankAccountNumber("");
       setBankAccountName("");
+      setFiles([]);
+      setPreviews([]);
     }
   }, [open, existingRequest]);
+
+  useEffect(() => {
+    const urls = files.map((f) => ({
+      url: URL.createObjectURL(f),
+      isVideo: f.type.startsWith("video/"),
+    }));
+    setPreviews(urls);
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u.url));
+    };
+  }, [files]);
+
+  const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length === 0) return;
+
+    const invalid = picked.find(
+      (f) => !f.type.startsWith("image/") && !f.type.startsWith("video/"),
+    );
+    if (invalid) {
+      toast.error("Chỉ hỗ trợ ảnh hoặc video.");
+      e.target.value = "";
+      return;
+    }
+    if (files.length + picked.length > MAX_FILES) {
+      toast.error(`Tối đa ${MAX_FILES} tệp đính kèm.`);
+      e.target.value = "";
+      return;
+    }
+    setFiles((prev) => [...prev, ...picked]);
+    e.target.value = "";
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handleSubmit = async () => {
     if (!session?.user?.access_token) return;
@@ -91,7 +136,7 @@ export default function ReturnRequestDialog({
 
     setSubmitting(true);
     try {
-      await returnRequestService.create(
+      const created = await returnRequestService.create(
         {
           userId: order.userId,
           orderId: order.id,
@@ -102,6 +147,27 @@ export default function ReturnRequestDialog({
         },
         session.user.access_token
       );
+
+      const requestId = created?.data?.requestId;
+      if (files.length > 0 && requestId) {
+        try {
+          await awsS3Service.uploadManyRequestFile(
+            order.userId,
+            requestId,
+            files,
+            session.user.access_token,
+          );
+        } catch (uploadErr) {
+          console.error("[ReturnRequestDialog] Media upload failed:", uploadErr);
+          toast.error(
+            "Đã tạo yêu cầu nhưng tải ảnh/video thất bại. Bạn có thể thử lại sau.",
+          );
+          onSubmitted?.();
+          onClose();
+          return;
+        }
+      }
+
       toast.success("Yêu cầu hoàn trả đã được gửi. Chúng tôi sẽ liên hệ trong thời gian sớm nhất.");
       onSubmitted?.();
       onClose();
@@ -111,6 +177,8 @@ export default function ReturnRequestDialog({
       setSubmitting(false);
     }
   };
+
+  const existingMedia = existingRequest?.media ?? [];
 
   const badge = existingRequest
     ? REQUEST_STATUS_BADGE[existingRequest.status]
@@ -203,6 +271,59 @@ export default function ReturnRequestDialog({
               disabled={readOnly}
             />
           </div>
+
+          {!readOnly && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Ảnh / video minh chứng (tối đa {MAX_FILES})</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handlePickFiles}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={files.length >= MAX_FILES}
+                className="cursor-pointer w-fit"
+              >
+                <Upload className="size-4 mr-2" />
+                Chọn tệp ({files.length}/{MAX_FILES})
+              </Button>
+              {previews.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  {previews.map((p, idx) => (
+                    <div key={idx} className="relative group border border-gray-200">
+                      {p.isVideo ? (
+                        <video src={p.url} className="w-full h-20 object-cover" />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.url} alt={`preview-${idx}`} className="w-full h-20 object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute top-0.5 right-0.5 bg-black/60 text-white p-0.5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Xoá tệp"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {readOnly && existingMedia.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Ảnh / video đính kèm</Label>
+              <MediaGallery media={existingMedia} columns={4} />
+            </div>
+          )}
         </div>
 
         <DialogFooter>

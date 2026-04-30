@@ -20,17 +20,17 @@ const Verify = (props: { id: string }) => {
     e.preventDefault();
 
     if (!codeActive.trim()) {
-      setError("Please input your activation code!");
+      setError("Vui lòng nhập mã kích hoạt!");
       return;
     }
 
     try {
       await authService.checkCode({ id, codeActive });
-      toast.success("Your account is activated.");
+      toast.success("Tài khoản của bạn đã được kích hoạt.");
       router.push(`/auth/login`);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Verification failed";
+      const msg = error instanceof ApiError ? error.message : "Xác thực thất bại";
       toast.error(msg);
     }
   };
@@ -39,16 +39,16 @@ const Verify = (props: { id: string }) => {
     <div className="flex justify-center mt-8">
       <div className="w-full max-w-md">
         <fieldset className="p-4 m-1 border border-gray-300">
-          <legend className="text-sm font-medium px-1">Active your account</legend>
+          <legend className="text-sm font-medium px-1">Kích hoạt tài khoản</legend>
           <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
-            <div>Code active sent to your email. Please check your email.</div>
+            <div>Mã kích hoạt đã được gửi đến email của bạn. Vui lòng kiểm tra email.</div>
             <Separator />
 
             <div className="space-y-2">
-              <Label htmlFor="codeActive">Activation Code</Label>
+              <Label htmlFor="codeActive">Mã kích hoạt</Label>
               <Input
                 id="codeActive"
-                placeholder="Enter 6-digit activation code"
+                placeholder="Nhập mã kích hoạt 6 chữ số"
                 value={codeActive}
                 onChange={(e) => {
                   setCodeActive(e.target.value);
@@ -59,17 +59,17 @@ const Verify = (props: { id: string }) => {
             </div>
 
             <Button type="submit" className="cursor-pointer">
-              Submit
+              Xác nhận
             </Button>
           </form>
           <div className="mt-4">
             <Link href="/" className="inline-flex items-center gap-1 text-sm hover:underline cursor-pointer">
-              <ArrowLeft className="size-4" /> Go to homepage
+              <ArrowLeft className="size-4" /> Về trang chủ
             </Link>
           </div>
           <Separator className="my-4" />
           <div className="text-center text-sm">
-            Already have an account? <Link href="/auth/login" className="hover:underline cursor-pointer">Log in</Link>
+            Đã có tài khoản? <Link href="/auth/login" className="hover:underline cursor-pointer">Đăng nhập</Link>
           </div>
         </fieldset>
       </div>

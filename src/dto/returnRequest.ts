@@ -66,10 +66,11 @@ export type ReturnRequestStatus = "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJE
 
 export interface ReturnRequestEntity {
   id: number;
-  orderId: number;
-  userId: number;
-  status: ReturnRequestStatus;
-  description: string;
+  requestId: number;
+  orderId?: number;
+  userId?: number;
+  status?: ReturnRequestStatus;
+  description?: string;
   bankName?: string | null;
   bankAccountNumber?: string | null;
   bankAccountName?: string | null;

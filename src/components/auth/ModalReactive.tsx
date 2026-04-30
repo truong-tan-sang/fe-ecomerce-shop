@@ -23,9 +23,9 @@ interface ModalReactiveProps {
 
 function StepIndicator({ current }: { current: number }) {
   const steps = [
-    { label: "Login", icon: User },
-    { label: "Verification", icon: ShieldCheck },
-    { label: "Done", icon: Smile },
+    { label: "Đăng nhập", icon: User },
+    { label: "Xác thực", icon: ShieldCheck },
+    { label: "Hoàn tất", icon: Smile },
   ];
 
   return (
@@ -94,7 +94,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
       setCurrent(1);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Request failed";
+      const msg = error instanceof ApiError ? error.message : "Yêu cầu thất bại";
       toast.error(msg);
     }
   };
@@ -102,7 +102,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
   const onFinishStep1 = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!code.trim()) {
-      setCodeError("Please input your activation code!");
+      setCodeError("Vui lòng nhập mã kích hoạt!");
       return;
     }
     try {
@@ -113,7 +113,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
       setCurrent(2);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Verification failed";
+      const msg = error instanceof ApiError ? error.message : "Xác thực thất bại";
       toast.error(msg);
     }
   };
@@ -122,7 +122,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Active Your Account</DialogTitle>
+          <DialogTitle>Kích hoạt tài khoản</DialogTitle>
         </DialogHeader>
 
         <StepIndicator current={current} />
@@ -130,11 +130,11 @@ const ModalReactive = (props: ModalReactiveProps) => {
         {current === 0 && (
           <>
             <div className="mb-4">
-              <p className="text-sm text-muted-foreground">Your account has not been activated</p>
+              <p className="text-sm text-muted-foreground">Tài khoản của bạn chưa được kích hoạt</p>
             </div>
             <form onSubmit={onFinishStep0} autoComplete="off" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="reactive-email">Email Address</Label>
+                <Label htmlFor="reactive-email">Địa chỉ email</Label>
                 <Input
                   id="reactive-email"
                   value={email}
@@ -142,7 +142,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
                 />
               </div>
               <Button type="submit" className="cursor-pointer">
-                Resend
+                Gửi lại
               </Button>
             </form>
           </>
@@ -151,14 +151,14 @@ const ModalReactive = (props: ModalReactiveProps) => {
         {current === 1 && (
           <>
             <div className="mb-4">
-              <p className="text-sm text-muted-foreground">Type code confirm, please!</p>
+              <p className="text-sm text-muted-foreground">Vui lòng nhập mã xác nhận!</p>
             </div>
             <form onSubmit={onFinishStep1} autoComplete="off" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="reactive-code">Activation Code</Label>
+                <Label htmlFor="reactive-code">Mã kích hoạt</Label>
                 <Input
                   id="reactive-code"
-                  placeholder="Enter 6-digit activation code"
+                  placeholder="Nhập mã kích hoạt 6 chữ số"
                   value={code}
                   onChange={(e) => {
                     setCode(e.target.value);
@@ -168,7 +168,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
                 {codeError && <p className="text-sm text-destructive">{codeError}</p>}
               </div>
               <Button type="submit" className="cursor-pointer">
-                Active
+                Kích hoạt
               </Button>
             </form>
           </>
@@ -177,7 +177,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
         {current === 2 && (
           <div className="my-4">
             <p className="text-sm">
-              Your account has been successfully activated. Please log in again.
+              Tài khoản của bạn đã được kích hoạt thành công. Vui lòng đăng nhập lại.
             </p>
           </div>
         )}

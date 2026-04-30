@@ -29,6 +29,9 @@ export default function FloatingChat() {
   const userId = session?.user?.id ? String(session.user.id) : null;
   const supportRoomName = userId ? `support-${userId}` : null;
 
+  const role = session?.user?.role as string | undefined;
+  const isStaffOrAdmin = role === "ADMIN" || role === "OPERATOR" || pathname.startsWith("/admin") || pathname.startsWith("/staff");
+
   const handleIncoming = useCallback((msg: ChatMessage) => {
     if (msg.isMine) return;
     setMessages((prev) => {
@@ -185,7 +188,7 @@ export default function FloatingChat() {
   }
 
   if (pathname?.startsWith("/admin")) return null;
-  if (!session) return null;
+  if (!session || isStaffOrAdmin) return null;
 
   return (
     <>

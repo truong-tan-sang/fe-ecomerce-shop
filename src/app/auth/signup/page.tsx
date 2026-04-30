@@ -37,19 +37,19 @@ function Signup() {
     let newErrors = { firstName: "", lastName: "", email: "", password: "" };
 
     if (!user.firstName.trim()) {
-      newErrors.firstName = "Please enter your first name.";
+      newErrors.firstName = "Vui lòng nhập họ.";
     }
 
     if (!user.lastName.trim()) {
-      newErrors.lastName = "Please enter your last name.";
+      newErrors.lastName = "Vui lòng nhập tên.";
     }
 
     if (!user.email.trim()) {
-      newErrors.email = "Please enter a valid email.";
+      newErrors.email = "Vui lòng nhập email hợp lệ.";
     }
 
     if (!user.password.trim()) {
-      newErrors.password = "Password cannot be empty.";
+      newErrors.password = "Mật khẩu không được để trống.";
     }
 
     if (
@@ -94,7 +94,7 @@ function Signup() {
       router.push(`/auth/verify/${res?.data?.id}`);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Register failed";
+      const msg = error instanceof ApiError ? error.message : "Đăng ký thất bại";
       toast.error(msg);
     } finally {
       setShowLoader(false);

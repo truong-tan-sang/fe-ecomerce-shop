@@ -208,6 +208,13 @@ export interface RequestInOrderDto {
     email: string;
   } | null;
   returnRequest?: ReturnRequestRowInOrder[];
+  media?: RequestMediaInOrder[];
+}
+
+export interface RequestMediaInOrder {
+  id: number;
+  url: string;
+  type: "IMAGE" | "VIDEO";
 }
 
 export interface OrderFullInformationEntity {

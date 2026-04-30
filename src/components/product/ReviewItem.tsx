@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Star, Pencil } from "lucide-react";
 import type { ReviewDto } from "@/dto/product-detail";
 import type { ProductVariantEntity } from "@/dto/product-variant";
-import ImageLightbox from "@/components/common/ImageLightbox";
+import MediaGallery from "@/components/common/MediaGallery";
 import ReviewEditDialog from "@/components/profile/ReviewEditDialog";
 
 interface ReviewItemProps {
@@ -23,7 +22,6 @@ export default function ReviewItem({
   accessToken,
   onUpdated,
 }: ReviewItemProps) {
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
 
   const reviewDate = new Date(review.createdAt).toLocaleDateString("vi-VN", {
@@ -88,34 +86,9 @@ export default function ReviewItem({
       )}
 
       {review.media && review.media.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {review.media.map((m, idx) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setLightboxIdx(idx)}
-              className="relative w-16 h-16 border overflow-hidden cursor-pointer hover:border-black transition-colors"
-              aria-label="Xem ảnh"
-            >
-              <Image
-                src={m.url}
-                alt=""
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
-            </button>
-          ))}
+        <div className="mt-3">
+          <MediaGallery media={review.media} layout="wrap" />
         </div>
-      )}
-
-      {review.media && review.media.length > 0 && (
-        <ImageLightbox
-          images={review.media.map((m) => ({ id: m.id, url: m.url }))}
-          initialIndex={lightboxIdx ?? 0}
-          open={lightboxIdx !== null}
-          onClose={() => setLightboxIdx(null)}
-        />
       )}
 
       {canEdit && editing && (

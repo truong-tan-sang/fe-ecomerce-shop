@@ -25,7 +25,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!email.trim()) {
-      setError("Please enter a valid email.");
+      setError("Vui lòng nhập email hợp lệ.");
       return;
     }
 
@@ -33,11 +33,11 @@ const ForgotPassword = () => {
 
     try {
       await authService.retryPassword({ email: email.trim() });
-      toast.success("Please check your inbox for the verification code.");
+      toast.success("Vui lòng kiểm tra hộp thư để nhận mã xác nhận.");
       router.push(`/auth/change-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Failed to send reset password email.";
+      const msg = error instanceof ApiError ? error.message : "Gửi email đặt lại mật khẩu thất bại.";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -57,23 +57,23 @@ const ForgotPassword = () => {
           />
         </div>
         <h2 className="mb-12 text-center text-2xl font-semibold text-gray-800">
-          Forgot Password?
+          Quên mật khẩu?
         </h2>
 
         <div className="mb-6 text-center text-sm text-gray-600">
-          <p>Enter your email address and we&apos;ll send you a code to reset your password.</p>
+          <p>Nhập địa chỉ email của bạn và chúng tôi sẽ gửi mã để đặt lại mật khẩu.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="forgot-email">Email Address</Label>
+            <Label htmlFor="forgot-email">Địa chỉ email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-[#9D9D9D]" />
               <Input
                 id="forgot-email"
                 type="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 value={email}
                 onChange={handleChange}
                 className="border-0 border-b border-[#9D9D9D] bg-transparent pl-10 pr-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
@@ -89,7 +89,7 @@ const ForgotPassword = () => {
             {loading ? (
               <LoaderCircle className="animate-spin" />
             ) : (
-              "Send Reset Code"
+              "Gửi mã đặt lại"
             )}
           </Button>
         </form>
@@ -99,7 +99,7 @@ const ForgotPassword = () => {
             href="/auth/login"
             className="text-sm font-medium text-gray-900 hover:underline cursor-pointer"
           >
-            Back to Login
+            Quay lại đăng nhập
           </Link>
         </div>
       </div>

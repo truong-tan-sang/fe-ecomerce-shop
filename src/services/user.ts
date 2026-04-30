@@ -27,6 +27,7 @@ export interface UserDto {
   role?: UserRole;
   isActive?: boolean;
   status?: "ACTIVE" | "INACTIVE" | "VIP";
+  createdAt?: string;
 }
 
 export interface UserFullDto extends UserDto {
