@@ -7,30 +7,28 @@ export async function middleware(req: Request) {
 
   const session = await auth();
 
-  // Debug logging
   console.log("[Middleware] Pathname:", pathname);
-  console.log("[Middleware] Session:", JSON.stringify(session, null, 2));
   console.log("[Middleware] User role:", session?.user?.role);
-  console.log("[Middleware] User isAdmin:", session?.user?.isAdmin);
 
-  // Redirect admins to /admin when landing on home or homepage
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.isAdmin === true;
-  if ((pathname === "/" || pathname === "/homepage") && isAdmin) {
-    console.log("[Middleware] Redirecting admin to /admin");
-    return NextResponse.redirect(new URL("/admin", url));
+  const isOperator = session?.user?.role === "OPERATOR";
+
+  // Redirect from home based on role
+  if (pathname === "/" || pathname === "/homepage") {
+    if (isAdmin) return NextResponse.redirect(new URL("/admin", url));
+    if (isOperator) return NextResponse.redirect(new URL("/staff", url));
   }
 
-  // Protect /admin for admin role only
+  // Protect /admin — ADMIN only
   if (pathname.startsWith("/admin")) {
-    if (!session) {
-      console.log("[Middleware] No session, redirecting to login");
-      return NextResponse.redirect(new URL("/auth/login", url));
-    }
-    if (!isAdmin) {
-      console.log("[Middleware] User is not admin, redirecting to /");
-      return NextResponse.redirect(new URL("/", url));
-    }
-    console.log("[Middleware] Admin access granted");
+    if (!session) return NextResponse.redirect(new URL("/auth/login", url));
+    if (!isAdmin) return NextResponse.redirect(new URL("/", url));
+  }
+
+  // Protect /staff — OPERATOR (and ADMIN for testing)
+  if (pathname.startsWith("/staff")) {
+    if (!session) return NextResponse.redirect(new URL("/auth/login", url));
+    if (!isOperator && !isAdmin) return NextResponse.redirect(new URL("/", url));
   }
 
   return NextResponse.next();
