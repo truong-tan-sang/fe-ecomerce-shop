@@ -79,4 +79,21 @@
   --admin-status-inactive: #ef4343;
   --admin-status-warning:  #fbbd23;
   --admin-status-info:     #6467f2;
+
+  /* Override storefront status tokens with admin palette equivalents
+     so shared utilities (returnRequestStatus, REQUEST_STATUS_BADGE) resolve correctly */
+  --status-success:        var(--admin-status-active);
+  --status-error:          var(--admin-status-inactive);
+  --status-warning:        var(--admin-status-warning);
+  --status-info:           var(--admin-status-info);
+
+  /* Status badge surfaces (light wash — use instead of bg-yellow-*, bg-blue-*, etc.) */
+  --status-success-bg:     var(--admin-green-light);
+  --status-success-border: var(--admin-green-mid);
+  --status-warning-bg:     rgba(251, 189, 35,  0.12);
+  --status-warning-border: rgba(251, 189, 35,  0.35);
+  --status-info-bg:        rgba(100, 103, 242, 0.12);
+  --status-info-border:    rgba(100, 103, 242, 0.35);
+  --status-error-bg:       rgba(239, 67,  67,  0.10);
+  --status-error-border:   rgba(239, 67,  67,  0.30);
 }

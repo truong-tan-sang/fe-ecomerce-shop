@@ -75,6 +75,16 @@
   --status-warning: #f59e0b;
   --status-info: #3b82f6;
 
+  /* Status badge surfaces (light wash for chips/tags) */
+  --status-success-bg:     rgba(16, 185, 129, 0.10);
+  --status-success-border: rgba(16, 185, 129, 0.30);
+  --status-error-bg:       rgba(239, 68, 68, 0.10);
+  --status-error-border:   rgba(239, 68, 68, 0.30);
+  --status-warning-bg:     rgba(245, 158, 11, 0.10);
+  --status-warning-border: rgba(245, 158, 11, 0.30);
+  --status-info-bg:        rgba(59, 130, 246, 0.10);
+  --status-info-border:    rgba(59, 130, 246, 0.30);
+
   /* Gradients */
   --gradient-header: linear-gradient(to bottom, #1a1a1a, #111111);
   --gradient-info: linear-gradient(to bottom, #ffffff, #f0f0f0);
