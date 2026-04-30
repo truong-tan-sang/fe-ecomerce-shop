@@ -1,9 +1,9 @@
-export default function AdminDashboardPage() {
-  // TODO: Implement dashboard widgets and metrics
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-      <p className="mt-2 text-sm text-gray-600">TODO: dashboard contents</p>
-    </div>
-  );
+import { auth } from "@/auth";
+import DashboardClient from "@/components/admin/dashboard/DashboardClient";
+
+export default async function AdminDashboardPage() {
+  const session = await auth();
+  const token = session?.user?.access_token ?? "";
+
+  return <DashboardClient token={token} />;
 }
