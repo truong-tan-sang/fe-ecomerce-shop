@@ -72,7 +72,7 @@ const ModalReactive = (props: ModalReactiveProps) => {
   const { isModalOpen, setIsModalOpen, userEmail } = props;
   const [current, setCurrent] = useState(0);
   const [email, setEmail] = useState("");
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState<number | null>(null);
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
 
@@ -90,7 +90,9 @@ const ModalReactive = (props: ModalReactiveProps) => {
     e.preventDefault();
     try {
       const res = await authService.retryActive({ email });
-      setUserId(res?.data?.data?._id || "");
+      const id = res?.data?.id ?? null;
+      if (!id) throw new Error("Không nhận được ID người dùng từ server");
+      setUserId(id);
       setCurrent(1);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
@@ -105,10 +107,14 @@ const ModalReactive = (props: ModalReactiveProps) => {
       setCodeError("Vui lòng nhập mã kích hoạt!");
       return;
     }
+    if (!userId) {
+      setCodeError("Phiên xác thực không hợp lệ. Vui lòng gửi lại mã.");
+      return;
+    }
     try {
       await authService.checkCode({
         codeActive: code,
-        id: userId,
+        id: String(userId),
       });
       setCurrent(2);
     } catch (error) {

@@ -58,7 +58,7 @@ export const authService = {
     }),
 
   retryActive: (body: RetryActiveRequest) =>
-    sendRequest<IBackendRes<AuthResponseEntity>>({
+    sendRequest<IBackendRes<UserEntity>>({
       url: `${BASE_URL}/auth/retry-active`,
       method: "POST",
       body,
