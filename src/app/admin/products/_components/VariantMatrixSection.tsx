@@ -39,6 +39,7 @@ interface VariantMatrixSectionProps {
   onCreateColor: (name: string, hexCode: string) => Promise<void>;
   onUpdateColor: (id: number, name: string, hexCode: string) => Promise<void>;
   onDeleteColor: (id: number) => Promise<void>;
+  stockOnly?: boolean;
 }
 
 export default function VariantMatrixSection({
@@ -50,6 +51,7 @@ export default function VariantMatrixSection({
   onCreateColor,
   onUpdateColor,
   onDeleteColor,
+  stockOnly = false,
 }: VariantMatrixSectionProps) {
   const [activeTab, setActiveTab] = useState<"stock" | "price">("stock");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -291,12 +293,14 @@ export default function VariantMatrixSection({
         <h3 className="text-lg font-semibold text-[var(--admin-green-dark)]">
           Ma trận sản phẩm con
         </h3>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "stock" | "price")}>
-          <TabsList className="bg-[var(--admin-green-light)]">
-            <TabsTrigger value="stock" className="cursor-pointer">Số lượng</TabsTrigger>
-            <TabsTrigger value="price" className="cursor-pointer">Giá</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {!stockOnly && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "stock" | "price")}>
+            <TabsList className="bg-[var(--admin-green-light)]">
+              <TabsTrigger value="stock" className="cursor-pointer">Số lượng</TabsTrigger>
+              <TabsTrigger value="price" className="cursor-pointer">Giá</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
 
       {/* Matrix table */}
@@ -313,13 +317,15 @@ export default function VariantMatrixSection({
                       style={{ backgroundColor: color.hex }}
                     />
                     <span className="text-sm font-medium">{color.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeColor(color.name)}
-                      className="text-muted-foreground hover:text-destructive text-xs cursor-pointer ml-0.5"
-                    >
-                      ✕
-                    </button>
+                    {!stockOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeColor(color.name)}
+                        className="text-muted-foreground hover:text-destructive text-xs cursor-pointer ml-0.5"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 </TableHead>
               ))}
@@ -337,13 +343,15 @@ export default function VariantMatrixSection({
                     <span className="bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] px-3 py-1 rounded-md text-sm font-semibold">
                       {size}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => removeSize(size)}
-                      className="text-muted-foreground hover:text-destructive text-xs cursor-pointer"
-                    >
-                      ✕
-                    </button>
+                    {!stockOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeSize(size)}
+                        className="text-muted-foreground hover:text-destructive text-xs cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 </TableCell>
                 {selectedColors.map((color) => {
@@ -447,7 +455,7 @@ export default function VariantMatrixSection({
       )}
 
       {/* Add color / Add size buttons — always below the table, centered */}
-      <div className="flex items-center justify-center gap-3 pt-4">
+      {!stockOnly && <div className="flex items-center justify-center gap-3 pt-4">
         <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
           <PopoverTrigger asChild>
             <Button type="button" variant="outline" size="sm" className="cursor-pointer border-dashed">
@@ -483,7 +491,7 @@ export default function VariantMatrixSection({
             )}
           </PopoverContent>
         </Popover>
-      </div>
+      </div>}
 
       {/* Color create/edit dialog */}
       <Dialog open={colorDialogOpen} onOpenChange={setColorDialogOpen}>

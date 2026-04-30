@@ -37,9 +37,10 @@ interface ProductFormProps {
   productId?: number;
   onSuccess?: () => void;
   onCancel?: () => void;
+  stockOnly?: boolean;
 }
 
-export default function ProductForm({ productId, onSuccess, onCancel }: ProductFormProps) {
+export default function ProductForm({ productId, onSuccess, onCancel, stockOnly = false }: ProductFormProps) {
   const isModal = !!onCancel;
   const isEditMode = productId !== undefined;
   const { data: session } = useSession();
@@ -605,7 +606,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
   const formBody = (
     <>
       {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6${stockOnly ? " pointer-events-none opacity-60" : ""}`}>
         <ProductBasicInfoCard
           formState={formState}
           onFieldChange={handleFieldChange}
@@ -632,11 +633,12 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
           onCreateColor={handleCreateColor}
           onUpdateColor={handleUpdateColor}
           onDeleteColor={handleDeleteColor}
+          stockOnly={stockOnly}
         />
       </div>
 
       {/* Color image upload */}
-      <div className="mb-6">
+      <div className={`mb-6${stockOnly ? " pointer-events-none opacity-60" : ""}`}>
         <ColorImageUploadSection
           formState={formState}
           onColorImageChange={handleColorImageChange}
@@ -653,7 +655,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
         {/* Modal footer */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-200">
           <div>
-            {isEditMode && (
+            {isEditMode && !stockOnly && (
               <Button
                 variant="destructive"
                 onClick={handleDelete}
@@ -678,7 +680,7 @@ export default function ProductForm({ productId, onSuccess, onCancel }: ProductF
               disabled={loading}
               className="cursor-pointer"
             >
-              {loading ? "Đang lưu..." : isEditMode ? "Lưu thay đổi" : "Tạo sản phẩm"}
+              {loading ? "Đang lưu..." : stockOnly ? "Lưu tồn kho" : isEditMode ? "Lưu thay đổi" : "Tạo sản phẩm"}
             </Button>
           </div>
         </div>

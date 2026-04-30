@@ -1,4 +1,9 @@
+import AuthorityClient from "@/components/admin/authority/AuthorityClient";
+
 export default function AdminAuthorityPage() {
-  // TODO: Implement control authority management
-  return <div>TODO: Control Authority</div>;
+  return (
+    <div className="h-full flex flex-col min-h-0">
+      <AuthorityClient />
+    </div>
+  );
 }

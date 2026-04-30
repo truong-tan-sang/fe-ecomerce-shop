@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Star, Trash2, Loader2 } from "lucide-react";
 import {
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { reviewService } from "@/services/review";
-import ImageLightbox from "@/components/common/ImageLightbox";
+import MediaGallery from "@/components/common/MediaGallery";
 import type { AdminReviewDto } from "@/dto/review";
 
 interface ReviewDetailSheetProps {
@@ -53,11 +52,8 @@ export default function ReviewDetailSheet({
 }: ReviewDetailSheetProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-
-  // Reset lightbox and confirm state when a different review is shown
+  // Reset confirm state when a different review is shown
   useEffect(() => {
-    setLightboxIdx(null);
     setConfirmDelete(false);
   }, [review?.id]);
 
@@ -84,7 +80,7 @@ export default function ReviewDetailSheet({
           side="right"
           className="w-full sm:max-w-lg overflow-y-auto"
           onInteractOutside={(e) => {
-            if (lightboxIdx !== null || confirmDelete) {
+            if (confirmDelete) {
               e.preventDefault();
             }
           }}
@@ -185,31 +181,13 @@ export default function ReviewDetailSheet({
                   </div>
                 )}
 
-                {/* Photos */}
+                {/* Photos / videos */}
                 {review.media && review.media.length > 0 && (
                   <div>
                     <p className="text-xs uppercase tracking-wide text-gray-500 mb-2 font-semibold">
-                      Hình ảnh ({review.media.length})
+                      Ảnh / video ({review.media.length})
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {review.media.map((m, idx) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => setLightboxIdx(idx)}
-                          className="relative w-20 h-20 border overflow-hidden cursor-pointer hover:border-black transition-colors rounded"
-                          aria-label="Xem ảnh"
-                        >
-                          <Image
-                            src={m.url}
-                            alt=""
-                            fill
-                            sizes="80px"
-                            className="object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
+                    <MediaGallery media={review.media} layout="wrap" thumbSize="w-20 h-20" />
                   </div>
                 )}
 
@@ -248,15 +226,6 @@ export default function ReviewDetailSheet({
           )}
         </SheetContent>
       </Sheet>
-
-      {review && review.media && review.media.length > 0 && (
-        <ImageLightbox
-          images={review.media.map((m) => ({ id: m.id, url: m.url }))}
-          initialIndex={lightboxIdx ?? 0}
-          open={lightboxIdx !== null}
-          onClose={() => setLightboxIdx(null)}
-        />
-      )}
 
       <Dialog open={confirmDelete} onOpenChange={(o) => !deleting && setConfirmDelete(o)}>
         <DialogContent className="sm:max-w-md">

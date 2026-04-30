@@ -38,8 +38,6 @@ export default function AdminProductsReviewsPage() {
   const [reviews, setReviews] = useState<AdminReviewDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const pageRef = useRef(1);
 
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,49 +45,55 @@ export default function AdminProductsReviewsPage() {
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchReviews = useCallback(
-    async (page: number, append: boolean, tab: FilterTab) => {
-      if (!accessToken) return;
-      if (page === 1) setLoading(true);
-      else setLoadingMore(true);
-
-      try {
-        const ratingFilter = TAB_TO_RATING[tab];
-        console.log("[ReviewsPage] Fetching tab:", tab, "page:", page);
-        const res = await reviewService.getAllReviews(
-          page,
-          PER_PAGE,
-          ratingFilter,
-          accessToken
-        );
-        const data = Array.isArray(res.data) ? res.data : [];
-
-        if (append) setReviews((prev) => [...prev, ...data]);
-        else setReviews(data);
-        setHasMore(data.length === PER_PAGE);
-      } catch (err) {
-        console.error("[ReviewsPage] Error:", err);
-        if (!append) setReviews([]);
-        setHasMore(false);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [accessToken]
-  );
-
   useEffect(() => {
-    pageRef.current = 1;
-    fetchReviews(1, false, activeTab);
-  }, [fetchReviews, activeTab]);
+    if (!accessToken) return;
+    let cancelled = false;
 
-  const loadNextPage = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    const nextPage = pageRef.current + 1;
-    pageRef.current = nextPage;
-    fetchReviews(nextPage, true, activeTab);
-  }, [loadingMore, hasMore, fetchReviews, activeTab]);
+    (async () => {
+      setLoading(true);
+      setReviews([]);
+      const ratingFilter = TAB_TO_RATING[activeTab];
+      const all: AdminReviewDto[] = [];
+      let page = 1;
+      try {
+        while (!cancelled) {
+          console.log("[ReviewsPage] Fetching tab:", activeTab, "page:", page);
+          const res = await reviewService.getAllReviews(
+            page,
+            PER_PAGE,
+            ratingFilter,
+            accessToken
+          );
+          const data = Array.isArray(res.data) ? res.data : [];
+          console.log("[ReviewsPage] Page", page, "→", data.length, "items");
+          if (data.length === 0) break;
+          all.push(...data);
+          if (cancelled) return;
+          if (page === 1) {
+            setReviews(all.slice());
+            setLoading(false);
+            setLoadingMore(true);
+          } else {
+            setReviews(all.slice());
+          }
+          if (data.length < PER_PAGE) break;
+          page += 1;
+        }
+        if (!cancelled) console.log("[ReviewsPage] Done. Total:", all.length);
+      } catch (err) {
+        console.error("[ReviewsPage] Fetch error:", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, activeTab]);
 
   // Client-side search across product/user/comment
   const filteredReviews = useMemo(() => {
@@ -119,26 +123,6 @@ export default function AdminProductsReviewsPage() {
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
   });
-
-  // Infinite scroll
-  useEffect(() => {
-    if (!hasMore || loadingMore || loading) return;
-    const virtualItems = rowVirtualizer.getVirtualItems();
-    const lastVisible = virtualItems[virtualItems.length - 1];
-    const nearEnd = lastVisible
-      ? lastVisible.index >= filteredReviews.length - 5
-      : filteredReviews.length > 0;
-    if (nearEnd) loadNextPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    rowVirtualizer.getVirtualItems(),
-    filteredReviews.length,
-    hasMore,
-    loadingMore,
-    loading,
-    loadNextPage,
-  ]);
 
   const handleDeleted = (reviewId: number) => {
     setReviews((prev) => prev.filter((r) => r.id !== reviewId));

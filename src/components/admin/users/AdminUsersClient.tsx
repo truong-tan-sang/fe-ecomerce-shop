@@ -46,12 +46,10 @@ export default function AdminUsersClient() {
   const accessToken = session?.user?.access_token || "";
   const router = useRouter();
 
-  // ── List state (mirrors coupons pattern exactly) ──
+  // ── List state ──
   const [users, setUsers]               = useState<UserDto[]>([]);
   const [loading, setLoading]           = useState(true);
   const [loadingMore, setLoadingMore]   = useState(false);
-  const [hasMore, setHasMore]           = useState(true);
-  const pageRef                         = useRef(1);
 
   // ── Search (debounced, client-side filter on accumulated list) ──
   const [searchInput, setSearchInput]   = useState("");
@@ -63,61 +61,50 @@ export default function AdminUsersClient() {
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
-  const fetchUsers = useCallback(async (page: number, append: boolean) => {
-    if (!accessToken) return;
-    if (page === 1) setLoading(true);
-    else setLoadingMore(true);
-
-    try {
-      const url = `/user?page=${page}&perPage=${PER_PAGE}`;
-      console.log("[AdminUsers] Fetching page:", page, "| url:", url, "| append:", append);
-      const res = await userService.getUsers(page, PER_PAGE, accessToken);
-      console.log("[AdminUsers] Raw response:", res);
-      const data = Array.isArray(res?.data) ? res.data : [];
-      const newHasMore = data.length > 0;
-      console.log(
-        "[AdminUsers] Page", page,
-        "→ got", data.length, "items",
-        "| hasMore will be:", newHasMore,
-        "| (stops when page returns 0 items)",
-      );
-
-      if (append) {
-        setUsers((prev) => {
-          const next = [...prev, ...data];
-          console.log("[AdminUsers] Appended → total users now:", next.length);
-          return next;
-        });
-      } else {
-        setUsers(data);
-      }
-
-      setHasMore(newHasMore);
-    } catch (err) {
-      console.error("[AdminUsers] Fetch error:", err);
-      if (!append) setUsers([]);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [accessToken]);
-
-  // Initial load
+  // ── Fetch all pages on mount ─────────────────────────────────────────────
   useEffect(() => {
     if (!accessToken) return;
-    pageRef.current = 1;
-    fetchUsers(1, false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+    let cancelled = false;
 
-  const loadNextPage = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    const next = pageRef.current + 1;
-    pageRef.current = next;
-    fetchUsers(next, true);
-  }, [loadingMore, hasMore, fetchUsers]);
+    (async () => {
+      setLoading(true);
+      setUsers([]);
+      const all: UserDto[] = [];
+      let page = 1;
+      try {
+        while (!cancelled) {
+          console.log("[AdminUsers] Fetching page:", page);
+          const res = await userService.getUsers(page, PER_PAGE, accessToken);
+          const data = Array.isArray(res?.data) ? res.data : [];
+          console.log("[AdminUsers] Page", page, "→ got", data.length, "items");
+          if (data.length === 0) break;
+          all.push(...data);
+          if (cancelled) return;
+          if (page === 1) {
+            setUsers(all.slice());
+            setLoading(false);
+            setLoadingMore(true);
+          } else {
+            setUsers(all.slice());
+          }
+          if (data.length < PER_PAGE) break;
+          page += 1;
+        }
+        if (!cancelled) console.log("[AdminUsers] Done. Total:", all.length);
+      } catch (err) {
+        console.error("[AdminUsers] Fetch error:", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 
   // ── Search ───────────────────────────────────────────────────────────────
   const handleSearchChange = (value: string) => {
@@ -145,35 +132,6 @@ export default function AdminUsersClient() {
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
   });
-
-  // Infinite scroll — same trigger logic as coupons page
-  useEffect(() => {
-    const virtualItems = rowVirtualizer.getVirtualItems();
-    const lastVisible  = virtualItems[virtualItems.length - 1];
-    const nearEnd      = lastVisible
-      ? lastVisible.index >= users.length - 5
-      : users.length > 0;
-
-    console.log(
-      "[AdminUsers] Scroll check → hasMore:", hasMore,
-      "| loadingMore:", loadingMore,
-      "| loading:", loading,
-      "| users.length:", users.length,
-      "| lastVisible.index:", lastVisible?.index ?? "none",
-      "| nearEnd:", nearEnd,
-    );
-
-    if (!hasMore || loadingMore || loading) return;
-    if (nearEnd) loadNextPage();
-  }, [
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    rowVirtualizer.getVirtualItems(),
-    users.length,
-    hasMore,
-    loadingMore,
-    loading,
-    loadNextPage,
-  ]);
 
   // ── Chat ─────────────────────────────────────────────────────────────────
   const handleOpenChat = async (e: React.MouseEvent, user: UserDto) => {

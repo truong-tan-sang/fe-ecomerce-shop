@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package, Undo2 } from "lucide-react";
+import { getReturnRequestOverlay } from "@/utils/returnRequestStatus";
+import MediaGallery from "@/components/common/MediaGallery";
 import {
   Dialog,
   DialogContent,
@@ -34,10 +36,10 @@ const RETURN_STATUS_BADGE: Record<
   RequestInOrderStatus,
   { label: string; className: string }
 > = {
-  PENDING:     { label: "Đang chờ",   className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
-  IN_PROGRESS: { label: "Đang xử lý", className: "bg-blue-100 text-blue-800 border-blue-300" },
-  APPROVED:    { label: "Đã duyệt",   className: "bg-green-100 text-green-800 border-green-300" },
-  REJECTED:    { label: "Đã từ chối", className: "bg-red-100 text-red-800 border-red-300" },
+  PENDING:     { label: "Đang chờ",   className: "bg-[var(--status-warning-bg)] border-[var(--status-warning-border)] text-[var(--status-warning)]" },
+  IN_PROGRESS: { label: "Đang xử lý", className: "bg-[var(--status-info-bg)] border-[var(--status-info-border)] text-[var(--status-info)]" },
+  APPROVED:    { label: "Đã duyệt",   className: "bg-[var(--admin-green-light)] border-[var(--admin-green-mid)] text-[var(--admin-green-dark)]" },
+  REJECTED:    { label: "Đã từ chối", className: "bg-[var(--status-error-bg)] border-[var(--status-error-border)] text-[var(--status-error)]" },
 };
 
 function GHNTrackingLink({ orderId, accessToken }: { orderId: number; accessToken: string }) {
@@ -74,6 +76,7 @@ interface OrderDetailSheetProps {
   open: boolean;
   onClose: () => void;
   onOrderUpdated: (updated: OrderFullInformationEntity) => void;
+  readonly?: boolean;
 }
 
 const formatDate = (dateStr: string | null | undefined) => {
@@ -87,6 +90,7 @@ export default function OrderDetailSheet({
   open,
   onClose,
   onOrderUpdated,
+  readonly = false,
 }: OrderDetailSheetProps) {
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token || "";
@@ -278,6 +282,8 @@ export default function OrderDetailSheet({
   const returnBadge = returnRequest
     ? RETURN_STATUS_BADGE[returnRequest.status]
     : null;
+  const returnOverlay = getReturnRequestOverlay(order);
+  const returnMedia = returnRequest?.media ?? [];
 
   const canCancel =
     order.status === "PENDING" ||
@@ -310,6 +316,14 @@ export default function OrderDetailSheet({
                 <p className="text-[13px] text-gray-500">
                   Thanh toán lúc: {formatDate(payment.paymentDate)}
                 </p>
+              )}
+              {returnOverlay && (
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2 py-1 border text-xs font-semibold w-fit ${returnOverlay.className}`}
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  {returnOverlay.label}
+                </div>
               )}
             </div>
 
@@ -446,40 +460,51 @@ export default function OrderDetailSheet({
                   )}
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t">
-                  {returnRequest.status === "PENDING" && (
-                    <Button
-                      onClick={() => handleStartReviewReturn(Number(returnBank!.id))}
-                      disabled={submitting}
-                      className="bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)] hover:bg-[var(--admin-green-mid)] cursor-pointer"
-                    >
-                      Bắt đầu xử lý
-                    </Button>
-                  )}
-                  {returnRequest.status === "IN_PROGRESS" && (
-                    <>
+                {returnMedia.length > 0 && (
+                  <div className="flex flex-col gap-2 pt-2 border-t">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">
+                      Ảnh / video minh chứng ({returnMedia.length})
+                    </p>
+                    <MediaGallery media={returnMedia} columns={5} thumbSize="h-24" />
+                  </div>
+                )}
+
+                {!readonly && (
+                  <div className="flex gap-2 pt-2 border-t">
+                    {returnRequest.status === "PENDING" && (
                       <Button
-                        onClick={() => handleApproveReturn(Number(returnBank!.id))}
+                        onClick={() => handleStartReviewReturn(Number(returnBank!.id))}
                         disabled={submitting}
-                        className="bg-[var(--admin-green-dark)] text-white hover:bg-[var(--admin-green-dark)] cursor-pointer"
+                        className="bg-[var(--admin-green-mid)] text-[var(--admin-green-dark)] hover:bg-[var(--admin-green-mid)] cursor-pointer"
                       >
-                        Duyệt (hoàn tiền)
+                        Bắt đầu xử lý
                       </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleRejectReturn(Number(returnBank!.id))}
-                        disabled={submitting}
-                        className="cursor-pointer"
-                      >
-                        Từ chối
-                      </Button>
-                    </>
-                  )}
-                  {(returnRequest.status === "APPROVED" ||
-                    returnRequest.status === "REJECTED") && (
-                    <p className="text-sm text-gray-500 italic">Đã xử lý xong.</p>
-                  )}
-                </div>
+                    )}
+                    {returnRequest.status === "IN_PROGRESS" && (
+                      <>
+                        <Button
+                          onClick={() => handleApproveReturn(Number(returnBank!.id))}
+                          disabled={submitting}
+                          className="bg-[var(--admin-green-dark)] text-white hover:bg-[var(--admin-green-dark)] cursor-pointer"
+                        >
+                          Duyệt (hoàn tiền)
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleRejectReturn(Number(returnBank!.id))}
+                          disabled={submitting}
+                          className="cursor-pointer"
+                        >
+                          Từ chối
+                        </Button>
+                      </>
+                    )}
+                    {(returnRequest.status === "APPROVED" ||
+                      returnRequest.status === "REJECTED") && (
+                      <p className="text-sm text-gray-500 italic">Đã xử lý xong.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -501,7 +526,7 @@ export default function OrderDetailSheet({
                     <p className="text-sm text-gray-300">Chờ thanh toán</p>
                   )}
 
-                  {step1State === "active" && (
+                  {step1State === "active" && !readonly && (
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-gray-600">Chọn ca lấy hàng GHN:</p>
                       {loadingShifts ? (
@@ -536,6 +561,9 @@ export default function OrderDetailSheet({
                       </Button>
                     </div>
                   )}
+                  {step1State === "active" && readonly && (
+                    <p className="text-sm text-gray-400">Chờ xác nhận</p>
+                  )}
 
                   {step1State === "done" && (
                     <p className="text-sm text-gray-400">Đã xác nhận</p>
@@ -552,7 +580,7 @@ export default function OrderDetailSheet({
                     <p className="text-sm text-gray-300">Chờ xác nhận bước 1</p>
                   )}
 
-                  {step2State === "action" && (
+                  {step2State === "action" && !readonly && (
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-gray-600">Đơn hàng đang chờ GHN đến lấy hàng.</p>
                       <Button
@@ -567,6 +595,9 @@ export default function OrderDetailSheet({
                         )}
                       </Button>
                     </div>
+                  )}
+                  {step2State === "action" && readonly && (
+                    <p className="text-sm text-gray-400">Đang chờ GHN đến lấy hàng</p>
                   )}
 
                   {(step2State === "info" || step2State === "done") && (
@@ -586,7 +617,7 @@ export default function OrderDetailSheet({
                     <p className="text-sm text-gray-300">Chờ GHN lấy hàng</p>
                   )}
 
-                  {step3State === "active" && (
+                  {step3State === "active" && !readonly && (
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-gray-600">Đơn hàng đang trên đường giao đến khách.</p>
                       <div className="flex gap-3">
@@ -608,11 +639,14 @@ export default function OrderDetailSheet({
                       </div>
                     </div>
                   )}
+                  {step3State === "active" && readonly && (
+                    <p className="text-sm text-gray-400">Đang giao hàng</p>
+                  )}
 
                   {step3State === "done" && (
                     <div className="flex flex-col gap-1">
                       {(order.status === "DELIVERED" || order.status === "COMPLETED") && (
-                        <p className="text-sm font-medium text-green-700">Giao hàng thành công</p>
+                        <p className="text-sm font-medium text-[var(--admin-status-active)]">Giao hàng thành công</p>
                       )}
                       {shipment?.deliveredAt && (
                         <p className="text-sm text-gray-500">Lúc: {formatDate(shipment.deliveredAt)}</p>
@@ -621,8 +655,8 @@ export default function OrderDetailSheet({
                   )}
 
                   {order.status === "DELIVERED_FAILED" && (
-                    <div className="rounded-lg p-3 bg-orange-50 border border-orange-200">
-                      <p className="text-sm font-medium text-orange-600">Giao hàng thất bại — chờ xử lý</p>
+                    <div className="rounded-lg p-3 bg-[var(--status-warning-bg)] border border-[var(--status-warning-border)]">
+                      <p className="text-sm font-medium text-[var(--status-warning)]">Giao hàng thất bại — chờ xử lý</p>
                     </div>
                   )}
                 </div>
@@ -630,10 +664,10 @@ export default function OrderDetailSheet({
                 {/* Terminal banners */}
                 {(order.status === "CANCELLED" || order.status === "RETURNED") && (
                   <div className={`rounded-lg p-4 border ${
-                    order.status === "CANCELLED" ? "bg-red-50 border-red-200" : "bg-purple-50 border-purple-200"
+                    order.status === "CANCELLED" ? "bg-[var(--status-error-bg)] border-[var(--status-error-border)]" : "bg-gray-50 border-gray-200"
                   }`}>
                     <p className={`font-bold text-sm ${
-                      order.status === "CANCELLED" ? "text-red-600" : "text-purple-700"
+                      order.status === "CANCELLED" ? "text-[var(--status-error)]" : "text-gray-600"
                     }`}>
                       {order.status === "CANCELLED" && "Đơn hàng đã bị hủy"}
                       {order.status === "RETURNED" && "Đơn hàng đã được hoàn tiền"}
@@ -642,7 +676,7 @@ export default function OrderDetailSheet({
                 )}
 
                 {/* Cancel button */}
-                {canCancel && (
+                {canCancel && !readonly && (
                   <div>
                     <Button
                       variant="destructive"
