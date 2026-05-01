@@ -10,7 +10,9 @@ import {
 } from "react";
 import { useSession } from "next-auth/react";
 import { notificationService } from "@/services/notification";
+import { orderService } from "@/services/order";
 import { useNotificationSocket } from "@/hooks/useNotificationSocket";
+import { extractOrderId } from "@/utils/notification-route";
 import type { NotificationDto } from "@/dto/notification";
 
 const PER_PAGE = 20;
@@ -20,6 +22,7 @@ interface NotificationContextValue {
   unreadCount: number;
   hasMore: boolean;
   loading: boolean;
+  orderImageMap: Record<string, string | null>;
   loadMore: () => void;
   markRead: (id: string) => void;
 }
@@ -29,6 +32,7 @@ const NotificationContext = createContext<NotificationContextValue>({
   unreadCount: 0,
   hasMore: false,
   loading: false,
+  orderImageMap: {},
   loadMore: () => {},
   markRead: () => {},
 });
@@ -41,8 +45,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [orderImageMap, setOrderImageMap] = useState<Record<string, string | null>>({});
   const pageRef = useRef(1);
   const loadedRef = useRef(false);
+  const orderImageCacheRef = useRef<Record<string, string | null>>({});
 
   const refreshUnreadCount = useCallback(async () => {
     if (!accessToken) return;
@@ -53,6 +59,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.error("[NotificationProvider] Failed to fetch unread count:", err);
     }
   }, [accessToken]);
+
+  const fetchOrderImages = useCallback(
+    async (items: NotificationDto[]) => {
+      if (!accessToken) return;
+      const newIds = items
+        .filter((n) => n.type === "PERSONAL_NOTIFICATION")
+        .map((n) => extractOrderId(n.content))
+        .filter((id): id is string => id !== null && !(id in orderImageCacheRef.current));
+
+      if (newIds.length === 0) return;
+      newIds.forEach((id) => { orderImageCacheRef.current[id] = null; });
+
+      await Promise.allSettled(
+        newIds.map(async (orderId) => {
+          try {
+            const res = await orderService.getOrderDetail(Number(orderId), accessToken);
+            const url = res.data?.orderItems?.[0]?.productVariant?.media?.[0]?.url ?? null;
+            orderImageCacheRef.current[orderId] = url;
+            setOrderImageMap((prev) => ({ ...prev, [orderId]: url }));
+          } catch {
+            // silently ignore — icon fallback is shown
+          }
+        })
+      );
+    },
+    [accessToken]
+  );
 
   const fetchPage = useCallback(
     async (page: number) => {
@@ -67,13 +100,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           setNotifications((prev) => [...prev, ...items]);
         }
         setHasMore(items.length === PER_PAGE);
+        fetchOrderImages(items);
       } catch (err) {
         console.error("[NotificationProvider] Failed to fetch notifications:", err);
       } finally {
         setLoading(false);
       }
     },
-    [accessToken]
+    [accessToken, fetchOrderImages]
   );
 
   useEffect(() => {
@@ -117,7 +151,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const handleSocketNotification = useCallback((notification: NotificationDto) => {
     setNotifications((prev) => [notification, ...prev]);
     refreshUnreadCount();
-  }, [refreshUnreadCount]);
+    fetchOrderImages([notification]);
+  }, [refreshUnreadCount, fetchOrderImages]);
 
   useNotificationSocket({
     accessToken,
@@ -126,7 +161,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, unreadCount, hasMore, loading, loadMore, markRead }}
+      value={{ notifications, unreadCount, hasMore, loading, orderImageMap, loadMore, markRead }}
     >
       {children}
     </NotificationContext.Provider>

@@ -16,7 +16,7 @@ const RETURN_TITLES = ["yêu cầu hoàn trả"];
 
 const VOUCHER_TITLES = ["voucher"];
 
-function extractOrderId(content: string): string | null {
+export function extractOrderId(content: string): string | null {
   const match = content.match(/#(\d+)/);
   return match ? match[1] : null;
 }
