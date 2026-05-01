@@ -88,7 +88,7 @@ export default function AdminProductsReviewsPage() {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((r) => {
         const productName = r.product?.name?.toLowerCase() ?? "";
-        const userName = [r.user?.firstName, r.user?.lastName].filter(Boolean).join(" ").toLowerCase();
+        const userName = [r.user?.lastName, r.user?.firstName].filter(Boolean).join(" ").toLowerCase();
         const userEmail = r.user?.email?.toLowerCase() ?? "";
         const comment = r.comment?.toLowerCase() ?? "";
         return productName.includes(q) || userName.includes(q) || userEmail.includes(q) || comment.includes(q) || String(r.id).includes(q);
@@ -209,7 +209,7 @@ export default function AdminProductsReviewsPage() {
                 ? `${review.productVariant.variantSize} • ${review.productVariant.variantColor}`
                 : "";
               const userName =
-                [review.user?.firstName, review.user?.lastName]
+                [review.user?.lastName, review.user?.firstName]
                   .filter(Boolean)
                   .join(" ") || review.user?.email || `User #${review.userId}`;
               const userEmail = review.user?.email ?? "";

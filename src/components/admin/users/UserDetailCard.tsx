@@ -23,7 +23,7 @@ function getStatus(user: UserDto): UserStatus {
 
 export function getDisplayName(user: UserDto): string {
   return (
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    [user.lastName, user.firstName].filter(Boolean).join(" ") ||
     user.name ||
     user.username ||
     "—"

@@ -538,7 +538,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
                             <p className="px-3 py-2 text-xs text-gray-400">Không tìm thấy người dùng</p>
                           ) : (
                             filteredUsers.filter((u) => !form.targetUserIds.includes(u.id)).map((u) => {
-                              const displayName = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.name || u.username || `#${u.id}`;
+                              const displayName = [u.lastName, u.firstName].filter(Boolean).join(" ") || u.name || u.username || `#${u.id}`;
                               return <button key={u.id} type="button" onClick={() => setForm((f) => ({ ...f, targetUserIds: [...f.targetUserIds, u.id], targetUserDisplayNames: [...f.targetUserDisplayNames, displayName], targetUserSearchQuery: "" }))} className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--admin-green-light)] cursor-pointer border-b border-gray-100 last:border-0 flex items-center gap-2"><span className="font-medium flex-1 truncate">{displayName}</span><span className="text-gray-400 text-xs shrink-0">{u.email}</span></button>;
                             })
                           )}

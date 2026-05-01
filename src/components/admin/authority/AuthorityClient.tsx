@@ -26,7 +26,7 @@ const ROLE_ORDER: UserRole[] = ["USER", "OPERATOR", "ADMIN"];
 
 function getDisplayName(user: UserDto): string {
   return (
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    [user.lastName, user.firstName].filter(Boolean).join(" ") ||
     user.name ||
     user.username ||
     "—"

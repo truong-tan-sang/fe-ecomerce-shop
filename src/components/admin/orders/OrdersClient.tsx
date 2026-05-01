@@ -128,7 +128,10 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(
-        (o) => String(o.id).includes(q) || String(o.userId).includes(q)
+        (o) => {
+          const fullName = [o.user?.lastName, o.user?.firstName].filter(Boolean).join(" ").toLowerCase();
+          return String(o.id).includes(q) || fullName.includes(q) || (o.user?.email ?? "").toLowerCase().includes(q);
+        }
       );
     }
     return result;
@@ -234,7 +237,9 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
                     )}
                     <span className="truncate text-gray-700">{productName}</span>
                   </div>
-                  <div className="text-gray-600 truncate">#{order.userId}</div>
+                  <div className="text-gray-600 truncate">
+                    {[order.user?.lastName, order.user?.firstName].filter(Boolean).join(" ") || order.user?.email || `#${order.userId}`}
+                  </div>
                   <div className="text-gray-600">{formatDate(order.orderDate)}</div>
                   <div className="text-gray-800 font-medium">
                     {order.totalAmount.toLocaleString("vi-VN")}đ

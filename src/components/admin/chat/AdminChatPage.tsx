@@ -166,7 +166,7 @@ export default function AdminChatPage() {
       if (res?.data) {
         const d = res.data;
         const name =
-          [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+          [d.lastName, d.firstName].filter(Boolean).join(" ") ||
           d.username ||
           d.email ||
           "Tôi";
@@ -258,7 +258,7 @@ export default function AdminChatPage() {
         if (res?.data) {
           const d = res.data;
           const name =
-            [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+            [d.lastName, d.firstName].filter(Boolean).join(" ") ||
             d.username ||
             d.email ||
             `Khách hàng #${customerId}`;
@@ -287,7 +287,7 @@ export default function AdminChatPage() {
           if (res?.data) {
             const d = res.data;
             const name =
-              [d.firstName, d.lastName].filter(Boolean).join(" ") ||
+              [d.lastName, d.firstName].filter(Boolean).join(" ") ||
               d.username ||
               d.email ||
               "Đồng nghiệp";

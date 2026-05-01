@@ -94,7 +94,7 @@ export default function AdminProfilePage({ session }: Props) {
 
   const avatarUrl = avatarPreview ?? getAvatarUrl(profile?.userMedia ?? []) ?? profile?.image;
   const displayName =
-    [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") ||
+    [profile?.lastName, profile?.firstName].filter(Boolean).join(" ") ||
     session?.user?.name ||
     session?.user?.email ||
     "Admin";

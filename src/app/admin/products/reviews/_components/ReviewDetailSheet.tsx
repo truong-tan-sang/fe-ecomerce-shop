@@ -99,7 +99,7 @@ export default function ReviewDetailSheet({
                   {review.user ? (
                     <>
                       <p className="text-sm font-medium">
-                        {[review.user.firstName, review.user.lastName]
+                        {[review.user.lastName, review.user.firstName]
                           .filter(Boolean)
                           .join(" ") || `User #${review.user.id}`}
                       </p>
