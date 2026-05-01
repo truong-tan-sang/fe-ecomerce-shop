@@ -17,6 +17,8 @@ import {
 import { categoryService } from "@/services/category";
 import type { CategoryDto } from "@/dto/category";
 import { useNotifications } from "@/components/notification/NotificationContext";
+import { extractOrderId } from "@/utils/notification-route";
+import { useCart } from "@/components/cart/CartContext";
 import { getNotificationRoute } from "@/utils/notification-route";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -31,7 +33,8 @@ export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const { notifications, unreadCount, markRead } = useNotifications();
+  const { notifications, unreadCount, markRead, orderImageMap } = useNotifications();
+  const { cartCount } = useCart();
   const previewNotifications = notifications.slice(0, 5);
 
   useEffect(() => {
@@ -111,15 +114,24 @@ export default function Header() {
                         if (route) router.push(route);
                       }}
                     >
-                      <div
-                        className={`w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-full text-xs ${
-                          n.type === "PERSONAL_NOTIFICATION"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-red-100 text-red-600"
-                        }`}
-                      >
-                        <i className={`fa-solid ${n.type === "PERSONAL_NOTIFICATION" ? "fa-box" : "fa-tag"}`} />
-                      </div>
+                      {(() => {
+                        const orderId = n.type === "PERSONAL_NOTIFICATION" ? extractOrderId(n.content) : null;
+                        const imgUrl = orderId ? orderImageMap[orderId] : null;
+                        return (
+                          <div
+                            className={`w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-full text-xs overflow-hidden ${
+                              imgUrl ? "" : n.type === "PERSONAL_NOTIFICATION" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                            }`}
+                          >
+                            {imgUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <i className={`fa-solid ${n.type === "PERSONAL_NOTIFICATION" ? "fa-box" : "fa-tag"}`} />
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div className="flex-1 min-w-0">
                         <p className={`text-xs leading-snug mb-0.5 line-clamp-1 ${!n.isRead && n.type === "PERSONAL_NOTIFICATION" ? "font-bold" : "font-medium"}`}>
                           {n.title}
@@ -233,8 +245,13 @@ export default function Header() {
             <Link href="/product/1" className="hidden" aria-hidden>
               {/* hidden placeholder to keep focus order deterministic */}
             </Link>
-            <Link href="/cart" title="Giỏ hàng" className="p-2 transition-opacity hover:opacity-80 cursor-pointer">
+            <Link href="/cart" title="Giỏ hàng" className="relative p-2 transition-opacity hover:opacity-80 cursor-pointer">
               <i className="fa-solid fa-cart-shopping" />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5 rounded-full">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>

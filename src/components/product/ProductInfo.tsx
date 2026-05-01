@@ -7,6 +7,7 @@ import ColorSwatch from "./ColorSwatch";
 import type { ProductVariantEntity } from "@/dto/product-variant";
 import type { ColorEntity } from "@/dto/color";
 import { cartService } from "@/services/cart";
+import { useCart } from "@/components/cart/CartContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +80,7 @@ export default function ProductInfo({
     const [isLoading, setIsLoading] = useState(false);
     const { data: session } = useSession();
     const router = useRouter();
+    const { refreshCart } = useCart();
 
     // Find the currently selected variant based on size and colorId
     const selectedVariant = useMemo(() => {
@@ -197,6 +199,7 @@ export default function ProductInfo({
             await cartService.createCartItem(userId, { cartId, productVariantId: selectedVariant.id, quantity }, session.user.access_token);
             console.log("[ProductInfo] Cart item created successfully");
             toast.success("Đã thêm vào giỏ hàng");
+            await refreshCart();
         } catch (error) {
             console.error("[ProductInfo] Add to cart failed:", error);
             toast.error("Thêm vào giỏ hàng thất bại");

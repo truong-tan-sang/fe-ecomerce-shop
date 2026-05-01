@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cartService } from "@/services/cart";
+import { useCart } from "@/components/cart/CartContext";
 import type { CartItemWithDetails } from "@/dto/cart-api";
 import { mapCartItemToDetails } from "@/dto/cart-api";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { data: session } = useSession();
   const router = useRouter();
+  const { refreshCart } = useCart();
 
   // Load cart from API on mount
   useEffect(() => {
@@ -106,6 +108,7 @@ export default function CartPage() {
       setItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, quantity: newQty } : i)),
       );
+      await refreshCart();
     } catch (error) {
       console.error("[CartPage] Failed to update quantity:", error);
     }
@@ -123,6 +126,7 @@ export default function CartPage() {
         newSet.delete(itemId);
         return newSet;
       });
+      await refreshCart();
     } catch (error) {
       console.error("[CartPage] Failed to remove item:", error);
     }
@@ -144,6 +148,7 @@ export default function CartPage() {
       );
       setItems((prev) => prev.filter((i) => !selectedIds.has(i.id)));
       setSelectedIds(new Set());
+      await refreshCart();
     } catch (error) {
       console.error("[CartPage] Failed to remove selected items:", error);
     }
