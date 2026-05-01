@@ -28,6 +28,7 @@ export default function CategoriesClient({ readonly = false }: CategoriesClientP
 
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const PER_PAGE = 10;
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,17 +40,28 @@ export default function CategoriesClient({ readonly = false }: CategoriesClientP
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
+    setCategories([]);
+    const all: CategoryDto[] = [];
+    let page = 1;
     try {
-      console.log("[CategoriesClient] Fetching categories");
-      const res = await categoryService.getAllCategories(accessToken);
-      setCategories(res.data ?? []);
+      while (true) {
+        console.log("[CategoriesClient] Fetching categories page:", page);
+        const res = await categoryService.getCategoriesPage(page, PER_PAGE, accessToken);
+        const data = res.data ?? [];
+        if (data.length === 0) break;
+        all.push(...data);
+        setCategories(all.slice());
+        if (data.length < PER_PAGE) break;
+        page += 1;
+      }
+      console.log("[CategoriesClient] Done. Total:", all.length);
     } catch (err) {
       console.error("[CategoriesClient] Error:", err);
       setCategories([]);
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, PER_PAGE]);
 
   useEffect(() => {
     if (accessToken) fetchCategories();

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Star, Trash2, Loader2 } from "lucide-react";
 import {
   Sheet,
@@ -132,15 +131,6 @@ export default function ReviewDetailSheet({
                       {review.productVariant.variantSize} •{" "}
                       {review.productVariant.variantColor}
                     </p>
-                  )}
-                  {review.productId && (
-                    <Link
-                      href={`/product/${review.productId}#reviews`}
-                      target="_blank"
-                      className="inline-block mt-2 text-xs text-primary hover:underline underline-offset-2 cursor-pointer"
-                    >
-                      Xem trên trang sản phẩm →
-                    </Link>
                   )}
                 </div>
 

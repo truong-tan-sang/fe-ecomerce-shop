@@ -11,19 +11,10 @@ import { Input } from "@/components/ui/input";
 import ReviewDetailSheet from "./_components/ReviewDetailSheet";
 
 const ROW_HEIGHT = 64;
-const PER_PAGE = 50;
+const PER_PAGE = 10;
 const COLS = "48px 80px 2fr 1.5fr 130px 2fr 60px 130px";
 
 type FilterTab = "all" | "5" | "4" | "3" | "2" | "1";
-
-const TAB_TO_RATING: Record<FilterTab, number | undefined> = {
-  all: undefined,
-  "5": 5,
-  "4": 4,
-  "3": 3,
-  "2": 2,
-  "1": 1,
-};
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "—";
@@ -52,18 +43,12 @@ export default function AdminProductsReviewsPage() {
     (async () => {
       setLoading(true);
       setReviews([]);
-      const ratingFilter = TAB_TO_RATING[activeTab];
       const all: AdminReviewDto[] = [];
       let page = 1;
       try {
         while (!cancelled) {
-          console.log("[ReviewsPage] Fetching tab:", activeTab, "page:", page);
-          const res = await reviewService.getAllReviews(
-            page,
-            PER_PAGE,
-            ratingFilter,
-            accessToken
-          );
+          console.log("[ReviewsPage] Fetching page:", page);
+          const res = await reviewService.getAllReviews(page, PER_PAGE, undefined, accessToken);
           const data = Array.isArray(res.data) ? res.data : [];
           console.log("[ReviewsPage] Page", page, "→", data.length, "items");
           if (data.length === 0) break;
@@ -90,32 +75,27 @@ export default function AdminProductsReviewsPage() {
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, activeTab]);
+    return () => { cancelled = true; };
+  }, [accessToken]);
 
-  // Client-side search across product/user/comment
   const filteredReviews = useMemo(() => {
-    if (!searchQuery.trim()) return reviews;
-    const q = searchQuery.trim().toLowerCase();
-    return reviews.filter((r) => {
-      const productName = r.product?.name?.toLowerCase() ?? "";
-      const userName = [r.user?.firstName, r.user?.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      const userEmail = r.user?.email?.toLowerCase() ?? "";
-      const comment = r.comment?.toLowerCase() ?? "";
-      return (
-        productName.includes(q) ||
-        userName.includes(q) ||
-        userEmail.includes(q) ||
-        comment.includes(q) ||
-        String(r.id).includes(q)
-      );
-    });
-  }, [reviews, searchQuery]);
+    let result = reviews;
+    if (activeTab !== "all") {
+      const rating = Number(activeTab);
+      result = result.filter((r) => r.rating === rating);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((r) => {
+        const productName = r.product?.name?.toLowerCase() ?? "";
+        const userName = [r.user?.firstName, r.user?.lastName].filter(Boolean).join(" ").toLowerCase();
+        const userEmail = r.user?.email?.toLowerCase() ?? "";
+        const comment = r.comment?.toLowerCase() ?? "";
+        return productName.includes(q) || userName.includes(q) || userEmail.includes(q) || comment.includes(q) || String(r.id).includes(q);
+      });
+    }
+    return result;
+  }, [reviews, activeTab, searchQuery]);
 
   const rowVirtualizer = useVirtualizer({
     count: filteredReviews.length,

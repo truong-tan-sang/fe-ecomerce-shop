@@ -19,6 +19,16 @@ export const categoryService = {
     return response;
   },
 
+  async getCategoriesPage(page: number, perPage: number, accessToken?: string): Promise<IBackendRes<CategoryDto[]>> {
+    const url = `${BACKEND_URL}/category?page=${page}&perPage=${perPage}`;
+    const response = await sendRequest<IBackendRes<CategoryDto[]>>({
+      url,
+      method: "GET",
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    });
+    return response;
+  },
+
   async getCategoryById(id: number, accessToken?: string): Promise<IBackendRes<CategoryDto>> {
     const url = `${BACKEND_URL}/category/${id}`;
     console.log("[CategoryService] Fetching category:", id);

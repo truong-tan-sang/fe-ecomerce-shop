@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, Loader2 } from "lucide-react";
@@ -14,7 +14,7 @@ import { getReturnRequestOverlay } from "@/utils/returnRequestStatus";
 import { Undo2 } from "lucide-react";
 
 const ROW_HEIGHT = 56;
-const PER_PAGE = 50;
+const PER_PAGE = 10;
 const COLS = "48px 2fr 160px 140px 120px 120px 160px 130px";
 
 type FilterTab =
@@ -23,19 +23,41 @@ type FilterTab =
   | "shipping"
   | "delivered"
   | "pending_return"
-  | "returned";
+  | "returned"
+  | "cancelled";
 
-const TAB_FETCHER: Record<
-  FilterTab,
-  (page: number, perPage: number, token: string) => Promise<IBackendRes<OrderFullInformationEntity[]>>
-> = {
-  all:            (p, pp, t) => orderService.getAllOrderDetails(p, pp, t),
-  waiting:        (p, pp, t) => orderService.getShopConfirmedOrders(p, pp, t),
-  shipping:       (p, pp, t) => orderService.getShopShippedOrders(p, pp, t),
-  delivered:      (p, pp, t) => orderService.getShopDeliveredOrders(p, pp, t),
-  pending_return: (p, pp, t) => orderService.getShopOrdersWithPendingReturn(p, pp, t),
-  returned:       (p, pp, t) => orderService.getShopReturnedOrders(p, pp, t),
-};
+function applyTabFilter(orders: OrderFullInformationEntity[], tab: FilterTab): OrderFullInformationEntity[] {
+  switch (tab) {
+    case "all": return orders;
+    case "waiting":
+      return orders.filter((o) =>
+        o.status === "PENDING" ||
+        o.status === "PAYMENT_PROCESSING" ||
+        o.status === "PAYMENT_CONFIRMED"
+      );
+    case "shipping":
+      return orders.filter((o) =>
+        o.status === "WAITING_FOR_PICKUP" || o.status === "SHIPPED"
+      );
+    case "delivered":
+      return orders.filter((o) =>
+        o.status === "DELIVERED" || o.status === "COMPLETED"
+      );
+    case "pending_return":
+      return orders.filter((o) =>
+        o.requests?.some(
+          (r) => r.subject === "RETURN_REQUEST" &&
+            (r.status === "PENDING" || r.status === "IN_PROGRESS")
+        )
+      );
+    case "returned":
+      return orders.filter((o) => o.status === "RETURNED");
+    case "cancelled":
+      return orders.filter((o) =>
+        o.status === "CANCELLED" || o.status === "DELIVERED_FAILED"
+      );
+  }
+}
 
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -71,8 +93,8 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
       let page = 1;
       try {
         while (!cancelled) {
-          console.log("[OrdersClient] Fetching tab:", activeTab, "page:", page);
-          const res = await TAB_FETCHER[activeTab](page, PER_PAGE, accessToken);
+          console.log("[OrdersClient] Fetching all orders page:", page);
+          const res = await orderService.getAllOrderDetails(page, PER_PAGE, accessToken);
           const data = Array.isArray(res.data) ? res.data : [];
           if (data.length === 0) break;
           all.push(...data);
@@ -87,6 +109,7 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
           if (data.length < PER_PAGE) break;
           page += 1;
         }
+        console.log("[OrdersClient] Done. Total orders:", all.length);
       } catch (err) {
         console.error("[OrdersClient] Fetch error:", err);
       } finally {
@@ -98,15 +121,18 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
     })();
 
     return () => { cancelled = true; };
-  }, [accessToken, activeTab]);
+  }, [accessToken]);
 
   const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    const q = searchQuery.trim().toLowerCase();
-    return orders.filter(
-      (o) => String(o.id).includes(q) || String(o.userId).includes(q)
-    );
-  }, [orders, searchQuery]);
+    let result = applyTabFilter(orders, activeTab);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(
+        (o) => String(o.id).includes(q) || String(o.userId).includes(q)
+      );
+    }
+    return result;
+  }, [orders, activeTab, searchQuery]);
 
   const rowVirtualizer = useVirtualizer({
     count: filteredOrders.length,
@@ -130,10 +156,11 @@ export default function OrdersClient({ readonly = false }: OrdersClientProps) {
         <TabsList className="bg-[var(--admin-green-light)]">
           <TabsTrigger value="all" className="cursor-pointer">Tất cả</TabsTrigger>
           <TabsTrigger value="waiting" className="cursor-pointer">Đang chờ</TabsTrigger>
-          <TabsTrigger value="shipping" className="cursor-pointer">Đang trên đường</TabsTrigger>
+          <TabsTrigger value="shipping" className="cursor-pointer">Đang giao</TabsTrigger>
           <TabsTrigger value="delivered" className="cursor-pointer">Đã giao</TabsTrigger>
           <TabsTrigger value="pending_return" className="cursor-pointer">Yêu cầu trả hàng</TabsTrigger>
           <TabsTrigger value="returned" className="cursor-pointer">Hoàn tiền</TabsTrigger>
+          <TabsTrigger value="cancelled" className="cursor-pointer">Đã hủy</TabsTrigger>
         </TabsList>
       </Tabs>
 

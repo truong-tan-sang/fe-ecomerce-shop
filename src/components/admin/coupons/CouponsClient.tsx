@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, PlusSquare, Pencil, Trash2, Loader2, SlidersHorizontal, X } from "lucide-react";
@@ -50,7 +50,7 @@ function VoucherTargetCell({ voucher }: { voucher: VoucherDto }) {
 }
 
 const ROW_HEIGHT = 53;
-const PER_PAGE = 50;
+const PER_PAGE = 10;
 const COLS_FULL = "48px 140px 1fr 180px 120px 100px 100px 100px 160px 96px";
 const COLS_READONLY = "48px 140px 1fr 180px 120px 100px 100px 100px 160px";
 
@@ -109,13 +109,8 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
   const [vouchers, setVouchers] = useState<VoucherDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const pageRef = useRef(1);
 
   const [searchInput, setSearchInput] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingFilter, setPendingFilter] = useState<FilterState>(emptyFilter());
   const [appliedFilter, setAppliedFilter] = useState<FilterState>(emptyFilter());
@@ -149,57 +144,49 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
     colorService.getAllColors().then((res) => { if (Array.isArray(res?.data)) setColors(res.data); }).catch(() => {});
   }, []);
 
-  const fetchVouchers = useCallback(async (page: number, append: boolean, search: string, filter: FilterState) => {
-    if (page === 1) setLoading(true); else setLoadingMore(true);
-    const params = filterToParams(search, filter);
+  const fetchAllVouchers = useCallback(async () => {
+    setLoading(true);
+    setVouchers([]);
+    const all: VoucherDto[] = [];
+    let page = 1;
     try {
-      console.log("[CouponsClient] Searching vouchers page:", page, params);
-      const res = await voucherService.searchVouchers(params, page, PER_PAGE);
-      const data = Array.isArray(res.data) ? res.data : [];
-      if (append) setVouchers((prev) => [...prev, ...data]); else setVouchers(data);
-      setHasMore(data.length > 0);
+      while (true) {
+        console.log("[CouponsClient] Fetching vouchers page:", page);
+        const res = await voucherService.getAllVouchers(page, PER_PAGE);
+        const data = Array.isArray(res.data) ? res.data : [];
+        if (data.length === 0) break;
+        all.push(...data);
+        if (page === 1) { setVouchers(all.slice()); setLoading(false); setLoadingMore(true); }
+        else setVouchers(all.slice());
+        if (data.length < PER_PAGE) break;
+        page += 1;
+      }
+      console.log("[CouponsClient] Done. Total vouchers:", all.length);
     } catch (err) {
       console.error("[CouponsClient] Error:", err);
-      if (!append) setVouchers([]);
-      setHasMore(false);
+      setVouchers([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   }, []);
 
-  useEffect(() => {
-    pageRef.current = 1;
-    fetchVouchers(1, false, appliedSearch, appliedFilter);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchVouchers]);
+  useEffect(() => { fetchAllVouchers(); }, [fetchAllVouchers]);
 
-  const triggerNewSearch = useCallback((search: string, filter: FilterState) => {
-    pageRef.current = 1;
-    fetchVouchers(1, false, search, filter);
-  }, [fetchVouchers]);
+  const filteredVouchers = useMemo(() => {
+    let result = vouchers;
+    const q = searchInput.trim().toLowerCase();
+    if (q) result = result.filter((v) => v.code.toLowerCase().includes(q) || (v.description ?? "").toLowerCase().includes(q));
+    if (appliedFilter.discountType) result = result.filter((v) => v.discountType === appliedFilter.discountType);
+    if (appliedFilter.isActive === "active") result = result.filter((v) => v.isActive);
+    if (appliedFilter.isActive === "inactive") result = result.filter((v) => !v.isActive);
+    return result;
+  }, [vouchers, searchInput, appliedFilter]);
 
-  const loadNextPage = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    const nextPage = pageRef.current + 1;
-    pageRef.current = nextPage;
-    fetchVouchers(nextPage, true, appliedSearch, appliedFilter);
-  }, [loadingMore, hasMore, fetchVouchers, appliedSearch, appliedFilter]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { setAppliedSearch(value); triggerNewSearch(value, appliedFilter); }, 400);
-  };
-
-  const clearSearch = () => {
-    setSearchInput(""); setAppliedSearch("");
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    triggerNewSearch("", appliedFilter);
-  };
-
-  const applyFilters = () => { setAppliedFilter(pendingFilter); setFilterOpen(false); triggerNewSearch(appliedSearch, pendingFilter); };
-  const resetFilters = () => { const e = emptyFilter(); setPendingFilter(e); setAppliedFilter(e); setFilterOpen(false); triggerNewSearch(appliedSearch, e); };
+  const handleSearchChange = (value: string) => setSearchInput(value);
+  const clearSearch = () => setSearchInput("");
+  const applyFilters = () => { setAppliedFilter(pendingFilter); setFilterOpen(false); };
+  const resetFilters = () => { const e = emptyFilter(); setPendingFilter(e); setAppliedFilter(e); setFilterOpen(false); };
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -209,20 +196,11 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
   }, [filterOpen]);
 
   const rowVirtualizer = useVirtualizer({
-    count: vouchers.length,
+    count: filteredVouchers.length,
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
   });
-
-  useEffect(() => {
-    if (!hasMore || loadingMore || loading) return;
-    const virtualItems = rowVirtualizer.getVirtualItems();
-    const lastVisible = virtualItems[virtualItems.length - 1];
-    const nearEnd = lastVisible ? lastVisible.index >= vouchers.length - 5 : vouchers.length > 0;
-    if (nearEnd) loadNextPage();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowVirtualizer.getVirtualItems(), vouchers.length, hasMore, loadingMore, loading, loadNextPage]);
 
   const handleAssignSearch = (query: string, targetType: VoucherTargetType) => {
     if (assignDebounceRef.current) clearTimeout(assignDebounceRef.current);
@@ -292,7 +270,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
       if (dialogMode === "create") {
         const payload: CreateVoucherDto = { code: form.code.trim(), description: form.description.trim() || undefined, discountType: form.discountType, discountValue: parseFloat(form.discountValue), validFrom: new Date(form.validFrom).toISOString(), validTo: new Date(form.validTo).toISOString(), usageLimit: form.usageLimit ? parseInt(form.usageLimit) : undefined, timesUsed: 0, isActive: true, createdBy: parseInt(session.user.id) };
         const res = await voucherService.createVoucher(payload, accessToken);
-        if (res.data) { voucherId = res.data.id; setVouchers((prev) => [res.data!, ...prev]); }
+        if (res.data) { voucherId = res.data.id; }
       } else if (editingId !== null) {
         const payload = { code: form.code.trim(), description: form.description.trim() || undefined, discountType: form.discountType, discountValue: parseFloat(form.discountValue), validFrom: new Date(form.validFrom).toISOString(), validTo: new Date(form.validTo).toISOString(), usageLimit: form.usageLimit ? parseInt(form.usageLimit) : undefined, isActive: form.isActive };
         const res = await voucherService.updateVoucher(editingId, payload, accessToken);
@@ -307,6 +285,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
         } catch (assignErr) { console.error("[CouponsClient] Assignment failed:", assignErr); setAssignError("Voucher đã được tạo nhưng gán thất bại."); setSaving(false); return; }
       }
       setDialogOpen(false);
+      fetchAllVouchers();
     } catch (err) { console.error("[CouponsClient] Save error:", err); alert("Lưu voucher thất bại."); }
     finally { setSaving(false); }
   };
@@ -314,8 +293,8 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
   const handleDelete = async (id: number) => {
     try {
       await voucherService.deleteVoucher(id, accessToken);
-      setVouchers((prev) => prev.filter((v) => v.id !== id));
       setDeleteConfirmId(null);
+      fetchAllVouchers();
     } catch (err) { console.error("[CouponsClient] Delete error:", err); alert("Xóa voucher thất bại."); }
   };
 
@@ -394,13 +373,13 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
               {appliedFilter.discountType && (
                 <span className="flex items-center gap-1 bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] text-xs px-2 py-0.5 font-medium rounded-md">
                   {appliedFilter.discountType === "PERCENTAGE" ? "Phần trăm" : "Số tiền"}
-                  <button onClick={() => { const f = { ...appliedFilter, discountType: "" as const }; setAppliedFilter(f); triggerNewSearch(appliedSearch, f); }} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
+                  <button onClick={() => setAppliedFilter((f) => ({ ...f, discountType: "" }))} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
                 </span>
               )}
               {appliedFilter.isActive !== "all" && (
                 <span className="flex items-center gap-1 bg-[var(--admin-green-light)] text-[var(--admin-green-dark)] text-xs px-2 py-0.5 font-medium rounded-md">
                   {appliedFilter.isActive === "active" ? "Còn hiệu lực" : "Hết hiệu lực"}
-                  <button onClick={() => { const f = { ...appliedFilter, isActive: "all" as const }; setAppliedFilter(f); triggerNewSearch(appliedSearch, f); }} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
+                  <button onClick={() => setAppliedFilter((f) => ({ ...f, isActive: "all" }))} className="cursor-pointer hover:text-red-500"><X size={11} /></button>
                 </span>
               )}
             </div>
@@ -425,13 +404,13 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
         <div ref={tableContainerRef} className="overflow-auto flex-1 min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-12 gap-2 text-gray-400 text-sm"><Loader2 size={16} className="animate-spin" />Đang tải...</div>
-          ) : vouchers.length === 0 ? (
+          ) : filteredVouchers.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Không có voucher nào</div>
           ) : (
             <>
               <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const v = vouchers[virtualRow.index];
+                  const v = filteredVouchers[virtualRow.index];
                   return (
                     <div key={v.id} data-index={virtualRow.index} ref={rowVirtualizer.measureElement} className="grid border-t border-gray-100 hover:bg-gray-50 items-center text-sm text-black" style={{ gridTemplateColumns: COLS, position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${virtualRow.start}px)` }}>
                       <div className="px-4 py-3 text-gray-500">{virtualRow.index + 1}</div>
