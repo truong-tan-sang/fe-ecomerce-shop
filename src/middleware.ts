@@ -6,17 +6,23 @@ export async function middleware(req: Request) {
   const pathname = url.pathname;
 
   const session = await auth();
-  const isPublic = pathname.startsWith("/auth/");
+  const isAuthPage = pathname.startsWith("/auth/");
+  const isPublicStorefront =
+    pathname === "/" ||
+    pathname === "/homepage" ||
+    pathname.startsWith("/search") ||
+    pathname.startsWith("/product/");
+  const isPublic = isAuthPage || isPublicStorefront;
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.isAdmin === true;
   const isOperator = session?.user?.role === "OPERATOR";
 
-  // Rule 1: Not authenticated — only allow auth pages
+  // Rule 1: Not authenticated — only allow public pages
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL("/auth/login", url));
   }
 
   // Rule 2: Authenticated but visiting an auth page — redirect to dashboard
-  if (session && isPublic) {
+  if (session && isAuthPage) {
     if (isAdmin) return NextResponse.redirect(new URL("/admin", url));
     if (isOperator) return NextResponse.redirect(new URL("/staff", url));
     return NextResponse.redirect(new URL("/homepage", url));
