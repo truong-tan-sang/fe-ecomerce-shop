@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authService } from "./services/auth";
 import {
+  EmailNotFoundError,
   InactiveAccountError,
   InvalidEmailPasswordError,
 } from "./utils/errors";
@@ -37,7 +38,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const { ApiError } = await import("@/utils/api-error");
           if (error instanceof ApiError) {
             console.log("[Auth] Login failed:", error.statusCode, error.message);
-            if (error.statusCode === 401) {
+            if (error.statusCode === 404) {
+              throw new EmailNotFoundError();
+            } else if (error.statusCode === 401) {
               throw new InvalidEmailPasswordError();
             } else if (error.statusCode === 400) {
               throw new InactiveAccountError();

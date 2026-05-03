@@ -37,8 +37,11 @@ const ForgotPassword = () => {
       router.push(`/auth/change-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Gửi email đặt lại mật khẩu thất bại.";
-      toast.error(msg);
+      if (error instanceof ApiError && (error.statusCode === 400 || error.statusCode === 404)) {
+        toast.error("Email này chưa được đăng ký trong hệ thống.");
+      } else {
+        toast.error("Gửi mã xác nhận thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setLoading(false);
     }

@@ -59,8 +59,11 @@ function ChangePassword() {
       setStep(2);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Gửi mã xác nhận thất bại.";
-      toast.error(msg);
+      if (error instanceof ApiError && (error.statusCode === 400 || error.statusCode === 404)) {
+        toast.error("Email này chưa được đăng ký trong hệ thống.");
+      } else {
+        toast.error("Gửi mã xác nhận thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setShowLoader(false);
     }
@@ -114,8 +117,11 @@ function ChangePassword() {
       router.push("/auth/login");
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Đổi mật khẩu thất bại.";
-      toast.error(msg);
+      if (error instanceof ApiError && error.statusCode === 400) {
+        toast.error("Mã xác nhận không hợp lệ hoặc đã hết hạn.");
+      } else {
+        toast.error("Đổi mật khẩu thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setShowLoader(false);
     }

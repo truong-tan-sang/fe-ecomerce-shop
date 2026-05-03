@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { authenticate } from "@/utils/actions";
 import ModalReactive from "@/components/auth/ModalReactive";
 import Image from "next/image";
+import { toast } from "sonner";
+import { authService } from "@/services/auth";
 
 function Login() {
   const [user, setUser] = useState({ email: "", password: "" });
@@ -70,7 +72,22 @@ function Login() {
         return;
       }
 
-      console.error("Login failed:", res?.error);
+      if (res?.code === 3 || res?.code === 1) {
+        try {
+          const check = await authService.checkEmail(user.email);
+          if (!check?.data?.exists) {
+            toast.error("Email này chưa được đăng ký tài khoản.");
+            setErrors({ email: "Email chưa được đăng ký", password: "" });
+          } else {
+            toast.error("Mật khẩu không chính xác.");
+            setErrors({ email: "", password: "Mật khẩu không đúng" });
+          }
+        } catch {
+          toast.error("Email hoặc mật khẩu không chính xác.");
+        }
+      } else {
+        toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
+      }
       setShowLoader(false);
     } else {
       window.location.href = "/";

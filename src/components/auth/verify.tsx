@@ -28,10 +28,8 @@ const Verify = (props: { id: string }) => {
       await authService.checkCode({ id, codeActive });
       toast.success("Tài khoản của bạn đã được kích hoạt.");
       router.push(`/auth/login`);
-    } catch (error) {
-      const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Xác thực thất bại";
-      toast.error(msg);
+    } catch {
+      toast.error("Mã kích hoạt không hợp lệ hoặc đã hết hạn.");
     }
   };
 

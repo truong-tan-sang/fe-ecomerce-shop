@@ -94,10 +94,8 @@ const ModalReactive = (props: ModalReactiveProps) => {
       if (!id) throw new Error("Không nhận được ID người dùng từ server");
       setUserId(id);
       setCurrent(1);
-    } catch (error) {
-      const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Yêu cầu thất bại";
-      toast.error(msg);
+    } catch {
+      toast.error("Gửi lại mã kích hoạt thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -117,10 +115,8 @@ const ModalReactive = (props: ModalReactiveProps) => {
         id: String(userId),
       });
       setCurrent(2);
-    } catch (error) {
-      const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Xác thực thất bại";
-      toast.error(msg);
+    } catch {
+      toast.error("Mã kích hoạt không hợp lệ hoặc đã hết hạn.");
     }
   };
 

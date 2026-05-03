@@ -71,6 +71,13 @@ export const authService = {
       body,
     }),
 
+  checkEmail: (email: string) =>
+    sendRequest<IBackendRes<{ exists: boolean }>>({
+      url: `${BASE_URL}/auth/check-email`,
+      method: "POST",
+      body: { email },
+    }),
+
   changePassword: (body: ChangePasswordRequest) =>
     sendRequest<IBackendRes<AuthResponseEntity>>({
       url: `${BASE_URL}/auth/change-password`,

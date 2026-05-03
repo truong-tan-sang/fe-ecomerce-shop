@@ -17,3 +17,7 @@ export class InvalidEmailPasswordError extends AuthError {
 export class InactiveAccountError extends AuthError {
   static type = "Account is not activated yet";
 }
+
+export class EmailNotFoundError extends AuthError {
+  static type = "Email not found";
+}

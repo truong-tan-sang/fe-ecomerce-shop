@@ -94,8 +94,11 @@ function Signup() {
       router.push(`/auth/verify/${res?.data?.id}`);
     } catch (error) {
       const { ApiError } = await import("@/utils/api-error");
-      const msg = error instanceof ApiError ? error.message : "Đăng ký thất bại";
-      toast.error(msg);
+      if (error instanceof ApiError && error.statusCode === 409) {
+        toast.error("Email này đã được đăng ký. Vui lòng dùng email khác.");
+      } else {
+        toast.error("Đăng ký thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setShowLoader(false);
     }

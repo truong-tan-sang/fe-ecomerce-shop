@@ -2,6 +2,7 @@
 
 import { signIn } from "@/auth";
 import {
+  EmailNotFoundError,
   InactiveAccountError,
   InvalidEmailPasswordError,
 } from "@/utils/errors";
@@ -33,7 +34,12 @@ export async function authenticate(username: string, password: string) {
     console.log(">>> check r: ", r);
     return r;
   } catch (error) {
-    if (error instanceof InvalidEmailPasswordError) {
+    if (error instanceof EmailNotFoundError) {
+      return {
+        error: EmailNotFoundError.type,
+        code: 3,
+      };
+    } else if (error instanceof InvalidEmailPasswordError) {
       return {
         error: InvalidEmailPasswordError.type,
         code: 1,
