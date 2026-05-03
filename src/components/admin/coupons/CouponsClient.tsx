@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useSession } from "next-auth/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, PlusSquare, Pencil, Trash2, Loader2, SlidersHorizontal, X } from "lucide-react";
+import { toast } from "sonner";
 import { voucherService } from "@/services/voucher";
 import { categoryService } from "@/services/category";
 import { productService } from "@/services/product";
@@ -262,7 +263,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
   };
 
   const handleSave = async () => {
-    if (!form.code.trim() || !form.discountValue || !form.validFrom || !form.validTo) { alert("Vui lòng điền đầy đủ thông tin bắt buộc."); return; }
+    if (!form.code.trim() || !form.discountValue || !form.validFrom || !form.validTo) { toast.error("Vui lòng điền đầy đủ thông tin bắt buộc."); return; }
     if (!session?.user?.id) return;
     setSaving(true); setAssignError(null);
     try {
@@ -286,7 +287,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
       }
       setDialogOpen(false);
       fetchAllVouchers();
-    } catch (err) { console.error("[CouponsClient] Save error:", err); alert("Lưu voucher thất bại."); }
+    } catch (err) { console.error("[CouponsClient] Save error:", err); toast.error("Lưu voucher thất bại."); }
     finally { setSaving(false); }
   };
 
@@ -295,7 +296,7 @@ export default function CouponsClient({ readonly = false }: CouponsClientProps) 
       await voucherService.deleteVoucher(id, accessToken);
       setDeleteConfirmId(null);
       fetchAllVouchers();
-    } catch (err) { console.error("[CouponsClient] Delete error:", err); alert("Xóa voucher thất bại."); }
+    } catch (err) { console.error("[CouponsClient] Delete error:", err); toast.error("Xóa voucher thất bại."); }
   };
 
   const activeFilterCount = (appliedFilter.discountType !== "" ? 1 : 0) + (appliedFilter.isActive !== "all" ? 1 : 0);

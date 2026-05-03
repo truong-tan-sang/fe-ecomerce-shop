@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { productService } from "@/services/product";
 import { productVariantService } from "@/services/product-variant";
 import { categoryService } from "@/services/category";
@@ -320,20 +321,20 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
 
   const handleSave = async () => {
     if (!session?.user?.access_token || !session?.user?.id) {
-      alert("Bạn cần đăng nhập");
+      toast.error("Bạn cần đăng nhập để thực hiện thao tác này.");
       return;
     }
 
     const { name, description, categoryId } = formState;
     if (!name || !description || !categoryId) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc.");
       return;
     }
 
     // --- VARIANT VALIDATION ---
     const { selectedSizes, selectedColors, variantMatrix, colorImages } = formState;
     if (selectedColors.length === 0 || selectedSizes.length === 0) {
-      alert("Vui lòng thêm ít nhất một màu sắc và một kích cỡ để tạo sản phẩm con.");
+      toast.error("Vui lòng thêm ít nhất một màu sắc và một kích cỡ để tạo sản phẩm con.");
       return;
     }
 
@@ -346,7 +347,7 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
       });
       if (colorsWithoutImage.length > 0) {
         const missing = colorsWithoutImage.map((c) => c.label).join(", ");
-        alert(`Vui lòng upload ảnh cho tất cả màu sắc trước khi lưu.\nCòn thiếu: ${missing}`);
+        toast.error(`Vui lòng upload ảnh cho tất cả màu sắc trước khi lưu. Còn thiếu: ${missing}`);
         return;
       }
     }
@@ -415,7 +416,7 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
         console.log("[ProductForm] Creating product:", createData, "files:", productFiles.length);
         const productRes = await productService.createProduct(createData, productFiles, token);
         if (!productRes.data) {
-          alert("Tạo sản phẩm thất bại");
+          toast.error("Tạo sản phẩm thất bại.");
           setLoading(false);
           return;
         }
@@ -526,7 +527,7 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
         .filter((r): r is PromiseRejectedResult => r.status === "rejected")
         .map((r) => String(r.reason));
       if (deleteErrors.length > 0) {
-        alert(`Không thể xoá một số biến thể (đã có trong đơn hàng):\n${deleteErrors.join("\n")}`);
+        toast.error("Không thể xoá một số biến thể vì đã có trong đơn hàng.");
         setLoading(false);
         return;
       }
@@ -557,17 +558,17 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
 
       console.log("[ProductForm] All operations complete");
       if (failedCreates.length > 0) {
-        alert(`Một số sản phẩm con tạo thất bại: ${failedCreates.join(", ")}\nKiểm tra console để biết chi tiết.`);
+        toast.error(`Một số sản phẩm con tạo thất bại: ${failedCreates.join(", ")}`);
       } else if (onSuccess) {
         onSuccess();
       } else if (isEditMode) {
-        alert("Lưu thành công");
+        toast.success("Lưu thành công.");
       } else {
         router.push(`/admin/products/edit/${resolvedProductId}`);
       }
     } catch (error) {
       console.error("[ProductForm] Error:", error);
-      alert(isEditMode ? "Có lỗi xảy ra khi cập nhật sản phẩm" : "Có lỗi xảy ra khi tạo sản phẩm");
+      toast.error(isEditMode ? "Có lỗi xảy ra khi cập nhật sản phẩm." : "Có lỗi xảy ra khi tạo sản phẩm.");
     } finally {
       setLoading(false);
     }
@@ -588,7 +589,7 @@ export default function ProductForm({ productId, onSuccess, onCancel, stockOnly 
       }
     } catch (error) {
       console.error("[ProductForm] Error deleting:", error);
-      alert("Có lỗi xảy ra khi xóa sản phẩm");
+      toast.error("Có lỗi xảy ra khi xóa sản phẩm.");
     } finally {
       setLoading(false);
     }

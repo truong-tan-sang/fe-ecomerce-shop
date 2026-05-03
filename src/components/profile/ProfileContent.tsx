@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useProfile } from "./ProfileContext";
 import { userService } from "../../services/user";
 import { addressService } from "../../services/address";
@@ -105,7 +106,7 @@ export default function ProfileContent() {
             }
         } catch (err) {
             console.error("[ProfileContent] Failed to delete address:", err);
-            alert("Không thể xóa địa chỉ. Vui lòng thử lại.");
+            toast.error("Không thể xóa địa chỉ. Vui lòng thử lại.");
         }
     };
 

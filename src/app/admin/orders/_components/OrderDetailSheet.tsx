@@ -180,11 +180,11 @@ export default function OrderDetailSheet({
       if (res.data) {
         onOrderUpdated(res.data);
       } else {
-        alert("Có lỗi xảy ra. Vui lòng thử lại.");
+        toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
       }
     } catch (err) {
       console.error("[OrderDetailSheet] Action error:", err);
-      alert("Có lỗi xảy ra. Vui lòng thử lại.");
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +192,7 @@ export default function OrderDetailSheet({
 
   const handleConfirmOrder = async () => {
     const shift = ghnShifts.find((s) => String(s.id) === selectedShiftId);
-    if (!shift) return alert("Vui lòng chọn ca lấy hàng.");
+    if (!shift) { toast.error("Vui lòng chọn ca lấy hàng."); return; }
     await runAction(() =>
       orderService.updateOrderToWaitingPickup(
         order.id,

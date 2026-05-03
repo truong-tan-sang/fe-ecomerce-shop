@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -213,7 +214,7 @@ export default function VariantMatrixSection({
     // Don't allow deleting a color that's currently in use
     const inUse = selectedColors.find((sc) => sc.id === apiColor.id || sc.name === apiColor.name);
     if (inUse) {
-      alert(`Không thể xóa màu "${apiColor.name}" vì đang được sử dụng trong ma trận.`);
+      toast.error(`Không thể xóa màu "${apiColor.name}" vì đang được sử dụng trong ma trận.`);
       return;
     }
     if (!confirm(`Xóa màu "${apiColor.name}"?`)) return;
