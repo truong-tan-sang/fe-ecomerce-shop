@@ -46,7 +46,7 @@ const Verify = (props: { id: string }) => {
               <Label htmlFor="codeActive">Mã kích hoạt</Label>
               <Input
                 id="codeActive"
-                placeholder="Nhập mã kích hoạt 6 chữ số"
+                placeholder="Nhập mã kích hoạt"
                 value={codeActive}
                 onChange={(e) => {
                   setCodeActive(e.target.value);

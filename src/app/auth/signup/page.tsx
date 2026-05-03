@@ -36,6 +36,8 @@ function Signup() {
 
     let newErrors = { firstName: "", lastName: "", email: "", password: "" };
 
+    const emailRegex = /^(?:[a-zA-Z0-9_'^&+%`{}~!-]+(?:\.[a-zA-Z0-9_'^&+%`{}~!-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z-]*[a-zA-Z]:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]+)\])$/;
+
     if (!user.firstName.trim()) {
       newErrors.firstName = "Vui lòng nhập họ.";
     }
@@ -45,11 +47,15 @@ function Signup() {
     }
 
     if (!user.email.trim()) {
-      newErrors.email = "Vui lòng nhập email hợp lệ.";
+      newErrors.email = "Vui lòng nhập email.";
+    } else if (!emailRegex.test(user.email.trim())) {
+      newErrors.email = "Email không hợp lệ.";
     }
 
     if (!user.password.trim()) {
-      newErrors.password = "Mật khẩu không được để trống.";
+      newErrors.password = "Vui lòng nhập mật khẩu.";
+    } else if (user.password.trim().length < 8) {
+      newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
     }
 
     if (
@@ -64,13 +70,6 @@ function Signup() {
 
     setShowLoader(true);
 
-    // TODO: Add password strength validation (min 8 chars, uppercase, lowercase, number)
-    // TODO: Add email format validation (regex or library)
-    // TODO: Implement backend signup API
-    // API endpoint: POST /auth/signup
-    // Request body: { email, password, firstName, lastName, username }
-    // Response: { id, email, ... } - then redirect to /auth/verify/{id}
-    
     const email = user.email.trim();
     const password = user.password.trim();
     const firstName = user.firstName.trim();
@@ -173,7 +172,7 @@ function Signup() {
                 <Input
                   type="password"
                   name="password"
-                  placeholder="Mật khẩu"
+                  placeholder="Mật khẩu (tối thiểu 8 ký tự)"
                   value={user.password}
                   onChange={handleChange}
                   className="border-0 border-b border-[#9D9D9D] bg-transparent px-4 py-2.5 text-[#9D9D9D] placeholder:text-[#9D9D9D] focus-visible:ring-0 focus-visible:border-[#9D9D9D]"
