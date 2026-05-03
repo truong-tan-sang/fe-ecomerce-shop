@@ -5,8 +5,8 @@ import { io, Socket } from "socket.io-client";
 import { WsChatMessagePayload } from "@/dto/chat";
 import { parseProductCard, type ProductAttachment } from "@/utils/chat-product";
 
-const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL || "http://localhost:80";
+const WS_BASE =
+  process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4000";
 
 export interface ChatMessage {
   id: string;
@@ -37,9 +37,9 @@ export function useChatSocket({
   useEffect(() => {
     if (!accessToken) return;
 
-    console.log("[useChatSocket] Connecting to WS:", WS_URL);
+    console.log("[useChatSocket] Connecting to WS:", `${WS_BASE}/chat`);
 
-    const socket = io(WS_URL, {
+    const socket = io(`${WS_BASE}/chat`, {
       auth: { token: accessToken },
       transports: ["websocket"],
       reconnection: true,

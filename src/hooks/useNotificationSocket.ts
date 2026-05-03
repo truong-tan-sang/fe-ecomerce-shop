@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { io } from "socket.io-client";
 import type { NotificationDto } from "@/dto/notification";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:80";
+const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4000";
 
 interface PersonalNotificationPayload {
   receiverId: number;
@@ -34,7 +34,7 @@ export function useNotificationSocket({
 
     console.log("[useNotificationSocket] Connecting to namespace: notification");
 
-    const socket = io(`${WS_URL}/notification`, {
+    const socket = io(`${WS_BASE}/notification`, {
       auth: { token: accessToken },
       transports: ["websocket"],
       reconnection: true,
