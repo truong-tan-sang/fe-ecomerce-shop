@@ -28,6 +28,7 @@ export default function FloatingChat() {
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const lastMsgIdRef = useRef<string | null>(null);
 
   const accessToken = session?.user?.access_token ?? null;
   const currentUserEmail = session?.user?.email ?? null;
@@ -73,8 +74,12 @@ export default function FloatingChat() {
     if (open) setUnreadCount(0);
   }, [open]);
 
+  // Scroll to bottom when chat opens, or when a new message is appended (not on prepend).
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const lastId = messages[messages.length - 1]?.id ?? null;
+    if (lastId !== lastMsgIdRef.current) {
+      lastMsgIdRef.current = lastId;
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, open]);
@@ -119,10 +124,9 @@ export default function FloatingChat() {
         pageRef.current = 1;
         hasMoreRef.current = true;
         try {
-          const msgRes = await chatService.getRoomMessages(supportRoomName, accessToken, 1, 50);
+          const msgRes = await chatService.getRoomMessages(supportRoomName, accessToken, 1);
           if (msgRes?.data) {
             const raw = msgRes.data as ChatMessageDto[];
-            if (raw.length < 50) hasMoreRef.current = false;
             const history = raw
               .slice()
               .reverse()
@@ -160,10 +164,9 @@ export default function FloatingChat() {
     setLoadingMore(true);
     const nextPage = pageRef.current + 1;
     try {
-      const res = await chatService.getRoomMessages(supportRoomName, accessToken, nextPage, 50);
+      const res = await chatService.getRoomMessages(supportRoomName, accessToken, nextPage);
       const older = (res?.data as ChatMessageDto[]) ?? [];
       if (older.length === 0) { hasMoreRef.current = false; return; }
-      if (older.length < 50) hasMoreRef.current = false;
       pageRef.current = nextPage;
       const mapped = older.slice().reverse().map((m) => ({
         id: `hist-${m.id}`,

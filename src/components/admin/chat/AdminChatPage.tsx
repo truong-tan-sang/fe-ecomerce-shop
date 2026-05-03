@@ -101,6 +101,7 @@ export default function AdminChatPage() {
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const lastMsgIdRef = useRef<string | null>(null);
 
   const handleIncoming = useCallback((msg: ChatMessage) => {
     if (msg.isMine) return;
@@ -151,14 +152,12 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
-  // Scroll to bottom only when a new message arrives at the end (not on load-more prepend)
-  const prevMsgCountRef = useRef(0);
+  // Scroll to bottom only when the LAST message changes (new message appended).
+  // Prepending old messages doesn't change the last message id, so no snap-back.
   useEffect(() => {
-    const count = messages.length;
-    const prev = prevMsgCountRef.current;
-    prevMsgCountRef.current = count;
-    // If messages grew from the end (new message), scroll down. Skip initial load and prepends.
-    if (count > prev && !loadingMoreRef.current) {
+    const lastId = messages[messages.length - 1]?.id ?? null;
+    if (lastId && lastId !== lastMsgIdRef.current) {
+      lastMsgIdRef.current = lastId;
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
@@ -267,10 +266,9 @@ export default function AdminChatPage() {
       setMessages([]);
       loadCustomerProfile();
       try {
-        const res = await chatService.getRoomMessages(activeRoom.name, accessToken, 1, 50);
+        const res = await chatService.getRoomMessages(activeRoom.name, accessToken, 1);
         if (res?.data) {
           const raw = res.data as ChatMessageDto[];
-          if (raw.length < 50) hasMoreRef.current = false;
           const history = raw
             .slice()
             .reverse()
@@ -289,6 +287,14 @@ export default function AdminChatPage() {
         console.error("[AdminChat] Failed to load messages:", err);
       } finally {
         setMessagesLoading(false);
+        // If content doesn't overflow the container, scrollTop stays at 0 and onScroll
+        // never fires — proactively load more so the user isn't stuck.
+        requestAnimationFrame(() => {
+          const container = scrollContainerRef.current;
+          if (container && hasMoreRef.current && container.scrollTop < 80) {
+            loadMoreMessages();
+          }
+        });
       }
     }
 
@@ -355,10 +361,9 @@ export default function AdminChatPage() {
     setLoadingMore(true);
     const nextPage = pageRef.current + 1;
     try {
-      const res = await chatService.getRoomMessages(activeRoom.name, accessToken, nextPage, 50);
+      const res = await chatService.getRoomMessages(activeRoom.name, accessToken, nextPage);
       const older = (res?.data as ChatMessageDto[]) ?? [];
       if (older.length === 0) { hasMoreRef.current = false; return; }
-      if (older.length < 50) hasMoreRef.current = false;
       pageRef.current = nextPage;
       const mapped = older.slice().reverse().map((m) => ({
         id: `hist-${m.id}`,
