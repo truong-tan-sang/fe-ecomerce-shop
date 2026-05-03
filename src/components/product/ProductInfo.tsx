@@ -186,7 +186,7 @@ export default function ProductInfo({
     const handleAddToCart = async () => {
         if (!selectedVariant) return;
         if (!session?.user?.id || !session?.user?.access_token) {
-            toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
+            router.push("/auth/login");
             return;
         }
 
@@ -211,7 +211,7 @@ export default function ProductInfo({
     const handleBuyNow = () => {
         if (!selectedVariant) return;
         if (!session?.user?.id) {
-            toast.error("Vui lòng đăng nhập để mua hàng");
+            router.push("/auth/login");
             return;
         }
 
