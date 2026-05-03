@@ -46,17 +46,24 @@ function getSupportRoomLabel(room: ChatRoomDto): string {
   return match ? `Khách hàng #${match[1]}` : room.name;
 }
 
-// Returns true if the room is a customer support room
-function isSupportRoom(room: ChatRoomDto): boolean {
-  return room.name.startsWith("support-");
+
+function relativeTime(date: Date): string {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (mins < 1) return "Vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} giờ trước`;
+  return `${Math.floor(hrs / 24)} ngày trước`;
 }
 
-// Minutes since a date
-function minutesAgo(dateStr: string): number {
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+function previewText(text: string): string {
+  if (text.startsWith("[[PC:")) return "[Sản phẩm]";
+  return text.length > 42 ? text.slice(0, 42) + "…" : text;
 }
 
 type SenderKind = "mine" | "customer" | "colleague";
+
+interface LastMessage { text: string; timestamp: Date; isMine: boolean }
 
 interface SenderProfile {
   name: string;
@@ -84,11 +91,16 @@ export default function AdminChatPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [productDetailId, setProductDetailId] = useState<number | null>(null);
   const [senderProfiles, setSenderProfiles] = useState<Record<string, SenderProfile>>({});
-  // Admin's own profile for the avatar shown on "mine" bubbles
   const [myProfile, setMyProfile] = useState<SenderProfile | null>(null);
+  const [lastMessages, setLastMessages] = useState<Record<string, LastMessage>>({});
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeRoomRef = useRef<ChatRoomDto | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const loadingMoreRef = useRef(false);
 
   const handleIncoming = useCallback((msg: ChatMessage) => {
     if (msg.isMine) return;
@@ -102,6 +114,14 @@ export default function AdminChatPage() {
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
+    }
+
+    // Update last message preview for the room
+    if (msg.roomName) {
+      setLastMessages((prev) => ({
+        ...prev,
+        [msg.roomName!]: { text: msg.text, timestamp: msg.timestamp, isMine: false },
+      }));
     }
 
     // Unread count for non-active rooms
@@ -131,9 +151,16 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom only when a new message arrives at the end (not on load-more prepend)
+  const prevMsgCountRef = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const count = messages.length;
+    const prev = prevMsgCountRef.current;
+    prevMsgCountRef.current = count;
+    // If messages grew from the end (new message), scroll down. Skip initial load and prepends.
+    if (count > prev && !loadingMoreRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Load rooms (joined + queue) — runs on mount and every 30s
@@ -142,7 +169,7 @@ export default function AdminChatPage() {
     try {
       const [joinedRes, adminRes] = await Promise.all([
         chatService.getAllRooms(accessToken),
-        chatService.getAdminRooms(accessToken).catch(() => null), // graceful until partner adds endpoint
+        chatService.getAdminRooms(accessToken).catch(() => null),
       ]);
 
       const joined = (joinedRes?.data ?? []) as ChatRoomDto[];
@@ -153,10 +180,28 @@ export default function AdminChatPage() {
 
       setJoinedRooms(joined);
       setQueueRooms(queue);
+
+      // Seed last message previews for all rooms in parallel
+      const allRooms = [...joined, ...allSupportRooms];
+      await Promise.allSettled(
+        allRooms.map(async (r) => {
+          const res = await chatService.getRoomMessages(r.name, accessToken, 1, 1);
+          const msg = (res?.data as ChatMessageDto[])?.[0];
+          if (!msg) return;
+          setLastMessages((prev) => ({
+            ...prev,
+            [r.name]: {
+              text: msg.content,
+              timestamp: new Date(msg.createdAt),
+              isMine: msg.senderId === myUserId,
+            },
+          }));
+        })
+      );
     } catch (err) {
       console.error("[AdminChat] Failed to load rooms:", err);
     }
-  }, [accessToken]);
+  }, [accessToken, myUserId]);
 
   // Fetch admin's own profile once for avatar display on "mine" bubbles
   useEffect(() => {
@@ -216,20 +261,17 @@ export default function AdminChatPage() {
 
     async function loadMessages() {
       if (!activeRoom || !accessToken) return;
+      pageRef.current = 1;
+      hasMoreRef.current = true;
       setMessagesLoading(true);
       setMessages([]);
-      // Always load customer profile so real-time messages classify correctly,
-      // even when the room has no history yet (404 from getRoomMessages).
       loadCustomerProfile();
       try {
-        const res = await chatService.getRoomMessages(
-          activeRoom.name,
-          accessToken,
-          1,
-          50
-        );
+        const res = await chatService.getRoomMessages(activeRoom.name, accessToken, 1, 50);
         if (res?.data) {
-          const history = (res.data as ChatMessageDto[])
+          const raw = res.data as ChatMessageDto[];
+          if (raw.length < 50) hasMoreRef.current = false;
+          const history = raw
             .slice()
             .reverse()
             .map((m) => ({
@@ -307,6 +349,43 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRoom, accessToken, myUserId]);
 
+  async function loadMoreMessages() {
+    if (!hasMoreRef.current || loadingMoreRef.current || !activeRoom || !accessToken) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+    try {
+      const res = await chatService.getRoomMessages(activeRoom.name, accessToken, nextPage, 50);
+      const older = (res?.data as ChatMessageDto[]) ?? [];
+      if (older.length === 0) { hasMoreRef.current = false; return; }
+      if (older.length < 50) hasMoreRef.current = false;
+      pageRef.current = nextPage;
+      const mapped = older.slice().reverse().map((m) => ({
+        id: `hist-${m.id}`,
+        senderEmail: String(m.senderId),
+        text: m.content,
+        isMine: m.senderId === myUserId,
+        timestamp: new Date(m.createdAt),
+        productAttachment: parseProductCard(m.content) ?? undefined,
+      }));
+      const container = scrollContainerRef.current;
+      const prevHeight = container?.scrollHeight ?? 0;
+      setMessages((prev) => [...mapped, ...prev]);
+      requestAnimationFrame(() => {
+        if (container) container.scrollTop = container.scrollHeight - prevHeight;
+      });
+    } catch (err) {
+      console.error("[AdminChat] Failed to load more messages:", err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }
+
+  function handleMessagesScroll(e: React.UIEvent<HTMLDivElement>) {
+    if (e.currentTarget.scrollTop < 80) loadMoreMessages();
+  }
+
   function selectRoom(room: ChatRoomDto) {
     setActiveRoom(room);
     setUnreadCounts((prev) => {
@@ -338,15 +417,17 @@ export default function AdminChatPage() {
         ? sendPrivateMessage(getPeerUserId(activeRoom, myUserId) ?? "", text)
         : sendRoomMessage(activeRoom.name, text);
       if (!sent) return;
+      const now = new Date();
       const optimistic: ChatMessage = {
         id: `opt-${Date.now()}`,
         senderEmail: currentUserEmail ?? "admin",
         text,
         isMine: true,
-        timestamp: new Date(),
+        timestamp: now,
         productAttachment: pendingProduct,
       };
       setMessages((prev) => [...prev, optimistic]);
+      setLastMessages((prev) => ({ ...prev, [activeRoom.name]: { text, timestamp: now, isMine: true } }));
       setPendingProduct(null);
       return;
     }
@@ -365,14 +446,16 @@ export default function AdminChatPage() {
 
     if (!sent) return;
 
+    const now = new Date();
     const optimistic: ChatMessage = {
       id: `opt-${Date.now()}`,
       senderEmail: currentUserEmail ?? "admin",
       text,
       isMine: true,
-      timestamp: new Date(),
+      timestamp: now,
     };
     setMessages((prev) => [...prev, optimistic]);
+    setLastMessages((prev) => ({ ...prev, [activeRoom.name]: { text, timestamp: now, isMine: true } }));
     setInput("");
   }
 
@@ -418,41 +501,55 @@ export default function AdminChatPage() {
             </div>
           ) : (
             <>
-              {/* Queue section */}
+              {/* Queue section — sorted by latest message */}
               {queueRooms.length > 0 && (
                 <div>
                   <div className="px-4 py-2 text-[11px] font-semibold text-[var(--admin-green-dark)] uppercase tracking-wider flex items-center gap-1.5">
                     <Clock size={11} />
                     Chờ xử lý ({queueRooms.length})
                   </div>
-                  {queueRooms.map((room) => (
-                    <QueueRoomItem
-                      key={room.id}
-                      room={room}
-                      label={getRoomLabel(room)}
-                      unreadCount={unreadCounts[room.name] ?? 0}
-                      onClick={() => handlePickFromQueue(room)}
-                    />
-                  ))}
+                  {[...queueRooms]
+                    .sort((a, b) => {
+                      const ta = lastMessages[a.name]?.timestamp ?? new Date(a.createdAt);
+                      const tb = lastMessages[b.name]?.timestamp ?? new Date(b.createdAt);
+                      return tb.getTime() - ta.getTime();
+                    })
+                    .map((room) => (
+                      <QueueRoomItem
+                        key={room.id}
+                        room={room}
+                        label={getRoomLabel(room)}
+                        lastMessage={lastMessages[room.name]}
+                        unreadCount={unreadCounts[room.name] ?? 0}
+                        onClick={() => handlePickFromQueue(room)}
+                      />
+                    ))}
                 </div>
               )}
 
-              {/* Active / joined section */}
+              {/* Active / joined section — sorted by latest message */}
               {joinedRooms.length > 0 && (
                 <div>
                   <div className="px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                     Đang xử lý ({joinedRooms.length})
                   </div>
-                  {joinedRooms.map((room) => (
-                    <ActiveRoomItem
-                      key={room.id}
-                      room={room}
-                      label={getRoomLabel(room)}
-                      active={activeRoom?.id === room.id}
-                      unreadCount={unreadCounts[room.name] ?? 0}
-                      onClick={() => selectRoom(room)}
-                    />
-                  ))}
+                  {[...joinedRooms]
+                    .sort((a, b) => {
+                      const ta = lastMessages[a.name]?.timestamp ?? new Date(a.createdAt);
+                      const tb = lastMessages[b.name]?.timestamp ?? new Date(b.createdAt);
+                      return tb.getTime() - ta.getTime();
+                    })
+                    .map((room) => (
+                      <ActiveRoomItem
+                        key={room.id}
+                        room={room}
+                        label={getRoomLabel(room)}
+                        active={activeRoom?.id === room.id}
+                        lastMessage={lastMessages[room.name]}
+                        unreadCount={unreadCounts[room.name] ?? 0}
+                        onClick={() => selectRoom(room)}
+                      />
+                    ))}
                 </div>
               )}
 
@@ -493,7 +590,16 @@ export default function AdminChatPage() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleMessagesScroll}
+            className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50"
+          >
+            {loadingMore && (
+              <div className="flex justify-center py-2">
+                <Loader2 size={14} className="animate-spin text-gray-400" />
+              </div>
+            )}
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 size={20} className="animate-spin text-gray-400" />
@@ -747,15 +853,18 @@ function MessageList({
 function QueueRoomItem({
   room,
   label,
+  lastMessage,
   unreadCount,
   onClick,
 }: {
   room: ChatRoomDto;
   label: string;
+  lastMessage?: LastMessage;
   unreadCount: number;
   onClick: () => void;
 }) {
-  const isNew = minutesAgo(room.createdAt) < 10;
+  const isNew = (Date.now() - new Date(room.createdAt).getTime()) < 10 * 60 * 1000;
+  const ts = lastMessage?.timestamp ?? new Date(room.createdAt);
 
   return (
     <button
@@ -769,14 +878,16 @@ function QueueRoomItem({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate text-[var(--admin-green-dark)]">{label}</p>
-        <p className="text-[11px] text-[var(--admin-green-dark)] opacity-60 mt-0.5">
-          {isNew ? "Mới • " : ""}
-          {minutesAgo(room.createdAt)} phút trước
+        <div className="flex items-baseline justify-between gap-1">
+          <p className="text-sm font-medium truncate text-[var(--admin-green-dark)]">{label}</p>
+          <span className="text-[10px] text-[var(--admin-green-dark)] opacity-50 shrink-0">{relativeTime(ts)}</span>
+        </div>
+        <p className="text-[11px] text-[var(--admin-green-dark)] opacity-60 truncate mt-0.5">
+          {lastMessage ? (lastMessage.isMine ? "Bạn: " : "") + previewText(lastMessage.text) : (isNew ? "Mới" : "Chưa có tin nhắn")}
         </p>
       </div>
       {unreadCount > 0 && (
-        <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+        <span className="ml-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}
@@ -789,15 +900,19 @@ function ActiveRoomItem({
   room,
   label,
   active,
+  lastMessage,
   unreadCount,
   onClick,
 }: {
   room: ChatRoomDto;
   label: string;
   active: boolean;
+  lastMessage?: LastMessage;
   unreadCount: number;
   onClick: () => void;
 }) {
+  const ts = lastMessage?.timestamp ?? new Date(room.createdAt);
+
   return (
     <button
       onClick={onClick}
@@ -819,16 +934,26 @@ function ActiveRoomItem({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm truncate ${
-          active
-            ? "font-semibold text-[var(--admin-green-dark)]"
-            : "font-medium text-gray-700"
-        }`}>
-          {label}
-        </p>
+        <div className="flex items-baseline justify-between gap-1">
+          <p className={`text-sm truncate ${
+            active ? "font-semibold text-[var(--admin-green-dark)]" : "font-medium text-gray-700"
+          }`}>
+            {label}
+          </p>
+          <span className={`text-[10px] shrink-0 ${active ? "text-[var(--admin-green-dark)] opacity-60" : "text-gray-400"}`}>
+            {relativeTime(ts)}
+          </span>
+        </div>
+        {lastMessage && (
+          <p className={`text-[11px] truncate mt-0.5 ${
+            !active && unreadCount > 0 ? "font-semibold text-gray-700" : "text-gray-400"
+          }`}>
+            {lastMessage.isMine ? "Bạn: " : ""}{previewText(lastMessage.text)}
+          </p>
+        )}
       </div>
       {!active && unreadCount > 0 && (
-        <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+        <span className="ml-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}

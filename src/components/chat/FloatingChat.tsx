@@ -21,8 +21,13 @@ export default function FloatingChat() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingProduct, setPendingProduct] = useState<ProductAttachment | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const loadingMoreRef = useRef(false);
 
   const accessToken = session?.user?.access_token ?? null;
   const currentUserEmail = session?.user?.email ?? null;
@@ -111,10 +116,14 @@ export default function FloatingChat() {
         }
 
         console.log("[FloatingChat] Found support room:", supportRoomName);
+        pageRef.current = 1;
+        hasMoreRef.current = true;
         try {
-          const msgRes = await chatService.getRoomMessages(supportRoomName, accessToken, 1, 30);
+          const msgRes = await chatService.getRoomMessages(supportRoomName, accessToken, 1, 50);
           if (msgRes?.data) {
-            const history = (msgRes.data as ChatMessageDto[])
+            const raw = msgRes.data as ChatMessageDto[];
+            if (raw.length < 50) hasMoreRef.current = false;
+            const history = raw
               .slice()
               .reverse()
               .map((m) => ({
@@ -144,6 +153,43 @@ export default function FloatingChat() {
 
     loadHistory();
   }, [open, accessToken, userId, supportRoomName, historyLoaded, session, currentUserEmail, createRoom]);
+
+  async function loadMoreMessages() {
+    if (!hasMoreRef.current || loadingMoreRef.current || !supportRoomName || !accessToken) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+    try {
+      const res = await chatService.getRoomMessages(supportRoomName, accessToken, nextPage, 50);
+      const older = (res?.data as ChatMessageDto[]) ?? [];
+      if (older.length === 0) { hasMoreRef.current = false; return; }
+      if (older.length < 50) hasMoreRef.current = false;
+      pageRef.current = nextPage;
+      const mapped = older.slice().reverse().map((m) => ({
+        id: `hist-${m.id}`,
+        senderEmail: m.senderId.toString(),
+        text: m.content,
+        isMine: m.senderId === Number(userId),
+        timestamp: new Date(m.createdAt),
+        productAttachment: parseProductCard(m.content) ?? undefined,
+      }));
+      const container = scrollContainerRef.current;
+      const prevHeight = container?.scrollHeight ?? 0;
+      setMessages((prev) => [...mapped, ...prev]);
+      requestAnimationFrame(() => {
+        if (container) container.scrollTop = container.scrollHeight - prevHeight;
+      });
+    } catch (err) {
+      console.error("[FloatingChat] Failed to load more messages:", err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }
+
+  function handleScroll(e: React.UIEvent<HTMLDivElement>) {
+    if (e.currentTarget.scrollTop < 60) loadMoreMessages();
+  }
 
   function handleSend() {
     if (!connected || !supportRoomName) return;
@@ -218,7 +264,16 @@ export default function FloatingChat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-gray-50">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-gray-50"
+          >
+            {loadingMore && (
+              <div className="flex justify-center py-1">
+                <Loader2 size={12} className="animate-spin text-gray-400" />
+              </div>
+            )}
             {loading && (
               <div className="flex items-center justify-center h-full">
                 <Loader2 size={20} className="animate-spin text-gray-400" />
