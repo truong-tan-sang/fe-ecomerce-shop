@@ -74,6 +74,20 @@ export default function SearchPageClient({ categories, colors }: SearchPageClien
 
   const q = searchParams.get("q") ?? "";
 
+  // ── Sync filter state when URL changes (e.g. header category dropdown) ────
+  useEffect(() => {
+    setSelectedCategoryId(searchParams.get("categoryId") ? Number(searchParams.get("categoryId")) : null);
+    setSelectedColors(searchParams.getAll("colors"));
+    setSelectedSizes(searchParams.getAll("sizes"));
+    const minP = searchParams.get("minPrice") || "";
+    const maxP = searchParams.get("maxPrice") || "";
+    setMinPrice(minP);
+    setMaxPrice(maxP);
+    setPendingMin(minP);
+    setPendingMax(maxP);
+    setSelectedConditions(searchParams.getAll("conditions"));
+  }, [searchParams]);
+
   // ── Build fetch URL from current filter state ─────────────────────────────
   const buildApiUrl = useCallback(
     (pg: number) => {
