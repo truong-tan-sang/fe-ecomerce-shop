@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ProductVariantWithMediaEntity } from "@/dto/product";
 import type { ColorEntity } from "@/dto/color";
 
-const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80";
+const PLACEHOLDER_IMAGE = "/no-image.jpg";
 
 interface ProductCardProps {
   id: string;
@@ -55,6 +55,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const productColors = useProductColors(variants, colors);
   const [hoveredColorIndex, setHoveredColorIndex] = useState<number | null>(null);
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
 
   const inStock = stock > 0;
   const variantCount = variants.length;
@@ -85,11 +86,12 @@ export default function ProductCard({
       {/* Image */}
       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
         <Image
-          src={currentImage}
+          src={imgSrc ?? currentImage}
           alt={name}
           fill
           className={`object-cover transition-all duration-500 group-hover:scale-[1.03] ${!inStock ? "grayscale-[30%]" : ""}`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 256px"
+          onError={() => setImgSrc(PLACEHOLDER_IMAGE)}
         />
 
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-[11px] font-medium z-10">

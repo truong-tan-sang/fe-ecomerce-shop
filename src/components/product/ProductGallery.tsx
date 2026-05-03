@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
+const NO_IMAGE = "/no-image.jpg";
+
 interface ProductGalleryProps {
   images: string[];
   /** When set, forces the gallery to jump to this index (e.g. on color change) */
@@ -49,6 +51,7 @@ export default function ProductGallery({ images, forcedIndex }: ProductGalleryPr
               className="object-cover"
               sizes="80px"
               unoptimized
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = NO_IMAGE; }}
             />
           </Button>
         ))}
@@ -64,6 +67,7 @@ export default function ProductGallery({ images, forcedIndex }: ProductGalleryPr
           sizes="(max-width: 768px) 100vw, 50vw"
           priority
           unoptimized
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = NO_IMAGE; }}
         />
       </div>
     </div>
