@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-const subTabs = ["Hồ sơ", "Bảng Size", "Địa chỉ", "Đổi mật khẩu", "Xóa tài khoản"];
+const subTabs = ["Hồ sơ", "Địa chỉ", "Đổi mật khẩu"];
 
 export default function ProfileContent() {
     const profile = useProfile();
@@ -43,6 +43,43 @@ export default function ProfileContent() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Change password state
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [pwLoading, setPwLoading] = useState(false);
+    const [pwMessage, setPwMessage] = useState<string | null>(null);
+    const [pwError, setPwError] = useState<string | null>(null);
+
+    const handleChangePassword = async () => {
+        setPwMessage(null);
+        setPwError(null);
+        if (!newPassword || newPassword.length < 6) {
+            setPwError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPwError("Mật khẩu xác nhận không khớp.");
+            return;
+        }
+        if (!profile?.id || !session?.user?.access_token) {
+            setPwError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+            return;
+        }
+        setPwLoading(true);
+        try {
+            await userService.updateUser(String(profile.id), { password: newPassword }, session.user.access_token);
+            setPwMessage("Đổi mật khẩu thành công.");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (err) {
+            console.error("[ProfileContent] Change password error:", err);
+            const { ApiError } = await import("@/utils/api-error");
+            setPwError(err instanceof ApiError ? err.message : "Đổi mật khẩu thất bại. Vui lòng thử lại.");
+        } finally {
+            setPwLoading(false);
+        }
+    };
 
     // Address state
     const [addresses, setAddresses] = useState<AddressDto[]>([]);
@@ -318,10 +355,6 @@ export default function ProfileContent() {
                 </div>
             )}
 
-            {/* Placeholder for other tabs */}
-            {activeSubTab === "Bảng Size" && (
-                <div className="text-gray-500">TODO: Bảng Size content</div>
-            )}
             {activeSubTab === "Địa chỉ" && (
                 <div>
                     <div className="flex items-center justify-between mb-6">
@@ -413,7 +446,42 @@ export default function ProfileContent() {
                 </div>
             )}
             {activeSubTab === "Đổi mật khẩu" && (
-                <div className="text-gray-500">TODO: Đổi mật khẩu content</div>
+                <div className="max-w-md space-y-4">
+                    <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+                        <Label className="text-sm text-gray-600 font-normal">Mật khẩu mới</Label>
+                        <Input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Nhập mật khẩu mới"
+                            className="text-sm"
+                        />
+                    </div>
+                    <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+                        <Label className="text-sm text-gray-600 font-normal">Xác nhận mật khẩu</Label>
+                        <Input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Nhập lại mật khẩu mới"
+                            className="text-sm"
+                        />
+                    </div>
+                    <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+                        <div />
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                onClick={handleChangePassword}
+                                disabled={pwLoading}
+                                className="bg-black text-white px-6 py-2 h-auto text-sm font-semibold hover:bg-gray-800 w-fit"
+                            >
+                                {pwLoading ? "Đang lưu..." : "Đổi mật khẩu"}
+                            </Button>
+                            {pwMessage && <p className="text-green-600 text-sm">{pwMessage}</p>}
+                            {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
+                        </div>
+                    </div>
+                </div>
             )}
             </div>    
         </>
