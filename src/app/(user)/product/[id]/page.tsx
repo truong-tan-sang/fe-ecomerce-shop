@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import Header from "@/components/header/Navbar";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
 import ReviewSection from "@/components/product/ReviewSection";
+import OutfitRecommendationSection from "@/components/product/OutfitRecommendationSection";
 import { productService } from "@/services/product";
 import { colorService } from "@/services/color";
 import type { ReviewDto } from "@/dto/product-detail";
@@ -87,6 +88,11 @@ export default async function ProductDetailPage({
           variants={variants}
           colors={colors}
         />
+
+        {/* Outfit Recommendation Section */}
+        {variants.length > 0 && (
+          <OutfitRecommendationSection variantId={variants[0].id} />
+        )}
 
         {/* Review Section */}
         <ReviewSection
